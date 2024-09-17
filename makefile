@@ -4,7 +4,8 @@ d:
 		\
 		-lSDL2 \
 		\
-		main.c
+		main.c \
+			utils/*.c
 
 run: a.out
 	./a.out
