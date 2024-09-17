@@ -5,7 +5,8 @@ d:
 		-lSDL2 \
 		\
 		main.c \
-			utils/*.c
+			utils/*.c \
+			mike/mike.c \
 
 run: a.out
 	./a.out

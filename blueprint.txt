@@ -1,0 +1,88 @@
+
+PNG Anatomy
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+(multi-byte values are big-endian)
+
+8B PNG Header:
+	0x89
+	'P'
+	'N'
+	'G'
+	0x0D
+	0x0A
+	0x1A
+	0x0A
+IHDR Chunk : Image Header
+	4B length: 13
+	4B type: 'I', 'H', 'D', 'R'
+	[length]B data:
+		4B width
+		4B height
+		1B bitDepth
+		1B colourType
+		1B compressionMethod
+		1B filterMethod
+		1B interlaceMethod
+	4B CRC
+	
+n Chunks
+	Chunk:
+		4B length
+			< 80_00_00_00
+		4B type
+			4 1-byte chars
+				only a-z or A-Z
+
+			capitalization encodes meaning
+				B[0]
+					uppercase = CRITICAL
+					lowercase = ANCILLARY
+				B[1]
+					uppercase = PUBLIC CHUNK
+					lowercase = PRIVATE CHUNK
+
+					public is defined by official PNG standards, private is specific to some environment
+				B[2]
+					uppercase = ACCEPTABLE
+					lowercase = RESERVED: ERROR
+				B[3]
+					upparcase = NOT SAFE TO COPY
+					lowercase = SAFE TO COPY
+						
+					irrelevant for decoders
+					? whether the chunk can be copied by a PNG editor if its unrecognized to the new PNG ?
+
+			"capitalization" is defined by checking the corresponding ASCII capitalization bit, not by checking the actual letter ranges.
+				1 = lowercase, 0 = uppercase / as per ascii
+
+		[length]B data
+		
+		4B CRC Cyclic Redundancy Code
+			calculated over "type" & "data"
+			to check for corruption of the data
+
+	Chunk Ordering:
+		I am only mentioning the CRITICAL chunks here
+
+		IHDR:
+			only 1
+			always FIRST
+		PLTE:
+			only 1
+			appears before IDAT
+		IDAT:
+			multiple allowed
+			appear consecutively
+		IEND:
+			only 1
+			always LAST
+IEND Chunk
+	4B length: 0
+	4B type: IHDR
+	[length]B data
+	4B CRC
+
+IDAT
+==================================================
+

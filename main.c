@@ -7,7 +7,7 @@
 #include "utils/iByteSeeker.h"
 #include "utils/iByteSeeker_forw.h"
 
-//#include "mike/mike.h"
+#include "mike/mike.h"
 
 int FILE_step(void *vself, uint8_t *nDestination) {
 	int byte = fgetc(vself);
@@ -62,12 +62,16 @@ FILE * FILE_as_iByteSeeker(const char *path, iByteSeeker *nDestination) {
 int main(int argc, const char **argv) {
 
 	iByteSeeker bs;
-	FILE *f = FILE_as_iByteSeeker("png/PNG_transparency_demonstration.png", &bs);
+	FILE *f = FILE_as_iByteSeeker("pngs/PNG_transparency_demonstration.png", &bs);
 	if (f == NULL) {
+		printf("cant open file\n");
 		return 1;
 	}
 	
 	// ...
+
+	int e = Mike_decode(&bs, NULL);
+	printf("e: %d\n", e);
 
 	fclose(f);
 
