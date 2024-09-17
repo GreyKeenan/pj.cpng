@@ -1,65 +1,74 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <stdbool.h>
+//#include <stdbool.h>
+#include <limits.h>
 
-#include "./utils/iByteTrain.h"
-#include "./utils/iByteTrain_forw.h"
+#include "utils/iByteSeeker.h"
+#include "utils/iByteSeeker_forw.h"
 
+//#include "mike/mike.h"
 
-int _FilePtr_chewchew(void *vself, uint8_t *destination) {
-
+int FILE_step(void *vself, uint8_t *nDestination) {
 	int byte = fgetc(vself);
-
 	if (byte == EOF) {
-		return IBYTETRAIN_ENDOFTHELINE;
+		return iByteSeeker_ERROR;
 	}
 
-	if (destination != NULL) {
-		*destination = byte;
+	if (nDestination == NULL) {
+		return 0;
 	}
+	*nDestination = byte;
 
 	return 0;
 }
-int _FilePtr_lookoutAhead(const void *vself, uint8_t *destination) {
+int FILE_at(const void *vself, iByteSeeker_position *nDestination) {
 	FILE *self = (void *)vself;
-
-	int byte = fgetc(self);
-
-	if (byte == EOF) {
-		return IBYTETRAIN_ENDOFTHELINE;
+	long fposition = ftell(self);
+	if (fposition == -1) {
+		return iByteSeeker_ERROR;
 	}
-
-	ungetc(byte, self);
-
-	if (destination != NULL) {
-		*destination = byte;
+	return fposition;
+}
+int FILE_go(void *vself, iByteSeeker_position to) {
+	if (to > LONG_MAX) {
+		return iByteSeeker_ERROR;
 	}
-
+	if (fseek(vself, to, SEEK_SET)) {
+		return iByteSeeker_ERROR;
+	}
 	return 0;
 }
-iByteTrain FilePtr_as_iByteTrain(FILE *self) {
-	return (iByteTrain) {
-		.vself = self,
-		.chewchew = &_FilePtr_chewchew,
-		.lookoutAhead = &_FilePtr_lookoutAhead
-	};
+
+FILE * FILE_as_iByteSeeker(const char *path, iByteSeeker *nDestination) {
+	
+	FILE *f = fopen(path, "rb");
+	if (f == NULL) {
+		return NULL;
+	}
+	
+	if (nDestination != NULL) {
+		*nDestination = (iByteSeeker) {
+			.vself = f,
+			.step = &FILE_step,
+			.at = &FILE_at,
+			.go = &FILE_go
+		};
+	}
+
+	return f;
 }
 
 int main(int argc, const char **argv) {
 
-	FILE *f = fopen("pngs/PNG_transparency_demonstration.png", "r");
+	iByteSeeker bs;
+	FILE *f = FILE_as_iByteSeeker("png/PNG_transparency_demonstration.png", &bs);
 	if (f == NULL) {
 		return 1;
 	}
 	
-	iByteTrain bt = FilePtr_as_iByteTrain(f);
+	// ...
 
-	//feed byte reader to PNG decoding
-		// extract the IDAT data from the PNG and put it into some sort of BitByteReader
-		// feed bbr to zlib-standin
-		// ...
-	
 	fclose(f);
 
 	return 0;
