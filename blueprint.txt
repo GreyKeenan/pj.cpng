@@ -18,12 +18,32 @@ IHDR Chunk : Image Header
 	4B type: 'I', 'H', 'D', 'R'
 	[length]B data:
 		4B width
+			!0
 		4B height
+			!0
 		1B bitDepth
+			generally: 1, 2, 4, 8, 16
+
+			represents bits per SAMPLE (not per pixel)
+				so, if rgba & '8', is rgba=4 * 8 = 32 bits per pixel
+
+			only certain values are valid with color types:
+				colourType : bitDepth
+				0	: 1,2,4,8,16
+				3	: 1,2,4,8
+				2,4,6	: 8,16
+
 		1B colourType
-		1B compressionMethod
-		1B filterMethod
+			0, 2, 3, 4, 6
+				greyscale
+				truecolor
+				indexed-color
+				greyscale alpha
+				truecolor alpha
+		1B compressionMethod = 0
+		1B filterMethod = 0
 		1B interlaceMethod
+			0, 1 : none, Adam7
 	4B CRC
 	
 n Chunks
@@ -68,6 +88,7 @@ n Chunks
 		IHDR:
 			only 1
 			always FIRST
+			(see above)
 		PLTE:
 			only 1
 			appears before IDAT
@@ -77,12 +98,18 @@ n Chunks
 		IEND:
 			only 1
 			always LAST
+			(see below)
 IEND Chunk
 	4B length: 0
 	4B type: IHDR
 	[length]B data
 	4B CRC
 
+
 IDAT
+==================================================
+
+
+PLTE
 ==================================================
 

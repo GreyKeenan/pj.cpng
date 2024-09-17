@@ -4,15 +4,18 @@
 //#include <stdbool.h>
 #include <limits.h>
 
-#include "utils/iByteSeeker.h"
-#include "utils/iByteSeeker_forw.h"
+//#include "utils/iByteSeeker.h"
+//#include "utils/iByteSeeker_forw.h"
+#include "utils/iByteTrain_forw.h"
+#include "utils/iByteTrain_impl.h"
+#include "utils/iByteTrain.h"
 
 #include "mike/mike.h"
 
-int FILE_step(void *vself, uint8_t *nDestination) {
+int FILE_chewchew(void *vself, uint8_t *nDestination) {
 	int byte = fgetc(vself);
 	if (byte == EOF) {
-		return iByteSeeker_ERROR;
+		return iByteTrain_ENDOFTHELINE;
 	}
 
 	if (nDestination == NULL) {
@@ -22,47 +25,26 @@ int FILE_step(void *vself, uint8_t *nDestination) {
 
 	return 0;
 }
-int FILE_at(const void *vself, iByteSeeker_position *nDestination) {
-	FILE *self = (void *)vself;
-	long fposition = ftell(self);
-	if (fposition == -1) {
-		return iByteSeeker_ERROR;
-	}
-	return fposition;
-}
-int FILE_go(void *vself, iByteSeeker_position to) {
-	if (to > LONG_MAX) {
-		return iByteSeeker_ERROR;
-	}
-	if (fseek(vself, to, SEEK_SET)) {
-		return iByteSeeker_ERROR;
-	}
-	return 0;
-}
 
-FILE * FILE_as_iByteSeeker(const char *path, iByteSeeker *nDestination) {
+FILE *FILE_as_iByteTrain(const char *path, iByteTrain *destination) {
 	
 	FILE *f = fopen(path, "rb");
 	if (f == NULL) {
 		return NULL;
 	}
-	
-	if (nDestination != NULL) {
-		*nDestination = (iByteSeeker) {
-			.vself = f,
-			.step = &FILE_step,
-			.at = &FILE_at,
-			.go = &FILE_go
-		};
-	}
 
+	*destination = (iByteTrain) {
+		.vself = f,
+		.chewchew = &FILE_chewchew
+	};
 	return f;
+
 }
 
 int main(int argc, const char **argv) {
 
-	iByteSeeker bs;
-	FILE *f = FILE_as_iByteSeeker("pngs/PNG_transparency_demonstration.png", &bs);
+	iByteTrain bt;
+	FILE *f = FILE_as_iByteTrain("pngs/PNG_transparency_demonstration.png", &bt);
 	if (f == NULL) {
 		printf("cant open file\n");
 		return 1;
@@ -70,8 +52,8 @@ int main(int argc, const char **argv) {
 	
 	// ...
 
-	int e = Mike_decode(&bs, NULL);
-	printf("e: %d\n", e);
+	int e = Mike_decode(&bt);
+	printf("\nfinal error status: %d\n", e);
 
 	fclose(f);
 

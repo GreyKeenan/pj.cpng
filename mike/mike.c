@@ -4,50 +4,236 @@
 
 #include "utils/endian.h"
 
-#include "utils/iByteSeeker.h"
-#include "utils/byteJumper.h"
-#include "utils/byteJumper_impl.h"
+#include "utils/iByteTrain.h"
 
 #include <stdbool.h>
 
-#define MIKE_ERROR 1
-#define MIKE_ERROR_EOF 2
-#define MIKE_ERROR_PNG_NOT 3
-#define MIKE_ERROR_PNG_IHDR_NOT 4
-#define MIKE_ERROR_PNG_IHDR_LENGTH 5
+enum Mike_Error {
+	MIKE_ERROR = 1
+	, MIKE_ERROR_EOTL
+	
+	, MIKE_ERROR_PNG_NOT
+	, MIKE_ERROR_PNG_INT32
+
+	, MIKE_ERROR_PNG_IHDR_NOT
+	, MIKE_ERROR_PNG_IHDR_LENGTH
+	, MIKE_ERROR_PNG_IHDR_COLORTYPE
+	, MIKE_ERROR_PNG_IHDR_BITDEPTH
+	, MIKE_ERROR_PNG_IHDR_COMPRESSIONMETHOD
+	, MIKE_ERROR_PNG_IHDR_FILTERMETHOD
+	, MIKE_ERROR_PNG_IHDR_INTERLACEMETHOD
+	, MIKE_ERROR_PNG_IHDR_NONSEQUENTIAL
+
+	, MIKE_ERROR_PNG_PLTE_ORDER
+	, MIKE_ERROR_PNG_PLTE_MISSING
+
+	, MIKE_ERROR_PNG_CHUNK_UNKNOWN_CRITICAL
+};
+
+struct mike_IHDR {
+	uint32_t width;
+	uint32_t height;
+	uint8_t bitDepth;
+	uint8_t colorType;
+	uint8_t compressionMethod;
+	uint8_t filterMethod;
+	uint8_t interlaceMethod;
+};
 
 #define PNG_HEADER_LENGTH 8
-const uint8_t _Mike_PNG_header[PNG_HEADER_LENGTH] = {0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A};
+const uint8_t mike_PNG_header[PNG_HEADER_LENGTH] = {0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A};
 
 #define CHUNK_NAME_LENGTH 4
-#define CRC_LENGTH 4
+#define CHUNK_ISLOWERCASE 0x20
+#define CHUNK_CRC_LENGTH 4
 
 #define IHDR_LENGTH 13
+#define IHDR_COLORTYPE_INDEXED 3
+
+int mike_png_readInt32(iByteTrain *bt, uint32_t *nDestination);
+
+static inline int mike_chunk_readName(iByteTrain *bt, uint8_t* destination);
+static inline bool mike_chunk_compareName(uint8_t *a, uint8_t *b);
+int mike_chunk_eatCRC(iByteTrain *bt); //TODO
 
 
-int Mike_PNG_dechunk(iByteSeeker *bs, ByteJumper *bj);
+int Mike_decode(iByteTrain *bt) {
 
+	int e = 0;
+	uint8_t byte = 0;
 
-int Mike_decode(iByteSeeker *bs, void *destination) {
+	uint32_t chunkLength = 0;
+	uint8_t chunkName[CHUNK_NAME_LENGTH + 1] = {0}; // extra space so can print as string
 
-	// interpret PNG chunks -> iByteSeeker & size information
-	// zlib/DEFLATE iBitByteJumper -> array_of_bytes -> iBitByteTrain
-	// PNG decompress iBitByteTrain -> referenceImage
+	struct mike_IHDR ihdr = {0};
 
-	ByteJumper bj = {0};
+	// PNG header
+	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	for (int i = 0; i < PNG_HEADER_LENGTH; ++i) {
+		if (iByteTrain_chewchew(bt, &byte)) {
+			return MIKE_ERROR_EOTL;
+		}
+		
+		if (byte != mike_PNG_header[i]) {
+			return MIKE_ERROR_PNG_NOT;
+		}
+	}
 
-	int e = Mike_PNG_dechunk(bs, &bj);
+	// dechunking
+	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+	// IHDR
+	// ==================================================
+
+	e = mike_png_readInt32(bt, &chunkLength);
+	if (e) return e;
+	if (chunkLength != IHDR_LENGTH) {
+		return MIKE_ERROR_PNG_IHDR_LENGTH;
+	}
+	e = mike_chunk_readName(bt, chunkName);
+	if (e) return e;
+	if (!mike_chunk_compareName(chunkName, (uint8_t*)"IHDR")) {
+		return MIKE_ERROR_PNG_IHDR_NOT;
+	}
+
+	e = mike_png_readInt32(bt, &ihdr.width);
+	if (e) return e;
+	e = mike_png_readInt32(bt, &ihdr.height);
 	if (e) return e;
 
-	return e;
+	if (iByteTrain_chewchew(bt, &ihdr.bitDepth)) return MIKE_ERROR_EOTL;
+	if (iByteTrain_chewchew(bt, &ihdr.colorType)) return MIKE_ERROR_EOTL;
+	if (iByteTrain_chewchew(bt, &ihdr.compressionMethod)) return MIKE_ERROR_EOTL;
+	if (iByteTrain_chewchew(bt, &ihdr.filterMethod)) return MIKE_ERROR_EOTL;
+	if (iByteTrain_chewchew(bt, &ihdr.interlaceMethod)) return MIKE_ERROR_EOTL;
+	switch (ihdr.colorType) {
+		case 0:
+			switch (ihdr.bitDepth) {
+				case 1:
+				case 2:
+				case 4:
+				case 8:
+				case 16:
+					break;
+				default: return MIKE_ERROR_PNG_IHDR_BITDEPTH;
+			}
+			break;
+		case 3:
+			switch (ihdr.bitDepth) {
+				case 1:
+				case 2:
+				case 4:
+				case 8:
+					break;
+				default: return MIKE_ERROR_PNG_IHDR_BITDEPTH;
+			}
+			break;
+		case 2:
+		case 4:
+		case 6:
+			switch (ihdr.bitDepth) {
+				case 8:
+				case 16:
+					break;
+				default: return MIKE_ERROR_PNG_IHDR_BITDEPTH;
+			}
+			break;
+		default: return MIKE_ERROR_PNG_IHDR_COLORTYPE; //invalid
+	}
+	if (ihdr.compressionMethod != 0) {
+		return MIKE_ERROR_PNG_IHDR_COMPRESSIONMETHOD;
+	}
+	if (ihdr.filterMethod != 0) {
+		return MIKE_ERROR_PNG_IHDR_FILTERMETHOD;
+	}
+	if (ihdr.interlaceMethod > 1) {
+		return MIKE_ERROR_PNG_IHDR_INTERLACEMETHOD;
+	}
+
+	e = mike_chunk_eatCRC(bt);
+	if (e) return e;
+
+	// following chunks
+	// ==================================================
+	uint8_t flags = 0;
+	#define haveIDAT 0x01
+	#define havePLTE 0x02
+	#define previousWasIDAT 0x04
+	while (1) {
+		e = mike_png_readInt32(bt, &chunkLength);
+		if (e) return e;
+
+		e = mike_chunk_readName(bt, chunkName);
+		if (e) return e;
+
+		if (chunkName[0] & CHUNK_ISLOWERCASE) {
+			flags = flags & ~previousWasIDAT;
+
+			for (uint32_t i = 0; i < chunkLength; ++i) {
+				if (iByteTrain_chewchew(bt, NULL)) return MIKE_ERROR_EOTL;
+			}
+			e = mike_chunk_eatCRC(bt);
+			if (e) return e;
+			continue;
+		}
+
+		if (mike_chunk_compareName(chunkName, (uint8_t*)"IDAT")) {
+			if ((flags & haveIDAT) && (flags & previousWasIDAT)) {
+				return MIKE_ERROR_PNG_IHDR_NONSEQUENTIAL;
+			}
+			if (ihdr.colorType == IHDR_COLORTYPE_INDEXED && !(flags & havePLTE)) {
+				return MIKE_ERROR_PNG_PLTE_MISSING;
+			}
+			flags = flags & haveIDAT;
+			flags = flags & previousWasIDAT;
+
+			// ...
+
+			//TEMP
+			// --------------------------------------------------
+			for (uint32_t i = 0; i < chunkLength; ++i) {
+				if (iByteTrain_chewchew(bt, NULL)) return MIKE_ERROR_EOTL;
+			}
+			e = mike_chunk_eatCRC(bt);
+			if (e) return e;
+			// --------------------------------------------------
+			continue;
+		}
+
+		flags = flags & ~previousWasIDAT;
+
+		if (mike_chunk_compareName(chunkName, (uint8_t*)"PLTE")) {
+			if (haveIDAT) {
+				return MIKE_ERROR_PNG_PLTE_ORDER;
+			}
+			// ...
+
+			//TEMP
+			// --------------------------------------------------
+			for (uint32_t i = 0; i < chunkLength; ++i) {
+				if (iByteTrain_chewchew(bt, NULL)) return MIKE_ERROR_EOTL;
+			}
+			e = mike_chunk_eatCRC(bt);
+			if (e) return e;
+			// --------------------------------------------------
+			continue;
+		}
+		if (mike_chunk_compareName(chunkName, (uint8_t*)"IEND")) {
+			e = mike_chunk_eatCRC(bt);
+			return e;
+		}
+
+		return MIKE_ERROR_PNG_CHUNK_UNKNOWN_CRITICAL;
+	}
+
+	return 0;
 }
 
-int Mike_readUint32(iByteSeeker *bs, uint32_t *destination) {
-
+int mike_png_readInt32(iByteTrain *bt, uint32_t *nDestination) {
 	uint8_t bytes[4] = {0};
 	for (int i = 0; i < 4; ++i) {
-		if (iByteSeeker_step(bs, bytes + i)) {
-			return MIKE_ERROR_EOF;
+		if (iByteTrain_chewchew(bt, bytes + i)) {
+			return MIKE_ERROR_EOTL;
 		}
 	}
 
@@ -55,73 +241,35 @@ int Mike_readUint32(iByteSeeker *bs, uint32_t *destination) {
 		Endian_flip(bytes, 4);
 	}
 
-	*destination = *(uint32_t*)bytes;
+	if (*(uint32_t*)bytes & 0x80000000) {
+		return MIKE_ERROR_PNG_INT32;
+	}
+
+	if (nDestination == NULL) return 0;
+	*nDestination = *(uint32_t*)bytes;
 	
 	return 0;
 }
-int Mike_PNG_compareChunkString(iByteSeeker *bs, const char *name, bool *destination) {
-	uint8_t byte = 0;
-
+static inline int mike_chunk_readName(iByteTrain *bt, uint8_t* destination) {
 	for (int i = 0; i < CHUNK_NAME_LENGTH; ++i) {
-		if (iByteSeeker_step(bs, &byte)) {
-			return MIKE_ERROR_EOF;
-		}
-		if (byte != name[i]) {
-			*destination = false;
-			return 0;
+		if (iByteTrain_chewchew(bt, destination + i)) {
+			return MIKE_ERROR_EOTL;
 		}
 	}
-	*destination = true;
+	printf("chunk: %s\n", destination);
 	return 0;
 }
-int Mike_PNG_eatCRC(iByteSeeker *bs) { //TODO TEMP
-	for (int i = 0; i < CRC_LENGTH; ++i) {
-		if (iByteSeeker_step(bs, NULL)) {
-			return MIKE_ERROR_EOF;
+static inline bool mike_chunk_compareName(uint8_t *a, uint8_t *b) {
+	for (int i = 0; i < CHUNK_NAME_LENGTH; ++i) {
+		if (a[i] != b[i]) {
+			return false;
 		}
 	}
-	return 0;
+	return true;
 }
-
-int Mike_PNG_dechunk(iByteSeeker *bs, ByteJumper *bj) {
-	
-	int e = 0;
-	uint8_t byte = 0;
-
-	//PNG header
-	for (int i = 0; i < PNG_HEADER_LENGTH; ++i) {
-		if (iByteSeeker_step(bs, &byte)) {
-			return MIKE_ERROR_EOF;
-		}
-		
-		if (byte != _Mike_PNG_header[i]) {
-			return MIKE_ERROR_PNG_NOT;
-		}
+int mike_chunk_eatCRC(iByteTrain *bt) {
+	for (int i = 0; i < CHUNK_CRC_LENGTH; ++i) {
+		if (iByteTrain_chewchew(bt, NULL)) return MIKE_ERROR_EOTL;
 	}
-
-	//IHDR
-	uint32_t int32_destination = 0;
-	e = Mike_readUint32(bs, &int32_destination); //chunk length
-	if (e) return e;
-	if (int32_destination != IHDR_LENGTH) {
-		return MIKE_ERROR_PNG_IHDR_LENGTH;
-	}
-
-	bool isChunk = 0;
-	e = Mike_PNG_compareChunkString(bs, "IHDR", &isChunk); //chunk name
-	if (e) return e;
-	if (!isChunk) {
-		return MIKE_ERROR_PNG_IHDR_NOT;
-	}
-
-	/*
-	e = Mike_readUint32(bs, &int32_destination); //width
-	if (e) return e;
-	// validate width, store it
-	e = Mike_readUint32(bs, &int32_destination); //length
-	if (e) return e;
-	// validate length, store it
-	*/
-	
 	return 0;
 }
