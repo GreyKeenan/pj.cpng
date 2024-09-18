@@ -1,6 +1,8 @@
 #include <stdio.h>
 
 #include "./mike.h"
+#include "./deflate.h"
+#include "./deflate_impl.h"
 
 #include "utils/endian.h"
 
@@ -23,6 +25,7 @@ enum Mike_Error {
 	, MIKE_ERROR_PNG_IHDR_FILTERMETHOD
 	, MIKE_ERROR_PNG_IHDR_INTERLACEMETHOD
 	, MIKE_ERROR_PNG_IHDR_NONSEQUENTIAL
+	, MIKE_ERROR_PNG_IHDR_EXTRA
 
 	, MIKE_ERROR_PNG_PLTE_ORDER
 	, MIKE_ERROR_PNG_PLTE_MISSING
@@ -66,6 +69,8 @@ int Mike_decode(iByteTrain *bt) {
 	uint8_t chunkName[CHUNK_NAME_LENGTH + 1] = {0}; // extra space so can print as string
 
 	struct mike_IHDR ihdr = {0};
+
+	struct Mike_Deflate_State destate = {0};
 
 	// PNG header
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -159,6 +164,7 @@ int Mike_decode(iByteTrain *bt) {
 	#define haveIDAT 0x01
 	#define havePLTE 0x02
 	#define previousWasIDAT 0x04
+	#define deflateOver 0x08
 	while (1) {
 		e = mike_png_readInt32(bt, &chunkLength);
 		if (e) return e;
@@ -184,19 +190,30 @@ int Mike_decode(iByteTrain *bt) {
 			if (ihdr.colorType == IHDR_COLORTYPE_INDEXED && !(flags & havePLTE)) {
 				return MIKE_ERROR_PNG_PLTE_MISSING;
 			}
-			flags = flags & haveIDAT;
-			flags = flags & previousWasIDAT;
-
-			// ...
-
-			//TEMP
-			// --------------------------------------------------
-			for (uint32_t i = 0; i < chunkLength; ++i) {
-				if (iByteTrain_chewchew(bt, NULL)) return MIKE_ERROR_EOTL;
+			if (flags & deflateOver) {
+				return MIKE_ERROR_PNG_IHDR_EXTRA;
 			}
+			flags = flags | haveIDAT;
+			flags = flags | previousWasIDAT;
+
+			// DEFLATE
+			// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			for (uint32_t i = 0; i < chunkLength; ++i) {
+				if (iByteTrain_chewchew(bt, &byte)) return MIKE_ERROR_EOTL;
+				e = Mike_Deflate_step(&destate, byte);
+				switch (e) {
+					case 0: break;
+					case MIKE_DEFLATE_END:
+						flags = flags | deflateOver;
+						break;
+					default: return e;
+				}
+			}
+			// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 			e = mike_chunk_eatCRC(bt);
 			if (e) return e;
-			// --------------------------------------------------
+
 			continue;
 		}
 
@@ -209,13 +226,13 @@ int Mike_decode(iByteTrain *bt) {
 			// ...
 
 			//TEMP
-			// --------------------------------------------------
+			// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			for (uint32_t i = 0; i < chunkLength; ++i) {
 				if (iByteTrain_chewchew(bt, NULL)) return MIKE_ERROR_EOTL;
 			}
 			e = mike_chunk_eatCRC(bt);
 			if (e) return e;
-			// --------------------------------------------------
+			// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			continue;
 		}
 		if (mike_chunk_compareName(chunkName, (uint8_t*)"IEND")) {

@@ -109,7 +109,46 @@ IEND Chunk
 IDAT
 ==================================================
 
+data within idats, when appended together, is a zlib-compressed stream
 
 PLTE
 ==================================================
+
+
+
+Zlib
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+2B zlib header
+	1B CMF
+		4b compression method = 8 (for PNGs)
+		4b additional info, depedning on prev 4 bits
+			when compression method == 8:
+				is log2(lz77_window_size - 8)
+				CANNOT be > 7
+	1B FLG flags
+		5b validation value
+			ensures that these 2 bytes, as a 16bit uint, MSB being CMF, is divisible by 31 (x % 31 = 0)
+		1b FDICT = 0 (for PNGs)
+			if 1, indicates presence of a preset dict
+		2b FLEVEL
+			the level of compression the compressor used
+
+			irrelevant for decompressors
+0|4B DICT
+	(only present if FDICT flag bit == 1)
+	never present for PNGs
+	identifies the preset dict that was used in compression
+	is an ADLER32 of the dict
+
+(n)B data
+	a stream of data following the DEFLATE format
+
+4B ADLER32
+	checksum of decompressed data, to ensure decompression was correct
+
+
+DEFLATE
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
