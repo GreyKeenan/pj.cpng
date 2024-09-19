@@ -6,9 +6,21 @@
 struct Mike_Deflate_State {
 
 	union {
-		struct { uint8_t bytesRead; uint8_t cminfo; } zlibHeader;
-			//if first^, avoids issues with 0 initialization before it is memset 0 later
-		uint8_t bitsRead;
+		struct { uint8_t bytesRead; uint8_t cminfo; } zlibHeader; //first for 0 init
+		struct {
+			uint8_t bitsRead;
+			uint8_t compressionType;
+			_Bool isLastBlock;
+		} blockHeader;
+
+		struct {
+			_Bool isLastBlock;
+			_Bool lengthObtained;
+			uint16_t bytesRead;
+			uint16_t length;
+			uint16_t invertedLength;
+		} uncompressed;
+
 		uint16_t currentCode;
 		struct { uint32_t target; uint8_t bytesRead; } adler32;
 	} data;

@@ -13,10 +13,8 @@
 enum Mike_Error {
 	MIKE_ERROR = 1
 	, MIKE_ERROR_EOTL
-	
 	, MIKE_ERROR_PNG_NOT
 	, MIKE_ERROR_PNG_INT32
-
 	, MIKE_ERROR_PNG_IHDR_NOT
 	, MIKE_ERROR_PNG_IHDR_LENGTH
 	, MIKE_ERROR_PNG_IHDR_COLORTYPE
@@ -26,10 +24,8 @@ enum Mike_Error {
 	, MIKE_ERROR_PNG_IHDR_INTERLACEMETHOD
 	, MIKE_ERROR_PNG_IHDR_NONSEQUENTIAL
 	, MIKE_ERROR_PNG_IHDR_EXTRA
-
 	, MIKE_ERROR_PNG_PLTE_ORDER
 	, MIKE_ERROR_PNG_PLTE_MISSING
-
 	, MIKE_ERROR_PNG_CHUNK_UNKNOWN_CRITICAL
 };
 
@@ -184,7 +180,7 @@ int Mike_decode(iByteTrain *bt) {
 		}
 
 		if (mike_chunk_compareName(chunkName, (uint8_t*)"IDAT")) {
-			if ((flags & haveIDAT) && (flags & previousWasIDAT)) {
+			if ((flags & haveIDAT) && !(flags & previousWasIDAT)) {
 				return MIKE_ERROR_PNG_IHDR_NONSEQUENTIAL;
 			}
 			if (ihdr.colorType == IHDR_COLORTYPE_INDEXED && !(flags & havePLTE)) {
