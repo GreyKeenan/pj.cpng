@@ -31,16 +31,23 @@ static inline void mike_Deflate_clearData(Mike_Deflate_State *state);
 
 int mike_Deflate_doZlibHeader(Mike_Deflate_State *state, uint8_t byte);
 int mike_Deflate_doBlockHeader(Mike_Deflate_State *state, bool bit);
+int mike_Deflate_doUncompressed(Mike_Deflate_State *state, uint8_t byte);
 
 
 int Mike_Deflate_step(Mike_Deflate_State *state, uint8_t byte) { //do I need to return a bits-of-byte-read for the final thing?
-	if (state->id == ZLIBHEADER) {
-		return mike_Deflate_doZlibHeader(state, byte);
+	switch (state->id) {
+		case END:
+			return MIKE_DEFLATE_END;
+
+		case ZLIBHEADER:
+			return mike_Deflate_doZlibHeader(state, byte);
+		case UNCOMPRESSED:
+			return mike_Deflate_doUncompressed(state, byte);
+
+		default: break;
 	}
-	// ? END
 
 	int e = 0;
-
 	for (int i = 1; i != 0; i = i << 1) {
 
 		switch (state->id) { //These probably need to be bit-looped for all except ZLIBHEADER & ADLER32
@@ -50,9 +57,6 @@ int Mike_Deflate_step(Mike_Deflate_State *state, uint8_t byte) { //do I need to 
 			case BLOCKHEADER:
 				e = mike_Deflate_doBlockHeader(state, byte & i);
 				break;
-
-			//case UNCOMPRESSED:
-				
 
 			default: return MIKE_DEFLATE_ERROR_STATE_UNKNOWN;
 		}
@@ -151,6 +155,58 @@ int mike_Deflate_doBlockHeader(Mike_Deflate_State *state, bool bit) {
 		default:
 			return MIKE_DEFLATE_ERROR_BLOCKHEADER_OVERREAD;
 	}
+	return 0;
+}
+
+int mike_Deflate_doUncompressed(Mike_Deflate_State *state, uint8_t byte) {
+
+	if (!state->data.uncompressed.lengthObtained) {
+		switch (state->data.uncompressed.bytesRead) {
+			case 0:
+				state->data.uncompressed.length = byte;
+
+				state->data.uncompressed.bytesRead++;
+				break;
+			case 1:
+				state->data.uncompressed.length = state->data.uncompressed.length | (uint16_t)byte << 8;
+
+				state->data.uncompressed.bytesRead++;
+				break;
+			case 2:
+				state->data.uncompressed.invertedLength = byte;
+
+				state->data.uncompressed.bytesRead++;
+				break;
+			case 3:
+
+				if (state->data.uncompressed.length != (uint16_t)~(state->data.uncompressed.invertedLength | (uint16_t)byte << 8)) {
+					return MIKE_DEFLATE_ERROR_UNCOMPRESSED_NLEN;
+				}
+
+				state->data.uncompressed.bytesRead = 0;
+				state->data.uncompressed.lengthObtained = true;
+				break;
+
+			default:
+				return MIKE_DEFLATE_ERROR_UNCOMPRESSED_LENGTH_OVERREAD;
+		}
+		return 0;
+	}
+
+	if (state->data.uncompressed.bytesRead >= state->data.uncompressed.length) {
+		if (state->data.uncompressed.isLastBlock) {
+			state->id = END;
+			return 0;
+		}
+
+		state->id = BLOCKHEADER;
+		mike_Deflate_clearData(state);
+		return 0;
+	}
+
+	//TODO actually send bytes somewhere
+
+	state->data.uncompressed.bytesRead++;
 	return 0;
 }
 

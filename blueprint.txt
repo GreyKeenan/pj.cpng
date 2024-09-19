@@ -151,4 +151,24 @@ Zlib
 DEFLATE
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+consists of a series of blocks:
 
+3b block header
+	1b isLastBlock
+	2b compressionType
+		00 = uncompressed
+		01 = fixed
+		10 = dynamic
+		11 = reserved, error
+(corresponding data sequence to compressionType)
+
+
+uncompressed
+==================================================
+
+(LSB first:)
+
+2B length
+2B 1s complement of length, for validataion
+
+[length]B raw bytes of data

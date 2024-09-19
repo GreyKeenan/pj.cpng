@@ -44,7 +44,8 @@ FILE *FILE_as_iByteTrain(const char *path, iByteTrain *destination) {
 int main(int argc, const char **argv) {
 
 	iByteTrain bt;
-	FILE *f = FILE_as_iByteTrain("pngs/PNG_transparency_demonstration.png", &bt);
+	//FILE *f = FILE_as_iByteTrain("pngs/PNG_transparency_demonstration.png", &bt);
+	FILE *f = FILE_as_iByteTrain("pngs/uncompressed.png", &bt);
 	if (f == NULL) {
 		printf("cant open file\n");
 		return 1;
