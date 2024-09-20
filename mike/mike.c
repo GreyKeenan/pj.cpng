@@ -4,8 +4,6 @@
 #include "./deflate.h"
 #include "./deflate_impl.h"
 
-#include "utils/endian.h"
-
 #include "utils/iByteTrain.h"
 
 #include <stdbool.h>
@@ -49,7 +47,7 @@ const uint8_t mike_PNG_header[PNG_HEADER_LENGTH] = {0x89, 'P', 'N', 'G', 0x0D, 0
 #define IHDR_LENGTH 13
 #define IHDR_COLORTYPE_INDEXED 3
 
-int mike_png_readInt32(iByteTrain *bt, uint32_t *nDestination);
+int mike_png_readInt32(iByteTrain *bt, uint32_t *destination);
 
 static inline int mike_chunk_readName(iByteTrain *bt, uint8_t* destination);
 static inline bool mike_chunk_compareName(uint8_t *a, uint8_t *b);
@@ -242,25 +240,27 @@ int Mike_decode(iByteTrain *bt) {
 	return 0;
 }
 
-int mike_png_readInt32(iByteTrain *bt, uint32_t *nDestination) {
-	uint8_t bytes[4] = {0};
+int mike_png_readInt32(iByteTrain *bt, uint32_t *destination) {
+	/*
+		reads a big-endian uint32 as outlined in PNG spec
+		guarantees that the value is only an int31 as per spec
+	*/
+	uint8_t byte = 0;
+	uint32_t n = 0;
+
 	for (int i = 0; i < 4; ++i) {
-		if (iByteTrain_chewchew(bt, bytes + i)) {
+		if (iByteTrain_chewchew(bt, &byte)) {
 			return MIKE_ERROR_EOTL;
 		}
+		n = n << 8;
+		n = n | byte;
 	}
 
-	if (ENDIAN_ISLITTLE) {
-		Endian_flip(bytes, 4);
-	}
-
-	if (*(uint32_t*)bytes & 0x80000000) {
+	if (n & 0x80000000) {
 		return MIKE_ERROR_PNG_INT32;
 	}
 
-	if (nDestination == NULL) return 0;
-	*nDestination = *(uint32_t*)bytes;
-	
+	*destination = n;
 	return 0;
 }
 static inline int mike_chunk_readName(iByteTrain *bt, uint8_t* destination) {

@@ -5,7 +5,6 @@ d:
 		-lSDL2 \
 		\
 		main.c \
-			utils/*.c \
 			mike/mike.c \
 			mike/deflate.c \
 
