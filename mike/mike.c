@@ -11,8 +11,10 @@
 enum Mike_Error {
 	MIKE_ERROR = 1
 	, MIKE_ERROR_EOTL
+
 	, MIKE_ERROR_PNG_NOT
 	, MIKE_ERROR_PNG_INT32
+
 	, MIKE_ERROR_PNG_IHDR_NOT
 	, MIKE_ERROR_PNG_IHDR_LENGTH
 	, MIKE_ERROR_PNG_IHDR_COLORTYPE
@@ -22,8 +24,13 @@ enum Mike_Error {
 	, MIKE_ERROR_PNG_IHDR_INTERLACEMETHOD
 	, MIKE_ERROR_PNG_IHDR_NONSEQUENTIAL
 	, MIKE_ERROR_PNG_IHDR_EXTRA
+
 	, MIKE_ERROR_PNG_PLTE_ORDER
 	, MIKE_ERROR_PNG_PLTE_MISSING
+
+	, MIKE_ERROR_PNG_IDAT_MISSING
+	, MIKE_ERROR_PNG_DEFLATE_INCOMPLETE
+
 	, MIKE_ERROR_PNG_CHUNK_UNKNOWN_CRITICAL
 };
 
@@ -155,10 +162,10 @@ int Mike_decode(iByteTrain *bt) {
 	// following chunks
 	// ==================================================
 	uint8_t flags = 0;
-	#define haveIDAT 0x01
-	#define havePLTE 0x02
-	#define previousWasIDAT 0x04
-	#define deflateOver 0x08
+	#define HAVEIDAT 0x01
+	#define HAVEPLTE 0x02
+	#define PREVIOUSWASIDAT 0x04
+	#define DEFLATEOVER 0x08
 	while (1) {
 		e = mike_png_readInt32(bt, &chunkLength);
 		if (e) return e;
@@ -167,7 +174,7 @@ int Mike_decode(iByteTrain *bt) {
 		if (e) return e;
 
 		if (chunkName[0] & CHUNK_ISLOWERCASE) {
-			flags = flags & ~previousWasIDAT;
+			flags = flags & ~PREVIOUSWASIDAT;
 
 			for (uint32_t i = 0; i < chunkLength; ++i) {
 				if (iByteTrain_chewchew(bt, NULL)) return MIKE_ERROR_EOTL;
@@ -178,27 +185,31 @@ int Mike_decode(iByteTrain *bt) {
 		}
 
 		if (mike_chunk_compareName(chunkName, (uint8_t*)"IDAT")) {
-			if ((flags & haveIDAT) && !(flags & previousWasIDAT)) {
+			if ((flags & HAVEIDAT) && !(flags & PREVIOUSWASIDAT)) {
 				return MIKE_ERROR_PNG_IHDR_NONSEQUENTIAL;
 			}
-			if (ihdr.colorType == IHDR_COLORTYPE_INDEXED && !(flags & havePLTE)) {
+			if (ihdr.colorType == IHDR_COLORTYPE_INDEXED && !(flags & HAVEPLTE)) {
 				return MIKE_ERROR_PNG_PLTE_MISSING;
 			}
-			if (flags & deflateOver) {
+			if (flags & DEFLATEOVER) {
 				return MIKE_ERROR_PNG_IHDR_EXTRA;
 			}
-			flags = flags | haveIDAT;
-			flags = flags | previousWasIDAT;
+			flags = flags | HAVEIDAT;
+			flags = flags | PREVIOUSWASIDAT;
 
 			// DEFLATE
 			// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			for (uint32_t i = 0; i < chunkLength; ++i) {
 				if (iByteTrain_chewchew(bt, &byte)) return MIKE_ERROR_EOTL;
+				printf("%x", byte);
 				e = Mike_Deflate_step(&destate, byte);
 				switch (e) {
-					case 0: break;
+					case 0:
+						printf("\n");
+						break;
 					case MIKE_DEFLATE_END:
-						flags = flags | deflateOver;
+						printf("\t!\n");
+						flags = flags | DEFLATEOVER;
 						break;
 					default: return e;
 				}
@@ -211,10 +222,10 @@ int Mike_decode(iByteTrain *bt) {
 			continue;
 		}
 
-		flags = flags & ~previousWasIDAT;
+		flags = flags & ~PREVIOUSWASIDAT;
 
 		if (mike_chunk_compareName(chunkName, (uint8_t*)"PLTE")) {
-			if (haveIDAT) {
+			if (HAVEIDAT) {
 				return MIKE_ERROR_PNG_PLTE_ORDER;
 			}
 			// ...
@@ -231,10 +242,19 @@ int Mike_decode(iByteTrain *bt) {
 		}
 		if (mike_chunk_compareName(chunkName, (uint8_t*)"IEND")) {
 			e = mike_chunk_eatCRC(bt);
-			return e;
+			if (e) return e;
+
+			break;
 		}
 
 		return MIKE_ERROR_PNG_CHUNK_UNKNOWN_CRITICAL;
+	}
+
+	if (!(flags & HAVEIDAT)) {
+		return MIKE_ERROR_PNG_IDAT_MISSING;
+	}
+	if (!(flags & DEFLATEOVER)) {
+		return MIKE_ERROR_PNG_DEFLATE_INCOMPLETE;
 	}
 
 	return 0;
@@ -252,8 +272,7 @@ int mike_png_readInt32(iByteTrain *bt, uint32_t *destination) {
 		if (iByteTrain_chewchew(bt, &byte)) {
 			return MIKE_ERROR_EOTL;
 		}
-		n = n << 8;
-		n = n | byte;
+		n = (n << 8) | byte;
 	}
 
 	if (n & 0x80000000) {

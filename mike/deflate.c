@@ -245,7 +245,7 @@ int mike_Deflate_doAdler32(Mike_Deflate_State *state, uint8_t byte) {
 	}
 
 	state->id = END;
-	return 0;
+	return MIKE_DEFLATE_END; //returns END on completion, rather than only returning when calling past completion
 }
 
 

@@ -7,6 +7,7 @@
 
 enum Mike_Deflate_Error {
 	MIKE_DEFLATE_END = -101
+		// END is returned when the final byte is processed AND when subsequent bytes are fed in.
 
 	, MIKE_DEFLATE_ERROR = -100
 	, MIKE_DEFLATE_ERROR_STATE_UNKNOWN
