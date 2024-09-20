@@ -1,6 +1,8 @@
 #ifndef MIKE_DEFLATE_IMPL_H
 #define MIKE_DEFLATE_IMPL_H
 
+#include "./deflate_iNostalgicWriter_forw.h"
+
 #include <stdint.h>
 
 struct Mike_Deflate_State {
@@ -48,9 +50,7 @@ struct Mike_Deflate_State {
 	//metaTree
 	//distanceTree
 	
-	uint16_t outputLength;
-	uint16_t outputCap;
-	uint8_t *output;
+	struct Mike_Deflate_iNostalgicWriter *nw;
 
 };
 

@@ -33,8 +33,8 @@
 
 static inline void mike_Deflate_clearData(Mike_Deflate_State *state);
 
-int mike_Deflate_write(Mike_Deflate_State *state, uint8_t byte);
-int mike_Deflate_nostalgize(Mike_Deflate_State *state, uint8_t *destination, uint16_t distanceBack);
+static inline int mike_Deflate_write(Mike_Deflate_State *state, uint8_t byte);
+static inline int mike_Deflate_nostalgize(Mike_Deflate_State *state, uint8_t *destination, uint16_t distanceBack);
 
 int mike_Deflate_doZlibHeader(Mike_Deflate_State *state, uint8_t byte);
 int mike_Deflate_doUncompressed(Mike_Deflate_State *state, uint8_t byte);
@@ -266,32 +266,21 @@ static inline void mike_Deflate_adler32(Mike_Deflate_State *state, uint8_t byte)
 	state->s2 = (state->s1 + state->s2) % BASE;
 
 }
-#define STEP 1024
-int mike_Deflate_write(Mike_Deflate_State *state, uint8_t byte) {
-	void *tempPtr = NULL;
-	if (state->outputLength >= state->outputCap) {
-		state->outputCap += STEP;
+static inline int mike_Deflate_write(Mike_Deflate_State *state, uint8_t byte) {
 
-		tempPtr = realloc(state->output, state->outputCap);
-		//TODO ERR this is never freed
-		if (tempPtr == NULL) {
-			return 1;
-		}
-
-		state->output = tempPtr;
+	if (Mike_Deflate_iNostalgicWriter_write(state->nw, byte)) {
+		return MIKE_DEFLATE_ERROR_WRITER_WRITE;
 	}
-
 	mike_Deflate_adler32(state, byte);
 
-	state->output[state->outputLength] = byte;
-	state->outputLength++;
 	return 0;
 }
-int mike_Deflate_nostalgize(Mike_Deflate_State *state, uint8_t *destination, uint16_t distanceBack) {
-	if (distanceBack > state->outputLength) {
-		return 1;
+static inline int mike_Deflate_nostalgize(Mike_Deflate_State *state, uint8_t *destination, uint16_t distanceBack) {
+
+	if (Mike_Deflate_iNostalgicWriter_nostalgize(state->nw, destination, distanceBack)) {
+		return MIKE_DEFLATE_ERROR_WRITER_NOSTALGIZE;
 	}
-	*destination = state->output[state->outputLength - distanceBack];
+
 	return 0;
 }
 
