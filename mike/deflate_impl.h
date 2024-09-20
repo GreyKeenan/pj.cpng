@@ -40,12 +40,17 @@ struct Mike_Deflate_State {
 		readingAdler32
 	*/
 	uint16_t windowSize;
-	uint32_t runningAdler;
+	uint32_t s1;
+	uint32_t s2;
 
 	//staticTree //may need to be ptrs for padding, but nodes will probably be smaller than the union anyawys
 	//dynamicTree
 	//metaTree
 	//distanceTree
+	
+	uint16_t outputLength;
+	uint16_t outputCap;
+	uint8_t *output;
 
 };
 

@@ -3,12 +3,13 @@
 #include "./deflate.h"
 #include "./deflate_impl.h"
 
+#include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
 
 #define ZLIBHEADER 0
-#define READINGADLER 7
+#define ADLER32 7
 
 #define BLOCKHEADER 1
 
@@ -29,9 +30,14 @@
 
 static inline void mike_Deflate_clearData(Mike_Deflate_State *state);
 
+int mike_Deflate_write(Mike_Deflate_State *state, uint8_t byte);
+int mike_Deflate_nostalgize(Mike_Deflate_State *state, uint8_t *destination, uint16_t distanceBack);
+
 int mike_Deflate_doZlibHeader(Mike_Deflate_State *state, uint8_t byte);
-int mike_Deflate_doBlockHeader(Mike_Deflate_State *state, bool bit);
 int mike_Deflate_doUncompressed(Mike_Deflate_State *state, uint8_t byte);
+int mike_Deflate_doAdler32(Mike_Deflate_State *state, uint8_t byte);
+
+int mike_Deflate_doBlockHeader(Mike_Deflate_State *state, bool bit);
 
 
 int Mike_Deflate_step(Mike_Deflate_State *state, uint8_t byte) { //do I need to return a bits-of-byte-read for the final thing?
@@ -43,6 +49,8 @@ int Mike_Deflate_step(Mike_Deflate_State *state, uint8_t byte) { //do I need to 
 			return mike_Deflate_doZlibHeader(state, byte);
 		case UNCOMPRESSED:
 			return mike_Deflate_doUncompressed(state, byte);
+		case ADLER32:
+			return mike_Deflate_doAdler32(state, byte);
 
 		default: break;
 	}
@@ -76,6 +84,12 @@ int mike_Deflate_doZlibHeader(Mike_Deflate_State *state, uint8_t byte) {
 	uint16_t shirt = 0;
 	switch (state->data.zlibHeader.bytesRead) {
 		case 0:
+			// init ADLER calcs
+			// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+			state->s1 = 1;
+			state->s2 = 0;
+			// do zlib header stuff
+			// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 			state->data.zlibHeader.cminfo = byte;
 
 			if ((byte & 0x0f) != 8) {
@@ -193,9 +207,15 @@ int mike_Deflate_doUncompressed(Mike_Deflate_State *state, uint8_t byte) {
 		return 0;
 	}
 
+
+	mike_Deflate_write(state, byte);
+
+	state->data.uncompressed.bytesRead++;
 	if (state->data.uncompressed.bytesRead >= state->data.uncompressed.length) {
 		if (state->data.uncompressed.isLastBlock) {
-			state->id = END;
+
+			mike_Deflate_clearData(state);
+			state->id = ADLER32;
 			return 0;
 		}
 
@@ -203,13 +223,72 @@ int mike_Deflate_doUncompressed(Mike_Deflate_State *state, uint8_t byte) {
 		mike_Deflate_clearData(state);
 		return 0;
 	}
-
-	//TODO actually send bytes somewhere
-
-	state->data.uncompressed.bytesRead++;
 	return 0;
 }
+
+int mike_Deflate_doAdler32(Mike_Deflate_State *state, uint8_t byte) {
+	if (state->data.adler32.bytesRead > 3) {
+		return MIKE_DEFLATE_ERROR_ADLER32_OVERREAD;
+	}
+
+	state->data.adler32.target += byte << (8 * (3 - state->data.adler32.bytesRead));
+
+	if (state->data.adler32.bytesRead != 3) {
+		state->data.adler32.bytesRead++;
+		return 0;
+	}
+
+	uint32_t a = (state->s2 << 16) + state->s1;
+	//printf("target: %x / have: %x\n", state->data.adler32.target, a);
+	if (state->data.adler32.target != a) {
+		return MIKE_DEFLATE_ERROR_ADLER32_FAILED;
+	}
+
+	state->id = END;
+	return 0;
+}
+
+
+// utilities
+// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 static inline void mike_Deflate_clearData(Mike_Deflate_State *state) {
 	memset(&state->data, 0, sizeof(state->data));
 }
+
+
+#define BASE 65521
+static inline void mike_Deflate_adler32(Mike_Deflate_State *state, uint8_t byte) {
+	state->s1 = (state->s1 + byte) % BASE;
+	state->s2 = (state->s1 + state->s2) % BASE;
+
+}
+#define STEP 1024
+int mike_Deflate_write(Mike_Deflate_State *state, uint8_t byte) {
+	void *tempPtr = NULL;
+	if (state->outputLength >= state->outputCap) {
+		state->outputCap += STEP;
+
+		tempPtr = realloc(state->output, state->outputCap);
+		//TODO ERR this is never freed
+		if (tempPtr == NULL) {
+			return 1;
+		}
+
+		state->output = tempPtr;
+	}
+
+	mike_Deflate_adler32(state, byte);
+
+	state->output[state->outputLength] = byte;
+	state->outputLength++;
+	return 0;
+}
+int mike_Deflate_nostalgize(Mike_Deflate_State *state, uint8_t *destination, uint16_t distanceBack) {
+	if (distanceBack > state->outputLength) {
+		return 1;
+	}
+	*destination = state->output[state->outputLength - distanceBack];
+	return 0;
+}
+
