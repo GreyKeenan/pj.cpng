@@ -1,11 +1,11 @@
 #include <stdio.h>
 
 #include "./mike.h"
-#include "./deflate.h"
-#include "./deflate_impl.h"
+#include "./decompress/deflate.h"
+#include "./decompress/deflate_impl.h"
 
-#include "./deflate_iNostalgicWriter_forw.h"
-#include "./deflate_iNostalgicWriter.h"
+#include "./decompress/deflate_iNostalgicWriter_forw.h"
+#include "./decompress/deflate_iNostalgicWriter.h"
 
 #include "utils/iByteTrain.h"
 

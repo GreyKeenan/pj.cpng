@@ -6,7 +6,7 @@ d:
 		\
 		main.c \
 			mike/mike.c \
-			mike/deflate.c \
+				mike/decompress/deflate.c \
 
 run: a.out
 	./a.out
