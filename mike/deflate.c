@@ -3,6 +3,9 @@
 #include "./deflate.h"
 #include "./deflate_impl.h"
 
+#include "./deflate_iNostalgicWriter.h"
+#include "./deflate_iNostalgicWriter_forw.h"
+
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
