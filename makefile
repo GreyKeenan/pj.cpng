@@ -7,6 +7,7 @@ d:
 		main.c \
 			mike/mike.c \
 				mike/decompress/decompress.c \
+				mike/dechunk/dechunk.c \
 
 run: a.out
 	./a.out
