@@ -49,13 +49,13 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 	e = mike_dechunk_readInt32(bt, &chunkLength);
 	if (e) goto finalize;
 	if (chunkLength != IHDR_LENGTH) {
-		e = MIKE_ERROR_PNG_IHDR_LENGTH;
+		e = Mike_ERROR_PNG_IHDR_LENGTH;
 		goto finalize;
 	}
 	e = mike_dechunk_readName(bt, chunkName);
 	if (e) goto finalize;
 	if (!mike_dechunk_compareName(chunkName, (uint8_t*)"IHDR")) {
-		e = MIKE_ERROR_PNG_IHDR_NOT;
+		e = Mike_ERROR_PNG_IHDR_NOT;
 		goto finalize;
 	}
 
@@ -65,23 +65,23 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 	if (e) goto finalize;
 
 	if (iByteTrain_chewchew(bt, &ihdr->bitDepth)) {
-		e = MIKE_ERROR_EOTL;
+		e = Mike_ERROR_EOTL;
 		goto finalize;
 	}
 	if (iByteTrain_chewchew(bt, &ihdr->colorType)) {
-		e = MIKE_ERROR_EOTL;
+		e = Mike_ERROR_EOTL;
 		goto finalize;
 	}
 	if (iByteTrain_chewchew(bt, &ihdr->compressionMethod)) {
-		e = MIKE_ERROR_EOTL;
+		e = Mike_ERROR_EOTL;
 		goto finalize;
 	}
 	if (iByteTrain_chewchew(bt, &ihdr->filterMethod)) {
-		e = MIKE_ERROR_EOTL;
+		e = Mike_ERROR_EOTL;
 		goto finalize;
 	}
 	if (iByteTrain_chewchew(bt, &ihdr->interlaceMethod)) {
-		e = MIKE_ERROR_EOTL;
+		e = Mike_ERROR_EOTL;
 		goto finalize;
 	}
 	switch (ihdr->colorType) {
@@ -94,7 +94,7 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 				case 16:
 					break;
 				default: 
-					e = MIKE_ERROR_PNG_IHDR_BITDEPTH;
+					e = Mike_ERROR_PNG_IHDR_BITDEPTH;
 					goto finalize;
 			}
 			break;
@@ -106,7 +106,7 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 				case 8:
 					break;
 				default:
-					e = MIKE_ERROR_PNG_IHDR_BITDEPTH;
+					e = Mike_ERROR_PNG_IHDR_BITDEPTH;
 					goto finalize;
 			}
 			break;
@@ -118,24 +118,24 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 				case 16:
 					break;
 				default:
-					e = MIKE_ERROR_PNG_IHDR_BITDEPTH;
+					e = Mike_ERROR_PNG_IHDR_BITDEPTH;
 					goto finalize;
 			}
 			break;
 		default:
-			e = MIKE_ERROR_PNG_IHDR_COLORTYPE; //invalid
+			e = Mike_ERROR_PNG_IHDR_COLORTYPE; //invalid
 			goto finalize;
 	}
 	if (ihdr->compressionMethod != 0) {
-		e = MIKE_ERROR_PNG_IHDR_COMPRESSIONMETHOD;
+		e = Mike_ERROR_PNG_IHDR_COMPRESSIONMETHOD;
 		goto finalize;
 	}
 	if (ihdr->filterMethod != 0) {
-		e = MIKE_ERROR_PNG_IHDR_FILTERMETHOD;
+		e = Mike_ERROR_PNG_IHDR_FILTERMETHOD;
 		goto finalize;
 	}
 	if (ihdr->interlaceMethod > 1) {
-		e = MIKE_ERROR_PNG_IHDR_INTERLACEMETHOD;
+		e = Mike_ERROR_PNG_IHDR_INTERLACEMETHOD;
 		goto finalize;
 	}
 
@@ -162,7 +162,7 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 
 			for (uint32_t i = 0; i < chunkLength; ++i) {
 				if (iByteTrain_chewchew(bt, NULL)) {
-					e = MIKE_ERROR_EOTL;
+					e = Mike_ERROR_EOTL;
 					goto finalize;
 				}
 			}
@@ -173,15 +173,15 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 
 		if (mike_dechunk_compareName(chunkName, (uint8_t*)"IDAT")) {
 			if ((flags & HAVEIDAT) && !(flags & PREVIOUSWASIDAT)) {
-				e = MIKE_ERROR_PNG_IHDR_NONSEQUENTIAL;
+				e = Mike_ERROR_PNG_IHDR_NONSEQUENTIAL;
 				goto finalize;
 			}
 			if (ihdr->colorType == IHDR_COLORTYPE_INDEXED && !(flags & HAVEPLTE)) {
-				e = MIKE_ERROR_PNG_PLTE_MISSING;
+				e = Mike_ERROR_PNG_PLTE_MISSING;
 				goto finalize;
 			}
 			if (flags & DEFLATEOVER) {
-				e = MIKE_ERROR_PNG_IHDR_EXTRA;
+				e = Mike_ERROR_PNG_IHDR_EXTRA;
 				goto finalize;
 			}
 			flags = flags | HAVEIDAT;
@@ -191,7 +191,7 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 			// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			for (uint32_t i = 0; i < chunkLength; ++i) {
 				if (iByteTrain_chewchew(bt, &byte)) {
-					e = MIKE_ERROR_EOTL;
+					e = Mike_ERROR_EOTL;
 					goto finalize;
 				}
 				printf("%x", byte);
@@ -219,7 +219,7 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 
 		if (mike_dechunk_compareName(chunkName, (uint8_t*)"PLTE")) {
 			if (HAVEIDAT) {
-				e = MIKE_ERROR_PNG_PLTE_ORDER;
+				e = Mike_ERROR_PNG_PLTE_ORDER;
 				goto finalize;
 			}
 			// ...
@@ -228,7 +228,7 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 			// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			for (uint32_t i = 0; i < chunkLength; ++i) {
 				if (iByteTrain_chewchew(bt, NULL)){ 
-					e = MIKE_ERROR_EOTL;
+					e = Mike_ERROR_EOTL;
 					goto finalize;
 				}
 			}
@@ -244,16 +244,16 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 			break;
 		}
 
-		e = MIKE_ERROR_PNG_CHUNK_UNKNOWN_CRITICAL;
+		e = Mike_ERROR_PNG_CHUNK_UNKNOWN_CRITICAL;
 		goto finalize;
 	}
 
 	if (!(flags & HAVEIDAT)) {
-		e = MIKE_ERROR_PNG_IDAT_MISSING;
+		e = Mike_ERROR_PNG_IDAT_MISSING;
 		goto finalize;
 	}
 	if (!(flags & DEFLATEOVER)) {
-		e = MIKE_ERROR_PNG_DEFLATE_INCOMPLETE;
+		e = Mike_ERROR_PNG_DEFLATE_INCOMPLETE;
 		goto finalize;
 	}
 
@@ -273,13 +273,13 @@ int mike_dechunk_readInt32(iByteTrain *bt, uint32_t *destination) {
 
 	for (int i = 0; i < 4; ++i) {
 		if (iByteTrain_chewchew(bt, &byte)) {
-			return MIKE_ERROR_EOTL;
+			return Mike_ERROR_EOTL;
 		}
 		n = (n << 8) | byte;
 	}
 
 	if (n & 0x80000000) {
-		return MIKE_ERROR_PNG_INT32;
+		return Mike_ERROR_PNG_INT32;
 	}
 
 	*destination = n;
@@ -288,7 +288,7 @@ int mike_dechunk_readInt32(iByteTrain *bt, uint32_t *destination) {
 static inline int mike_dechunk_readName(iByteTrain *bt, uint8_t* destination) {
 	for (int i = 0; i < CHUNK_NAME_LENGTH; ++i) {
 		if (iByteTrain_chewchew(bt, destination + i)) {
-			return MIKE_ERROR_EOTL;
+			return Mike_ERROR_EOTL;
 		}
 	}
 	printf("chunk: %s\n", destination);
@@ -304,7 +304,7 @@ static inline bool mike_dechunk_compareName(uint8_t *a, uint8_t *b) {
 }
 int mike_dechunk_eatCRC(iByteTrain *bt) {
 	for (int i = 0; i < CHUNK_CRC_LENGTH; ++i) {
-		if (iByteTrain_chewchew(bt, NULL)) return MIKE_ERROR_EOTL;
+		if (iByteTrain_chewchew(bt, NULL)) return Mike_ERROR_EOTL;
 	}
 	return 0;
 }

@@ -1,4 +1,56 @@
 
+Overview
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+major steps to deciphering PNG image
+	1. dechunking
+	2. decompressing
+	3. defiltering
+	4. de-scanline-ing
+	5. (potentially) de-interlacing
+
+
+Dechunking
+==================================================
+
+reading image context data, like how it is formatted or its dimensions
+PNGs split data into chunks. IDAT chunks contain the compressed data, potentially split btwn multiple chunks
+
+
+Decompressing
+==================================================
+
+Compression method 0 is the only standardized allowed method. It is using ZLIB compression method 8, which uses DEFLATE.
+
+
+Defiltering
+==================================================
+
+filter method 0 is the only alloewd method.
+
+Each scanline is prefixed by an identifier for 1 of five "filter types" within filter method 0.
+	0: none
+	1: sub
+	2: up
+	3: average
+	4: paeth
+
+filter functions apply to bytes, not pixels.
+
+
+de-scanline-ing
+==================================================
+
+pixels in scanlines are packed without wasting bits between each other.
+scanlines themselves always start on a byte boundary, though
+	the bits between these gaps need not be 0. They can be anything.
+scanlines are all the same length
+
+when sub-byte pixels, the leftmost (first) sample starts in the high-order bits of the byte
+	sub-byte samples are not permitted combinations
+when multi-byte pixels/samples, its MSB byte first
+
+
 PNG Anatomy
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

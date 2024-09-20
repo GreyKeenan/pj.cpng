@@ -90,27 +90,39 @@ int Mike_decode(iByteTrain *bt) {
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	for (int i = 0; i < PNG_HEADER_LENGTH; ++i) {
 		if (iByteTrain_chewchew(bt, &byte)) {
-			e = MIKE_ERROR_EOTL;
+			e = Mike_ERROR_EOTL;
 			goto finalize;
 		}
 		
 		if (byte != mike_PNG_header[i]) {
-			e = MIKE_ERROR_PNG_NOT;
+			e = Mike_ERROR_PNG_NOT;
 			goto finalize;
 		}
 	}
 
 	// dechunking & decompressing
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 	struct mike_Ihdr ihdr = {0};
 
 	struct mike_Writer writer = mike_Writer_create(1024);
 	struct Mike_Decompress_iNostalgicWriter nw = mike_Writer_as_iNostalgicWriter(&writer);
 
 	e = mike_Dechunk_go(bt, &ihdr, &nw);
+	if (e) return e;
 
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+	if (ihdr.interlaceMethod == 1) {
+		printf("TODO ERR: ADAM7 INTERLACED\n");
+		e = Mike_ERROR;
+		goto finalize;
+	}
+	if (ihdr.colorType == 3) {
+		printf("TODO ERR: INDEXED PALETTE COLORTYPE\n");
+		e = Mike_ERROR;
+		goto finalize;
+	}
+
 
 	finalize:
 	mike_Writer_destroy(&writer);
