@@ -1,11 +1,12 @@
 #include <stdio.h>
 
 #include "./mike.h"
-#include "./decompress/deflate.h"
-#include "./decompress/deflate_impl.h"
 
-#include "./decompress/deflate_iNostalgicWriter_forw.h"
-#include "./decompress/deflate_iNostalgicWriter.h"
+#include "./decompress/decompress.h"
+#include "./decompress/state_impl.h"
+
+#include "./decompress/iNostalgicWriter_forw.h"
+#include "./decompress/iNostalgicWriter.h"
 
 #include "utils/iByteTrain.h"
 
@@ -81,7 +82,7 @@ int mike_Writer_write(void *vself, uint8_t byte) {
 
 		tempPtr = realloc(self->nData, self->cap + self->step);
 		if (tempPtr == NULL) {
-			return Mike_Deflate_iNostalgicWriter_TOOFAR;
+			return Mike_Decompress_iNostalgicWriter_TOOFAR;
 		}
 
 		self->cap += self->step;
@@ -96,14 +97,14 @@ int mike_Writer_nostalgize(const void *vself, uint8_t *destination, uint32_t dis
 	const mike_Writer *self = vself;
 
 	if (distanceBack > self->length) {
-		return Mike_Deflate_iNostalgicWriter_TOOFAR;
+		return Mike_Decompress_iNostalgicWriter_TOOFAR;
 	}
 
 	*destination = self->nData[self->length - distanceBack];
 	return 0;
 }
-Mike_Deflate_iNostalgicWriter mike_Writer_as_iNostalgicWriter(mike_Writer *self) {
-	return (Mike_Deflate_iNostalgicWriter) {
+Mike_Decompress_iNostalgicWriter mike_Writer_as_iNostalgicWriter(mike_Writer *self) {
+	return (Mike_Decompress_iNostalgicWriter) {
 		.vself = self,
 		.write = &mike_Writer_write,
 		.nostalgize = &mike_Writer_nostalgize
@@ -139,9 +140,9 @@ int Mike_decode(iByteTrain *bt) {
 
 	struct mike_IHDR ihdr = {0};
 
-	struct Mike_Deflate_State destate = {0};
+	struct Mike_Decompress_State destate = {0};
 	struct mike_Writer writer = mike_Writer_create(1024);
-	struct Mike_Deflate_iNostalgicWriter nw = mike_Writer_as_iNostalgicWriter(&writer);
+	struct Mike_Decompress_iNostalgicWriter nw = mike_Writer_as_iNostalgicWriter(&writer);
 	destate.nw = &nw;
 
 	// PNG header
@@ -313,12 +314,12 @@ int Mike_decode(iByteTrain *bt) {
 					goto finalize;
 				}
 				printf("%x", byte);
-				e = Mike_Deflate_step(&destate, byte);
+				e = Mike_Decompress_step(&destate, byte);
 				switch (e) {
 					case 0:
 						printf("\n");
 						break;
-					case MIKE_DEFLATE_END:
+					case Mike_Decompress_END:
 						printf("\t!\n");
 						flags = flags | DEFLATEOVER;
 						break;

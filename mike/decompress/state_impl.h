@@ -1,11 +1,11 @@
-#ifndef MIKE_DEFLATE_IMPL_H
-#define MIKE_DEFLATE_IMPL_H
+#ifndef MIKE_DECOMPRESS_IMPL_H
+#define MIKE_DECOMPRESS_IMPL_H
 
-#include "./deflate_iNostalgicWriter_forw.h"
+#include "./iNostalgicWriter_forw.h"
 
 #include <stdint.h>
 
-struct Mike_Deflate_State {
+struct Mike_Decompress_State {
 
 	union {
 		struct { uint8_t bytesRead; uint8_t cminfo; } zlibHeader; //first for 0 init
@@ -50,7 +50,7 @@ struct Mike_Deflate_State {
 	//metaTree
 	//distanceTree
 	
-	struct Mike_Deflate_iNostalgicWriter *nw;
+	struct Mike_Decompress_iNostalgicWriter *nw;
 
 };
 
