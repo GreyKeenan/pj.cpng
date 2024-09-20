@@ -5,7 +5,7 @@
 
 #include <stdint.h>
 
-struct Mike_Decompress_State {
+struct mike_Decompress_State {
 
 	union {
 		struct { uint8_t bytesRead; uint8_t cminfo; } zlibHeader; //first for 0 init

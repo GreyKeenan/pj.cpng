@@ -40,7 +40,7 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 	uint32_t chunkLength = 0;
 	uint8_t chunkName[CHUNK_NAME_LENGTH + 1] = {0}; // extra space so can print as string
 
-	struct Mike_Decompress_State destate = {0};
+	struct mike_Decompress_State destate = {0};
 	destate.nw = nw;
 
 	// IHDR
@@ -195,12 +195,12 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 					goto finalize;
 				}
 				printf("%x", byte);
-				e = Mike_Decompress_step(&destate, byte);
+				e = mike_Decompress_step(&destate, byte);
 				switch (e) {
 					case 0:
 						printf("\n");
 						break;
-					case Mike_Decompress_END:
+					case mike_Decompress_END:
 						printf("\t!\n");
 						flags = flags | DEFLATEOVER;
 						break;
