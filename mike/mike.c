@@ -163,10 +163,23 @@ int Mike_decode(iByteTrain *bt) {
 	struct iByteTrain filteredBt = mike_Writer_as_iByteTrain(&writer);
 
 	struct mike_Writer filteredWriter = mike_Writer_create(1024);
-	struct iByteLayer filteredBl = mike_Writer_as_iByteLayer(&writer);
+	struct iByteLayer filteredBl = mike_Writer_as_iByteLayer(&filteredWriter);
 
 	e = mike_Defilter_go(ihdr, &filteredBt, &filteredBl);
 	if (e) goto finalize;
+
+	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+	/*
+	filteredBt = mike_Writer_as_iByteTrain(&filteredWriter);
+	int i = 0;
+	while (!iByteTrain_chewchew(&filteredBt, &byte)) {
+		printf("%x ", byte);
+		i++;
+		i %= 3;
+		if (!i) printf("\n");
+	}
+	*/
 
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	finalize:

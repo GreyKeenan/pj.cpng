@@ -16,6 +16,7 @@
 #define FILTERTYPE_MAX 4
 
 static inline uint8_t mike_defilter_a(uint64_t i, uint8_t bytesPerPixel, uint8_t *scanline);
+static inline uint8_t mike_defilter_c(uint64_t c, uint8_t bytesPerPixel);
 static inline uint8_t mike_defilter_paeth(uint8_t a, uint8_t b, uint8_t c);
 
 int mike_Defilter_go(mike_Ihdr ihdr, iByteTrain *bt, iByteLayer *bl) {
@@ -74,11 +75,6 @@ int mike_Defilter_go(mike_Ihdr ihdr, iByteTrain *bt, iByteLayer *bl) {
 		}
 		printf("filterType: %x\n", filterType);
 
-		if (filterType > FILTERTYPE_MAX) {
-			e = Mike_Defilter_ERROR_FILTERTYPE;
-			goto finalize;
-		}
-
 		c = 0;
 		for (uint64_t i = 0; i < scanlineLength; ++i) {
 			if (iByteTrain_chewchew(bt, &byte)) {
@@ -101,15 +97,19 @@ int mike_Defilter_go(mike_Ihdr ihdr, iByteTrain *bt, iByteLayer *bl) {
 					byte += mike_defilter_paeth(
 						mike_defilter_a(i, bytesPerPixel, scanline),
 						scanline[i],
-						(c >> (8 * (bytesPerPixel - 1))) & 0xff
+						mike_defilter_c(c, bytesPerPixel)
 					);
 					break;
+				default:
+					e = Mike_Defilter_ERROR_FILTERTYPE;
+					goto finalize;
 			}
 
-			c = (c << 8) | scanline[i]; // (c >> (8 *(bytesPerPixel - 1))) & 0xff
+			c = (c << 8) | scanline[i];
 			scanline[i] = byte;
-			iByteLayer_lay(bl, byte);
-			printf("laying: %x\n", byte);
+			e = iByteLayer_lay(bl, byte);
+			if (e) goto finalize;
+			//printf("laying: %x\n", byte);
 		}
 
 	}
@@ -131,6 +131,12 @@ static inline uint8_t mike_defilter_a(uint64_t i, uint8_t bytesPerPixel, uint8_t
 
 	if (!i) return 0;
 	return scanline[i - 1];
+}
+static inline uint8_t mike_defilter_c(uint64_t c, uint8_t bytesPerPixel) {
+	if (bytesPerPixel) {
+		return (c >> (8 * (bytesPerPixel - 1))) & 0xff;
+	}
+	return c & 0xff;
 }
 static inline uint8_t mike_defilter_paeth(uint8_t a, uint8_t b, uint8_t c) {
 	uint16_t p = a + b - c;
