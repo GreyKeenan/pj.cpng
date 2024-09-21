@@ -9,20 +9,29 @@
 #include "./decompress/iNostalgicWriter_forw.h"
 #include "./decompress/iNostalgicWriter.h"
 
+#include "./defilter/defilter.h"
+
 #include "utils/iByteTrain.h"
+#include "utils/iByteTrain_impl.h"
+#include "utils/iByteTrain_forw.h"
+
+#include "utils/iByteLayer.h"
+#include "utils/iByteLayer_impl.h"
+#include "utils/iByteLayer_forw.h"
 
 #include <stdlib.h>
 
 
-// mike_Writer
+// temp writer // TODO
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 typedef struct mike_Writer mike_Writer;
 struct mike_Writer {
 	uint8_t *nData;
-	uint16_t length;
+	uint16_t length; //no overflow check
 	uint16_t cap;
 	uint16_t step;
+
+	uint16_t position;
 };
 
 mike_Writer mike_Writer_create(uint16_t step) {
@@ -76,7 +85,35 @@ Mike_Decompress_iNostalgicWriter mike_Writer_as_iNostalgicWriter(mike_Writer *se
 	};
 }
 
+iByteLayer mike_Writer_as_iByteLayer(mike_Writer *self) {
+	return (iByteLayer) {
+		.vself = self,
+		.lay = &mike_Writer_write
+	};
+}
+
+int mike_Writer_chewchew(void *vself, uint8_t *nDestination) {
+	mike_Writer *self = vself;
+
+	if (self->position >= self->length) {
+		return iByteTrain_ENDOFTHELINE;
+	}
+
+	if (nDestination != NULL) {
+		*nDestination = self->nData[self->position];
+	}
+	self->position++;
+
+	return 0;
+}
+iByteTrain mike_Writer_as_iByteTrain(mike_Writer *self) {
+	return (iByteTrain) {
+		.vself = self,
+		.chewchew = &mike_Writer_chewchew
+	};
+}
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 #define PNG_HEADER_LENGTH 8
 const uint8_t mike_PNG_header[PNG_HEADER_LENGTH] = {0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A};
@@ -108,22 +145,32 @@ int Mike_decode(iByteTrain *bt) {
 	struct Mike_Decompress_iNostalgicWriter nw = mike_Writer_as_iNostalgicWriter(&writer);
 
 	e = mike_Dechunk_go(bt, &ihdr, &nw);
-	if (e) return e;
+	if (e) goto finalize;
 
+	// defiltering
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+		// could handle this as I go within the iNostalgicWriter in the future
 
+	/*
+	// temp checks
+	// ==================================================
 	if (ihdr.interlaceMethod == 1) {
 		printf("TODO ERR: ADAM7 INTERLACED\n");
 		e = Mike_ERROR;
 		goto finalize;
 	}
-	if (ihdr.colorType == 3) {
-		printf("TODO ERR: INDEXED PALETTE COLORTYPE\n");
-		e = Mike_ERROR;
-		goto finalize;
-	}
+	// ==================================================
+	*/
 
+	struct iByteTrain filteredBt = mike_Writer_as_iByteTrain(&writer);
 
+	struct mike_Writer filteredWriter = mike_Writer_create(1024);
+	struct iByteLayer filteredBl = mike_Writer_as_iByteLayer(&writer);
+
+	e = mike_Defilter_go(ihdr, &filteredBt, &filteredBl);
+	if (e) goto finalize;
+
+	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	finalize:
 	mike_Writer_destroy(&writer);
 	return e;

@@ -194,14 +194,14 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 					e = Mike_ERROR_EOTL;
 					goto finalize;
 				}
-				printf("%x", byte);
+				//printf("%x", byte);
 				e = mike_Decompress_step(&destate, byte);
 				switch (e) {
 					case 0:
-						printf("\n");
+						//printf("\n");
 						break;
 					case mike_Decompress_END:
-						printf("\t!\n");
+						//printf("\t!\n");
 						flags = flags | DEFLATEOVER;
 						break;
 					default: goto finalize;

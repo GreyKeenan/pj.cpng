@@ -8,6 +8,7 @@ d:
 			mike/mike.c \
 				mike/decompress/decompress.c \
 				mike/dechunk/dechunk.c \
+				mike/defilter/defilter.c
 
 run: a.out
 	./a.out
