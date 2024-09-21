@@ -1,11 +1,12 @@
 #include <stdio.h>
 
 #include "./dechunk.h"
+#include "./error.h"
 
-#include "mike/error.h"
 #include "mike/ihdr_impl.h"
 
 #include "mike/decompress/decompress.h"
+#include "mike/decompress/error.h"
 #include "mike/decompress/state_impl.h"
 
 #include "mike/decompress/iNostalgicWriter_forw.h"
@@ -49,13 +50,13 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 	e = mike_dechunk_readInt32(bt, &chunkLength);
 	if (e) goto finalize;
 	if (chunkLength != IHDR_LENGTH) {
-		e = Mike_ERROR_PNG_IHDR_LENGTH;
+		e = Mike_Dechunk_ERROR_IHDR_LENGTH;
 		goto finalize;
 	}
 	e = mike_dechunk_readName(bt, chunkName);
 	if (e) goto finalize;
 	if (!mike_dechunk_compareName(chunkName, (uint8_t*)"IHDR")) {
-		e = Mike_ERROR_PNG_IHDR_NOT;
+		e = Mike_Dechunk_ERROR_IHDR_NOT;
 		goto finalize;
 	}
 
@@ -65,23 +66,23 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 	if (e) goto finalize;
 
 	if (iByteTrain_chewchew(bt, &ihdr->bitDepth)) {
-		e = Mike_ERROR_EOTL;
+		e = Mike_Dechunk_ERROR_EOTL;
 		goto finalize;
 	}
 	if (iByteTrain_chewchew(bt, &ihdr->colorType)) {
-		e = Mike_ERROR_EOTL;
+		e = Mike_Dechunk_ERROR_EOTL;
 		goto finalize;
 	}
 	if (iByteTrain_chewchew(bt, &ihdr->compressionMethod)) {
-		e = Mike_ERROR_EOTL;
+		e = Mike_Dechunk_ERROR_EOTL;
 		goto finalize;
 	}
 	if (iByteTrain_chewchew(bt, &ihdr->filterMethod)) {
-		e = Mike_ERROR_EOTL;
+		e = Mike_Dechunk_ERROR_EOTL;
 		goto finalize;
 	}
 	if (iByteTrain_chewchew(bt, &ihdr->interlaceMethod)) {
-		e = Mike_ERROR_EOTL;
+		e = Mike_Dechunk_ERROR_EOTL;
 		goto finalize;
 	}
 	switch (ihdr->colorType) {
@@ -94,7 +95,7 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 				case 16:
 					break;
 				default: 
-					e = Mike_ERROR_PNG_IHDR_BITDEPTH;
+					e = Mike_Dechunk_ERROR_IHDR_BITDEPTH;
 					goto finalize;
 			}
 			break;
@@ -106,7 +107,7 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 				case 8:
 					break;
 				default:
-					e = Mike_ERROR_PNG_IHDR_BITDEPTH;
+					e = Mike_Dechunk_ERROR_IHDR_BITDEPTH;
 					goto finalize;
 			}
 			break;
@@ -118,24 +119,24 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 				case 16:
 					break;
 				default:
-					e = Mike_ERROR_PNG_IHDR_BITDEPTH;
+					e = Mike_Dechunk_ERROR_IHDR_BITDEPTH;
 					goto finalize;
 			}
 			break;
 		default:
-			e = Mike_ERROR_PNG_IHDR_COLORTYPE; //invalid
+			e = Mike_Dechunk_ERROR_IHDR_COLORTYPE; //invalid
 			goto finalize;
 	}
 	if (ihdr->compressionMethod != 0) {
-		e = Mike_ERROR_PNG_IHDR_COMPRESSIONMETHOD;
+		e = Mike_Dechunk_ERROR_IHDR_COMPRESSIONMETHOD;
 		goto finalize;
 	}
 	if (ihdr->filterMethod != 0) {
-		e = Mike_ERROR_PNG_IHDR_FILTERMETHOD;
+		e = Mike_Dechunk_ERROR_IHDR_FILTERMETHOD;
 		goto finalize;
 	}
 	if (ihdr->interlaceMethod > 1) {
-		e = Mike_ERROR_PNG_IHDR_INTERLACEMETHOD;
+		e = Mike_Dechunk_ERROR_IHDR_INTERLACEMETHOD;
 		goto finalize;
 	}
 
@@ -162,7 +163,7 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 
 			for (uint32_t i = 0; i < chunkLength; ++i) {
 				if (iByteTrain_chewchew(bt, NULL)) {
-					e = Mike_ERROR_EOTL;
+					e = Mike_Dechunk_ERROR_EOTL;
 					goto finalize;
 				}
 			}
@@ -173,15 +174,15 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 
 		if (mike_dechunk_compareName(chunkName, (uint8_t*)"IDAT")) {
 			if ((flags & HAVEIDAT) && !(flags & PREVIOUSWASIDAT)) {
-				e = Mike_ERROR_PNG_IHDR_NONSEQUENTIAL;
+				e = Mike_Dechunk_ERROR_IHDR_NONSEQUENTIAL;
 				goto finalize;
 			}
 			if (ihdr->colorType == IHDR_COLORTYPE_INDEXED && !(flags & HAVEPLTE)) {
-				e = Mike_ERROR_PNG_PLTE_MISSING;
+				e = Mike_Dechunk_ERROR_PLTE_MISSING;
 				goto finalize;
 			}
 			if (flags & DEFLATEOVER) {
-				e = Mike_ERROR_PNG_IHDR_EXTRA;
+				e = Mike_Dechunk_ERROR_IHDR_EXTRA;
 				goto finalize;
 			}
 			flags = flags | HAVEIDAT;
@@ -191,7 +192,7 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 			// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			for (uint32_t i = 0; i < chunkLength; ++i) {
 				if (iByteTrain_chewchew(bt, &byte)) {
-					e = Mike_ERROR_EOTL;
+					e = Mike_Dechunk_ERROR_EOTL;
 					goto finalize;
 				}
 				//printf("%x", byte);
@@ -200,7 +201,7 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 					case 0:
 						//printf("\n");
 						break;
-					case mike_Decompress_END:
+					case Mike_Decompress_END:
 						//printf("\t!\n");
 						flags = flags | DEFLATEOVER;
 						break;
@@ -219,7 +220,7 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 
 		if (mike_dechunk_compareName(chunkName, (uint8_t*)"PLTE")) {
 			if (HAVEIDAT) {
-				e = Mike_ERROR_PNG_PLTE_ORDER;
+				e = Mike_Dechunk_ERROR_PLTE_ORDER;
 				goto finalize;
 			}
 			// ...
@@ -228,7 +229,7 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 			// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			for (uint32_t i = 0; i < chunkLength; ++i) {
 				if (iByteTrain_chewchew(bt, NULL)){ 
-					e = Mike_ERROR_EOTL;
+					e = Mike_Dechunk_ERROR_EOTL;
 					goto finalize;
 				}
 			}
@@ -244,16 +245,16 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 			break;
 		}
 
-		e = Mike_ERROR_PNG_CHUNK_UNKNOWN_CRITICAL;
+		e = Mike_Dechunk_ERROR_CHUNK_UNKNOWN_CRITICAL;
 		goto finalize;
 	}
 
 	if (!(flags & HAVEIDAT)) {
-		e = Mike_ERROR_PNG_IDAT_MISSING;
+		e = Mike_Dechunk_ERROR_IDAT_MISSING;
 		goto finalize;
 	}
 	if (!(flags & DEFLATEOVER)) {
-		e = Mike_ERROR_PNG_DEFLATE_INCOMPLETE;
+		e = Mike_Dechunk_ERROR_DEFLATE_INCOMPLETE;
 		goto finalize;
 	}
 
@@ -273,13 +274,13 @@ int mike_dechunk_readInt32(iByteTrain *bt, uint32_t *destination) {
 
 	for (int i = 0; i < 4; ++i) {
 		if (iByteTrain_chewchew(bt, &byte)) {
-			return Mike_ERROR_EOTL;
+			return Mike_Dechunk_ERROR_EOTL;
 		}
 		n = (n << 8) | byte;
 	}
 
 	if (n & 0x80000000) {
-		return Mike_ERROR_PNG_INT32;
+		return Mike_Dechunk_ERROR_INT32;
 	}
 
 	*destination = n;
@@ -288,7 +289,7 @@ int mike_dechunk_readInt32(iByteTrain *bt, uint32_t *destination) {
 static inline int mike_dechunk_readName(iByteTrain *bt, uint8_t* destination) {
 	for (int i = 0; i < CHUNK_NAME_LENGTH; ++i) {
 		if (iByteTrain_chewchew(bt, destination + i)) {
-			return Mike_ERROR_EOTL;
+			return Mike_Dechunk_ERROR_EOTL;
 		}
 	}
 	printf("chunk: %s\n", destination);
@@ -304,7 +305,7 @@ static inline bool mike_dechunk_compareName(uint8_t *a, uint8_t *b) {
 }
 int mike_dechunk_eatCRC(iByteTrain *bt) {
 	for (int i = 0; i < CHUNK_CRC_LENGTH; ++i) {
-		if (iByteTrain_chewchew(bt, NULL)) return Mike_ERROR_EOTL;
+		if (iByteTrain_chewchew(bt, NULL)) return Mike_Dechunk_ERROR_EOTL;
 	}
 	return 0;
 }

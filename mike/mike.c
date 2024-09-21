@@ -132,7 +132,7 @@ int Mike_decode(iByteTrain *bt) {
 		}
 		
 		if (byte != mike_PNG_header[i]) {
-			e = Mike_ERROR_PNG_NOT;
+			e = Mike_ERROR_NOTPNG;
 			goto finalize;
 		}
 	}

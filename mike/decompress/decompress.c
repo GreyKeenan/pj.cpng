@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "./decompress.h"
+#include "./error.h"
 
 #include "./state_impl.h"
 
@@ -46,7 +47,7 @@ int mike_decompress_doBlockHeader(mike_Decompress_State *state, bool bit);
 int mike_Decompress_step(mike_Decompress_State *state, uint8_t byte) { //do I need to return a bits-of-byte-read for the final thing?
 	switch (state->id) {
 		case END:
-			return mike_Decompress_END;
+			return Mike_Decompress_END;
 
 		case ZLIBHEADER:
 			return mike_decompress_doZlibHeader(state, byte);
@@ -63,13 +64,13 @@ int mike_Decompress_step(mike_Decompress_State *state, uint8_t byte) { //do I ne
 
 		switch (state->id) { //These probably need to be bit-looped for all except ZLIBHEADER & ADLER32
 			case END:
-				return mike_Decompress_END;
+				return Mike_Decompress_END;
 
 			case BLOCKHEADER:
 				e = mike_decompress_doBlockHeader(state, byte & i);
 				break;
 
-			default: return mike_Decompress_ERROR_STATE_UNKNOWN;
+			default: return Mike_Decompress_ERROR_STATE_UNKNOWN;
 		}
 
 		switch (e) {
@@ -96,11 +97,11 @@ int mike_decompress_doZlibHeader(mike_Decompress_State *state, uint8_t byte) {
 			state->data.zlibHeader.cminfo = byte;
 
 			if ((byte & 0x0f) != 8) {
-				return mike_Decompress_ERROR_ZLIBHEADER_COMPRESSIONMETHOD;
+				return Mike_Decompress_ERROR_ZLIBHEADER_COMPRESSIONMETHOD;
 			}
 
 			if (((byte & 0xf0) >> 4) > 7) {
-				return mike_Decompress_ERROR_ZLIBHEADER_WINDOWSIZE;
+				return Mike_Decompress_ERROR_ZLIBHEADER_WINDOWSIZE;
 			}
 			state->windowSize = byte & 0x0f;
 
@@ -113,10 +114,10 @@ int mike_decompress_doZlibHeader(mike_Decompress_State *state, uint8_t byte) {
 			shirt = shirt | byte;
 
 			if (shirt % 31) {
-				return mike_Decompress_ERROR_ZLIBHEADER_VALIDATION;
+				return Mike_Decompress_ERROR_ZLIBHEADER_VALIDATION;
 			}
 			if (byte & 0x20) {
-				return mike_Decompress_ERROR_ZLIBHEADER_HASDICT;
+				return Mike_Decompress_ERROR_ZLIBHEADER_HASDICT;
 			}
 
 
@@ -124,7 +125,7 @@ int mike_decompress_doZlibHeader(mike_Decompress_State *state, uint8_t byte) {
 			mike_decompress_clearData(state);
 			break;
 		default:
-			return mike_Decompress_ERROR_ZLIBHEADER_OVERREAD;
+			return Mike_Decompress_ERROR_ZLIBHEADER_OVERREAD;
 	}
 	return 0;
 }
@@ -166,11 +167,11 @@ int mike_decompress_doBlockHeader(mike_Decompress_State *state, bool bit) {
 					break;
 					*/
 				default:
-					return mike_Decompress_ERROR_BLOCKHEADER_COMPRESSIONTYPE;
+					return Mike_Decompress_ERROR_BLOCKHEADER_COMPRESSIONTYPE;
 			}
 
 		default:
-			return mike_Decompress_ERROR_BLOCKHEADER_OVERREAD;
+			return Mike_Decompress_ERROR_BLOCKHEADER_OVERREAD;
 	}
 	return 0;
 }
@@ -197,7 +198,7 @@ int mike_decompress_doUncompressed(mike_Decompress_State *state, uint8_t byte) {
 			case 3:
 
 				if (state->data.uncompressed.length != (uint16_t)~(state->data.uncompressed.invertedLength | (uint16_t)byte << 8)) {
-					return mike_Decompress_ERROR_UNCOMPRESSED_NLEN;
+					return Mike_Decompress_ERROR_UNCOMPRESSED_NLEN;
 				}
 
 				state->data.uncompressed.bytesRead = 0;
@@ -205,7 +206,7 @@ int mike_decompress_doUncompressed(mike_Decompress_State *state, uint8_t byte) {
 				break;
 
 			default:
-				return mike_Decompress_ERROR_UNCOMPRESSED_LENGTH_OVERREAD;
+				return Mike_Decompress_ERROR_UNCOMPRESSED_LENGTH_OVERREAD;
 		}
 		return 0;
 	}
@@ -231,7 +232,7 @@ int mike_decompress_doUncompressed(mike_Decompress_State *state, uint8_t byte) {
 
 int mike_decompress_doAdler32(mike_Decompress_State *state, uint8_t byte) {
 	if (state->data.adler32.bytesRead > 3) {
-		return mike_Decompress_ERROR_ADLER32_OVERREAD;
+		return Mike_Decompress_ERROR_ADLER32_OVERREAD;
 	}
 
 	state->data.adler32.target += byte << (8 * (3 - state->data.adler32.bytesRead));
@@ -244,11 +245,11 @@ int mike_decompress_doAdler32(mike_Decompress_State *state, uint8_t byte) {
 	uint32_t a = (state->s2 << 16) + state->s1;
 	//printf("target: %x / have: %x\n", state->data.adler32.target, a);
 	if (state->data.adler32.target != a) {
-		return mike_Decompress_ERROR_ADLER32_FAILED;
+		return Mike_Decompress_ERROR_ADLER32_FAILED;
 	}
 
 	state->id = END;
-	return mike_Decompress_END; //returns END on completion, rather than only returning when calling past completion
+	return Mike_Decompress_END; //returns END on completion, rather than only returning when calling past completion
 }
 
 
@@ -269,7 +270,7 @@ static inline void mike_decompress_adler32(mike_Decompress_State *state, uint8_t
 static inline int mike_decompress_write(mike_Decompress_State *state, uint8_t byte) {
 
 	if (Mike_Decompress_iNostalgicWriter_write(state->nw, byte)) {
-		return mike_Decompress_ERROR_WRITER_WRITE;
+		return Mike_Decompress_ERROR_WRITER_WRITE;
 	}
 	mike_decompress_adler32(state, byte);
 
@@ -278,7 +279,7 @@ static inline int mike_decompress_write(mike_Decompress_State *state, uint8_t by
 static inline int mike_decompress_nostalgize(mike_Decompress_State *state, uint8_t *destination, uint16_t distanceBack) {
 
 	if (Mike_Decompress_iNostalgicWriter_nostalgize(state->nw, destination, distanceBack)) {
-		return mike_Decompress_ERROR_WRITER_NOSTALGIZE;
+		return Mike_Decompress_ERROR_WRITER_NOSTALGIZE;
 	}
 
 	return 0;
