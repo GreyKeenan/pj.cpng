@@ -6,6 +6,7 @@ d:
 		\
 		main.c \
 			utils/autophagicSequence.c \
+				utils/expandingWriter.c \
 			mike/mike.c \
 				mike/decompress/decompress.c \
 				mike/dechunk/dechunk.c \

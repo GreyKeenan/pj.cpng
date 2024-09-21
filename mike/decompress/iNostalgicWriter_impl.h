@@ -3,14 +3,14 @@
 
 #include <stdint.h>
 
+#define Mike_Decompress_iNostalgicWriter_TOOFAR -1
+
 struct Mike_Decompress_iNostalgicWriter {
 	void *vself;
 
 	int (*write)(void *vself, uint8_t byte);
 	/*
-		writes the byte to some sort of output stream
-		returns 0 on success
-			returns Mike_Decompress_iNostalgicWriter_TOOFAR if unable to continue writing because of some length limit
+		should be identical to iByteLayer.lay()
 	*/
 	int (*nostalgize)(const void *vself, uint8_t *destination, uint32_t distanceBack);
 	/*

@@ -26,7 +26,6 @@ int AutophagicSequence_read(void *vself, uint8_t *nDestination) {
 		*nDestination = self->data[self->readPosition];
 	}
 	self->readPosition++;
-	//if (self->readPosition == 0)
 
 	return 0;
 }
@@ -35,12 +34,17 @@ int AutophagicSequence_write(void *vself, uint8_t byte) {
 	struct AutophagicSequence *self = vself;
 
 	if (self->writePosition >= self->readPosition) {
-		return -1;
+		return 1;
+	}
+	if (self->writePosition >= self->cap) {
+		return iByteLayer_LIMIT;
 	}
 
 	self->data[self->writePosition] = byte;
 	self->writePosition++;
-	//if (self->writePosition == 0)
+	if (self->writePosition > self->length) {
+		self->length = self->writePosition;
+	}
 
 	return 0;
 }
