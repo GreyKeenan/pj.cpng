@@ -9,9 +9,9 @@ enum Mike_Error {
 
 };
 
-#define Mike_ERRORTYPE_DECHUNK 0x2000
-#define Mike_ERRORTYPE_DECOMPRESS 0x4000
-#define Mike_ERRORTYPE_DEFILTER 0x6000
+#define Mike_ERRORTYPE_DECHUNK 0x1000
+#define Mike_ERRORTYPE_DECOMPRESS 0x2000
+#define Mike_ERRORTYPE_DEFILTER 0x3000
 /*
 	easy way to ensure errors are unique btwn these sections
 	subject to change

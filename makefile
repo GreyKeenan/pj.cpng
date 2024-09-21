@@ -5,6 +5,7 @@ d:
 		-lSDL2 \
 		\
 		main.c \
+			utils/autophagicSequence.c \
 			mike/mike.c \
 				mike/decompress/decompress.c \
 				mike/dechunk/dechunk.c \

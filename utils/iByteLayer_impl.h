@@ -10,8 +10,6 @@ struct iByteLayer {
 	/*
 		writes that byte to a sequence
 		returns 0 on success
-			return iByteLayer_ENDOFTHELINE if cant write any more for whatever reason
-			returns positive error for vself-specific errors
 	*/
 };
 

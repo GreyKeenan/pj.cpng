@@ -19,6 +19,10 @@
 #include "utils/iByteLayer_impl.h"
 #include "utils/iByteLayer_forw.h"
 
+#include "utils/autophagicSequence.h"
+#include "utils/autophagicSequence_impl.h"
+#include "utils/autophagicSequence_forw.h"
+
 #include <stdlib.h>
 
 
@@ -85,35 +89,11 @@ Mike_Decompress_iNostalgicWriter mike_Writer_as_iNostalgicWriter(mike_Writer *se
 	};
 }
 
-iByteLayer mike_Writer_as_iByteLayer(mike_Writer *self) {
-	return (iByteLayer) {
-		.vself = self,
-		.lay = &mike_Writer_write
-	};
-}
-
-int mike_Writer_chewchew(void *vself, uint8_t *nDestination) {
-	mike_Writer *self = vself;
-
-	if (self->position >= self->length) {
-		return iByteTrain_ENDOFTHELINE;
-	}
-
-	if (nDestination != NULL) {
-		*nDestination = self->nData[self->position];
-	}
-	self->position++;
-
-	return 0;
-}
-iByteTrain mike_Writer_as_iByteTrain(mike_Writer *self) {
-	return (iByteTrain) {
-		.vself = self,
-		.chewchew = &mike_Writer_chewchew
-	};
-}
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+#include "utils/autophagicSequence_forw.h"
+#include "utils/autophagicSequence.h"
+#include "utils/autophagicSequence_impl.h"
 
 #define PNG_HEADER_LENGTH 8
 const uint8_t mike_PNG_header[PNG_HEADER_LENGTH] = {0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A};
@@ -141,7 +121,7 @@ int Mike_decode(iByteTrain *bt) {
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	struct mike_Ihdr ihdr = {0};
 
-	struct mike_Writer writer = mike_Writer_create(1024);
+	struct mike_Writer writer = mike_Writer_create(512);
 	struct Mike_Decompress_iNostalgicWriter nw = mike_Writer_as_iNostalgicWriter(&writer);
 
 	e = mike_Dechunk_go(bt, &ihdr, &nw);
@@ -156,34 +136,29 @@ int Mike_decode(iByteTrain *bt) {
 	);
 	printf("\n");
 
+	printf("filteredData: length:%d, cap:%d\n", writer.length, writer.cap);
+
 	// defiltering
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		// could handle this as I go within the iNostalgicWriter in the future
 
-	struct iByteTrain filteredBt = mike_Writer_as_iByteTrain(&writer);
+	if (writer.nData == NULL) {
+		return Mike_ERROR;
+	}
+	struct AutophagicSequence aph = AutophagicSequence_create(writer.nData, writer.length, writer.cap);
+	struct iByteTrain fBt = AutophagicSequence_as_iByteTrain(&aph);
+	struct iByteLayer fBl = AutophagicSequence_as_iByteLayer(&aph);
 
-	struct mike_Writer filteredWriter = mike_Writer_create(1024);
-	struct iByteLayer filteredBl = mike_Writer_as_iByteLayer(&filteredWriter);
-
-	e = mike_Defilter_go(ihdr, &filteredBt, &filteredBl);
+	//e = mike_Defilter_go(ihdr, &filteredBt, &filteredBl);
+	e = mike_Defilter_go(ihdr, &fBt, &fBl);
 	if (e) goto finalize;
 
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-	/*
-	filteredBt = mike_Writer_as_iByteTrain(&filteredWriter);
-	int i = 0;
-	while (!iByteTrain_chewchew(&filteredBt, &byte)) {
-		printf("%x ", byte);
-		i++;
-		i %= 3;
-		if (!i) printf("\n");
-	}
-	*/
+	printf("unfilteredData: length:%d, cap:%d\n", aph.writePosition, aph.cap);
 
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	finalize:
 	mike_Writer_destroy(&writer);
-	mike_Writer_destroy(&filteredWriter);
 	return e;
 }
