@@ -142,7 +142,7 @@ int Mike_decode(iByteTrain *bt, Mike_ScanlineImage *destination) {
 	*destination = (struct Mike_ScanlineImage) {
 		.width = ihdr.width, .height = ihdr.height,
 		.colorType = ihdr.colorType, .bitDepth = ihdr.bitDepth,
-		.data = data
+		.data = data, .length = aph.writePosition
 	};
 	writer.nData = NULL;
 
