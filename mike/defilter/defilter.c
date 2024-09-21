@@ -49,7 +49,10 @@ int mike_Defilter_go(mike_Ihdr ihdr, iByteTrain *bt, iByteLayer *bl) {
 			goto finalize;
 	}
 	uint8_t bitsPerPixel = samplesPerPixel * ihdr.bitDepth;
+
 	uint8_t bytesPerPixel = bitsPerPixel >> 3;
+	if (!bytesPerPixel) bytesPerPixel++; //round up to 1 for 'a' and 'c'
+
 	uint64_t scanlineLengthBits = (uint64_t)bitsPerPixel * ihdr.width;
 	uint64_t scanlineLength = (scanlineLengthBits >> 3) + (bool)(scanlineLengthBits & 0x07);
 	//TODO in theory it could be this long, but if it is uh... there are other problems?
@@ -124,19 +127,11 @@ int mike_Defilter_go(mike_Ihdr ihdr, iByteTrain *bt, iByteLayer *bl) {
 }
 
 static inline uint8_t mike_defilter_a(uint64_t i, uint8_t bytesPerPixel, uint8_t *scanline) {
-	if (bytesPerPixel) {
-		if (i < bytesPerPixel) return 0;
-		return scanline[i - bytesPerPixel];
-	}
-
-	if (!i) return 0;
-	return scanline[i - 1];
+	if (i < bytesPerPixel) return 0;
+	return scanline[i - bytesPerPixel];
 }
 static inline uint8_t mike_defilter_c(uint64_t c, uint8_t bytesPerPixel) {
-	if (bytesPerPixel) {
-		return (c >> (8 * (bytesPerPixel - 1))) & 0xff;
-	}
-	return c & 0xff;
+	return (c >> (8 * (bytesPerPixel - 1))) & 0xff;
 }
 static inline uint8_t mike_defilter_paeth(uint8_t a, uint8_t b, uint8_t c) {
 	uint16_t p = a + b - c;
