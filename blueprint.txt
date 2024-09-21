@@ -36,6 +36,16 @@ Each scanline is prefixed by an identifier for 1 of five "filter types" within f
 	4: paeth
 
 filter functions apply to bytes, not pixels.
+the filtering functions are concerned with 4 diffent bytes:
+	- 'x': the current byte being filtered
+	- 'a': the byte ~~preceding~~ x (before 'a' was filtered)
+	- 'b': the byte *above* x, aka in the previous scanline, (before 'b' was filtered)
+	- 'c': 'a' of 'b', before 'c' was filtered
+	if any of these bytes are out of the bounds of the sequence, eg first byte of a scanline or first scanline, they are equal to 0
+
+	NOTE: the preceding byte is NOT NECESSARILY the immediately prior byte!!!
+		it is the byte corresponding to x in the previous pixel, not the previous byte
+		UNLESS bitdepth < 8, in which case it is just the previous byte
 
 
 de-scanline-ing

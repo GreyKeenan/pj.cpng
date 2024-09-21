@@ -147,20 +147,18 @@ int Mike_decode(iByteTrain *bt) {
 	e = mike_Dechunk_go(bt, &ihdr, &nw);
 	if (e) goto finalize;
 
+	printf("\n");
+	printf("HEXADECIMAL:\nwidth: %x, height: %x\nbitDepth: %x, colorType: %x\ncompressionMethod: %x, filterMethod: %x\ninterlaceMethod: %x\n",
+		ihdr.width, ihdr.height,
+		ihdr.bitDepth, ihdr.colorType,
+		ihdr.compressionMethod, ihdr.filterMethod,
+		ihdr.interlaceMethod
+	);
+	printf("\n");
+
 	// defiltering
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		// could handle this as I go within the iNostalgicWriter in the future
-
-	/*
-	// temp checks
-	// ==================================================
-	if (ihdr.interlaceMethod == 1) {
-		printf("TODO ERR: ADAM7 INTERLACED\n");
-		e = Mike_ERROR;
-		goto finalize;
-	}
-	// ==================================================
-	*/
 
 	struct iByteTrain filteredBt = mike_Writer_as_iByteTrain(&writer);
 
@@ -173,5 +171,6 @@ int Mike_decode(iByteTrain *bt) {
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	finalize:
 	mike_Writer_destroy(&writer);
+	mike_Writer_destroy(&filteredWriter);
 	return e;
 }

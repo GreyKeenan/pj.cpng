@@ -54,7 +54,7 @@ int main(int argc, const char **argv) {
 	// ...
 
 	int e = Mike_decode(&bt);
-	printf("\nfinal error status: %d\n", e);
+	printf("\nfinal error status: 0x%x\n", e);
 
 	fclose(f);
 
