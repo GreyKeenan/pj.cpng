@@ -58,6 +58,15 @@ int Mike_decode(iByteTrain *bt) {
 	int e = 0;
 	uint8_t byte = 0;
 
+	struct mike_Ihdr ihdr = {0};
+
+	struct ExpandingWriter writer = {0};
+	struct Mike_Decompress_iNostalgicWriter nw = {0};
+
+	struct AutophagicSequence aph = {0};
+	struct iByteTrain fBt = {0};
+	struct iByteLayer fBl = {0};
+
 	// PNG header
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	for (int i = 0; i < PNG_HEADER_LENGTH; ++i) {
@@ -74,14 +83,15 @@ int Mike_decode(iByteTrain *bt) {
 
 	// dechunking & decompressing
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	struct mike_Ihdr ihdr = {0};
 
 	#define STEP 512
-	struct ExpandingWriter writer = ExpandingWriter_create(NULL, 0, 0, STEP);
-	struct Mike_Decompress_iNostalgicWriter nw = Mike_ExpandingWriter_as_iNostalgicWriter(&writer);
+	writer = ExpandingWriter_create(NULL, 0, 0, STEP);
+	nw = Mike_ExpandingWriter_as_iNostalgicWriter(&writer);
 
 	e = mike_Dechunk_go(bt, &ihdr, &nw);
 	if (e) goto finalize;
+
+	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	printf("\n");
 	printf("HEXADECIMAL:\nwidth: %x, height: %x\nbitDepth: %x, colorType: %x\ncompressionMethod: %x, filterMethod: %x\ninterlaceMethod: %x\n",
@@ -96,16 +106,15 @@ int Mike_decode(iByteTrain *bt) {
 
 	// defiltering
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-		// could handle this as I go within the iNostalgicWriter in the future
 
 	if (writer.nData == NULL) { //shouldnt be possible
 		return Mike_ERROR;
 	}
-	struct AutophagicSequence aph = AutophagicSequence_create(writer.nData, writer.writePosition, writer.cap);
-	struct iByteTrain fBt = AutophagicSequence_as_iByteTrain(&aph);
-	struct iByteLayer fBl = AutophagicSequence_as_iByteLayer(&aph);
 
-	//e = mike_Defilter_go(ihdr, &filteredBt, &filteredBl);
+	aph = AutophagicSequence_create(writer.nData, writer.writePosition, writer.cap);
+	fBt = AutophagicSequence_as_iByteTrain(&aph);
+	fBl = AutophagicSequence_as_iByteLayer(&aph);
+
 	e = mike_Defilter_go(ihdr, &fBt, &fBl);
 	if (e) goto finalize;
 
@@ -114,6 +123,7 @@ int Mike_decode(iByteTrain *bt) {
 	printf("unfilteredData: length:%d, cap:%d\n", aph.writePosition, aph.cap);
 	printf("\t(overwrote filteredData)\n");
 
+	// end
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	finalize:
 	if (writer.nData != NULL) {
