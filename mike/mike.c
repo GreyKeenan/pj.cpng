@@ -3,6 +3,7 @@
 #include "./mike.h"
 #include "./error.h"
 #include "./ihdr_impl.h"
+#include "./scanlineImage_impl.h"
 
 #include "./dechunk/dechunk.h"
 
@@ -53,7 +54,7 @@ static inline Mike_Decompress_iNostalgicWriter Mike_ExpandingWriter_as_iNostalgi
 #define PNG_HEADER_LENGTH 8
 const uint8_t mike_PNG_header[PNG_HEADER_LENGTH] = {0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A};
 
-int Mike_decode(iByteTrain *bt) {
+int Mike_decode(iByteTrain *bt, Mike_ScanlineImage *destination) {
 
 	int e = 0;
 	uint8_t byte = 0;
@@ -66,6 +67,8 @@ int Mike_decode(iByteTrain *bt) {
 	struct AutophagicSequence aph = {0};
 	struct iByteTrain fBt = {0};
 	struct iByteLayer fBl = {0};
+
+	uint8_t *data = NULL;
 
 	// PNG header
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -110,8 +113,9 @@ int Mike_decode(iByteTrain *bt) {
 	if (writer.nData == NULL) { //shouldnt be possible
 		return Mike_ERROR;
 	}
+	data = writer.nData;
 
-	aph = AutophagicSequence_create(writer.nData, writer.writePosition, writer.cap);
+	aph = AutophagicSequence_create(data, writer.writePosition, writer.cap);
 	fBt = AutophagicSequence_as_iByteTrain(&aph);
 	fBl = AutophagicSequence_as_iByteLayer(&aph);
 
@@ -122,6 +126,25 @@ int Mike_decode(iByteTrain *bt) {
 
 	printf("unfilteredData: length:%d, cap:%d\n", aph.writePosition, aph.cap);
 	printf("\t(overwrote filteredData)\n");
+
+	if (ihdr.interlaceMethod != 0) {
+		printf("TODO ERR: adam7 interlace not supported\n");
+		return Mike_ERROR;
+	}
+	if (ihdr.colorType == 3) {
+		printf("TODO ERR: indexed-color images not supported\n");
+		return Mike_ERROR;
+	}
+
+	// give data
+	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+	*destination = (struct Mike_ScanlineImage) {
+		.width = ihdr.width, .height = ihdr.height,
+		.colorType = ihdr.colorType, .bitDepth = ihdr.bitDepth,
+		.data = data
+	};
+	writer.nData = NULL;
 
 	// end
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

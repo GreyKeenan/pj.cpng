@@ -61,6 +61,21 @@ when sub-byte pixels, the leftmost (first) sample starts in the high-order bits 
 when multi-byte pixels/samples, its MSB byte first
 
 
+sizing notes
+==================================================
+
+scanlines are at most 2^31 pixels long
+	^ accounting for scanline trailing bits, since there are no trailing bits for bitDepth > 8
+images are at most 2^31 scanlines tall
+pixels are at most 8B long
+uint64_t can represent a byte index throughout the largest possible image
+
+uint64_t cannot represent abit index, however
+
+
+
+
+
 PNG Anatomy
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
