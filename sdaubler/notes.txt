@@ -1,0 +1,38 @@
+
+SDL_Suface vs SDL_Texture
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+1 is for CPU graphics, other is for GPU graphics *[1]
+	texture is hardware rendering
+	surface is software
+
+So, I presume I need to create a surface w/ the image data I have, then use SDLs apis to convert that surface into a texture?
+	just like when using SDL_Image or something like that
+
+[1]: https://stackoverflow.com/questions/21392755/difference-between-surface-and-texture-sdl-general
+
+
+SDL_Surface
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+[docs][https://wiki.libsdl.org/SDL2/SDL_Surface]
+
+format is specified in SDL_PixelFormat
+
+
+SDL_PixelFormat
+==================================================
+
+[docs][https://wiki.libsdl.org/SDL2/SDL_PixelFormat]
+
+defines how the Surface's pixel data is formatted
+
+? why does the pixelFormat store *both* bitsPerPixel & bytesPerPixel ??
+
+? It doesnt say that there are any restrictions for the bitdepth of the pixel.
+
+
+SDL_CreateRGB_Surface
+==================================================
+
+[docs][https://wiki.libsdl.org/SDL2/SDL_CreateRGBSurface]

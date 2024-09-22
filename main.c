@@ -16,6 +16,8 @@
 #include "iPixelSequence/pixel_forw.h"
 #include "iPixelSequence/pixel_impl.h"
 
+#include "sdaubler/display.h"
+
 // FILE as iByteTrain
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 int FILE_chewchew(void *vself, uint8_t *nDestination) {
@@ -185,31 +187,7 @@ int main(int argc, const char **argv) {
 
 	struct iPixelSequence pxs = ScanlineImage_as_iPixelSequence(&image);
 
-	struct iPixelSequence_Pixel pxl = {0};
-	int csl = 0;
-	while (1) {
-		e = iPixelSequence_next(&pxs, &pxl);
-		printf("rgba: %x %x %x %x\n", pxl.red, pxl.green, pxl.blue, pxl.alpha);
-		switch (e) {
-			case 0:
-				break;
-			case iPixelSequence_END:
-				printf("peaceful end.\n");
-				goto endwhile;
-			case iPixelSequence_ENDOFTHISLINE:
-				printf("SCANLINE END: %d\n", csl);
-				csl++;
-				break;
-			default:
-				printf("error: %d\n", e);
-				goto endwhile;
-		}
-
-		continue;
-
-		endwhile:
-		break;
-	}
+	Sdaubler_display(&pxs);
 
 	return 0;
 }
