@@ -11,6 +11,7 @@ enum Sdaubler_Error {
 	, Sdaubler_ERROR_TEXTURE_INIT
 
 	, Sdaubler_ERROR_RENDERCOPY
+	, Sdaubler_ERROR_WAITEVENT
 
 	, Sdaubler_ERROR_CONVERT_SURFACE_CREATE
 	, Sdaubler_ERROR_CONVERT_GAUGE

@@ -5,7 +5,7 @@
 
 #include "SDL2/SDL.h"
 
-void sdaubler_loop(void);
+int sdaubler_loop(void);
 
 int Sdaubler_display(Sdaubler_iImageTrain *imt) {
 
@@ -83,7 +83,8 @@ int Sdaubler_display(Sdaubler_iImageTrain *imt) {
 	// stay open
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-	sdaubler_loop();
+	e = sdaubler_loop();
+	if (e) goto finalize;
 
 	// end
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -104,11 +105,11 @@ int Sdaubler_display(Sdaubler_iImageTrain *imt) {
 	return e;
 }
 
-void sdaubler_loop(void) {
+int sdaubler_loop(void) {
 	SDL_Event event = {0};
 	while (1) {
-		if (SDL_PollEvent(&event) == 0) {
-			continue;
+		if (!SDL_WaitEvent(&event)) {
+			return Sdaubler_ERROR_WAITEVENT;
 		}
 		switch (event.type) {
 			case SDL_QUIT:
@@ -119,5 +120,5 @@ void sdaubler_loop(void) {
 		}
 	}
 	endwhile:
-	return;
+	return 0;
 }
