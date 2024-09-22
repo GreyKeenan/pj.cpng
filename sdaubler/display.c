@@ -11,7 +11,10 @@ int Sdaubler_display(Sdaubler_iImageTrain *imt) {
 
 	int e = 0;
 
-	SDL_Surface surface = {0};
+	SDL_Surface *surface = NULL;
+	SDL_Texture *texture = NULL;
+
+	SDL_Rect rect = {0};
 
 	SDL_DisplayMode displayMode = {0};
 
@@ -24,7 +27,6 @@ int Sdaubler_display(Sdaubler_iImageTrain *imt) {
 	e = Sdaubler_convert(imt, &surface);
 	if (e) return e;
 
-	/*
 	// init SDL
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -59,24 +61,46 @@ int Sdaubler_display(Sdaubler_iImageTrain *imt) {
 	// render image
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-	// ...
+	texture = SDL_CreateTextureFromSurface(renderer, surface);
+	if (texture == NULL) {
+		e = Sdaubler_ERROR_TEXTURE_INIT;
+		goto finalize;
+	}
+
+	SDL_FreeSurface(surface);
+	surface = NULL;
+
+	rect = (SDL_Rect){0,0, displayMode.h >> 1, displayMode.h >> 1};
+
+	e = SDL_RenderCopy(renderer, texture, NULL, &rect);
+	if (e) {
+		e = Sdaubler_ERROR_RENDERCOPY;
+		goto finalize;
+	}
+
+	SDL_RenderPresent(renderer);
 
 	// stay open
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	sdaubler_loop();
-	*/
 
 	// end
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	finalize:
+	if (surface != NULL) {
+		SDL_FreeSurface(surface);
+	}
+	if (texture != NULL) {
+		SDL_DestroyTexture(texture);
+	}
 	if (window != NULL) {
 		SDL_DestroyWindow(window);
 	}
 	if (renderer != NULL) {
 		SDL_DestroyRenderer(renderer);
 	}
-	SDL_Quit();
+	SDL_Quit(); //segmentation fault happens here when SDl_RenderPresent is not called ????
 	return e;
 }
 

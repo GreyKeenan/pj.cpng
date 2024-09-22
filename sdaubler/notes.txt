@@ -53,3 +53,7 @@ SDL_CreateRGB_Surface
 ==================================================
 
 [docs][https://wiki.libsdl.org/SDL2/SDL_CreateRGBSurface]
+
+	will allocate memory for the pixel data, & free it automatically (im like 99% sure)
+
+	CreateRGBSurface_From will NOT allocate, and will NOT free

@@ -5,6 +5,6 @@
 
 #include "./iImageTrain_forw.h"
 
-int Sdaubler_convert(Sdaubler_iImageTrain *imt, SDL_Surface *destination);
+int Sdaubler_convert(Sdaubler_iImageTrain *imt, SDL_Surface **destination);
 
 #endif

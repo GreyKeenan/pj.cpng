@@ -8,10 +8,14 @@ enum Sdaubler_Error {
 
 	, Sdaubler_ERROR_WINDOW_INIT
 	, Sdaubler_ERROR_RENDERER_INIT
+	, Sdaubler_ERROR_TEXTURE_INIT
 
-	//convert
-	, Sdaubler_ERROR_CREATESURFACE
-	// ----
+	, Sdaubler_ERROR_RENDERCOPY
+
+	, Sdaubler_ERROR_CONVERT_SURFACE_CREATE
+	, Sdaubler_ERROR_CONVERT_GAUGE
+	, Sdaubler_ERROR_CONVERT_READPIXEL
+	, Sdaubler_ERROR_CONVERT_MALLOC
 };
 
 #endif
