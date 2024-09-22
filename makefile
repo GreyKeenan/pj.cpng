@@ -10,6 +10,7 @@ d:
 				mike/dechunk/dechunk.c \
 				mike/defilter/defilter.c \
 			sdaubler/display.c \
+				sdaubler/convert.c \
 		-lSDL2 \
 
 run: a.out

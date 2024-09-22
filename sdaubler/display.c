@@ -1,6 +1,8 @@
 #include "./display.h"
 #include "./error.h"
 
+#include "./convert.h"
+
 #include "SDL2/SDL.h"
 
 void sdaubler_loop(void);
@@ -8,6 +10,8 @@ void sdaubler_loop(void);
 int Sdaubler_display(iPixelSequence *ps) {
 
 	int e = 0;
+
+	SDL_Surface surface = {0};
 
 	SDL_DisplayMode displayMode = {0};
 
@@ -17,8 +21,10 @@ int Sdaubler_display(iPixelSequence *ps) {
 	// convert image
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-	// ...
+	e = Sdaubler_convert(ps, &surface);
+	if (e) return e;
 
+	/*
 	// init SDL
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -59,6 +65,7 @@ int Sdaubler_display(iPixelSequence *ps) {
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	sdaubler_loop();
+	*/
 
 	// end
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -30,6 +30,23 @@ defines how the Surface's pixel data is formatted
 ? why does the pixelFormat store *both* bitsPerPixel & bytesPerPixel ??
 
 ? It doesnt say that there are any restrictions for the bitdepth of the pixel.
+	BUT! when using createSurface & trying combinations, some result in failure status
+		
+	observed: (WITH CreateRGB_Surface)
+		bitmasks > bitDepth-will-fit cause error
+
+		bitmasks wasting space will cause error
+			ex: 16bit: 0x3000, 0x0300, 0x0030, 0x0003
+
+		bitdepth == 8, presumably because this is described as automatically indexed mode?
+
+
+? I dont udnerstand the "loss" values
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	observed:
+		when observing 32-bit (8,8,8,8) sample format, losses are all 0.
+
+		16-bit (4,4,4,4) format, losses are all 4
 
 
 SDL_CreateRGB_Surface

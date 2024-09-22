@@ -8,6 +8,10 @@ enum Sdaubler_Error {
 
 	, Sdaubler_ERROR_WINDOW_INIT
 	, Sdaubler_ERROR_RENDERER_INIT
+
+	//convert
+	, Sdaubler_ERROR_CREATESURFACE
+	// ----
 };
 
 #endif

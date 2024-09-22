@@ -181,13 +181,16 @@ int main(int argc, const char **argv) {
 
 	int e = Mike_decode(&bt, &image.image);
 	printf("\nmike final error status: 0x%x\n\n", e);
+	if (e) return e;
 
 	fclose(f);
 	bt = (struct iByteTrain){0};
 
 	struct iPixelSequence pxs = ScanlineImage_as_iPixelSequence(&image);
 
-	Sdaubler_display(&pxs);
+	e = Sdaubler_display(&pxs);
+	printf("\nsdaubler error status: 0x%x\n\n", e);
+	if (e) return e;
 
 	return 0;
 }
