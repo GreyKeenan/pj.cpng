@@ -7,7 +7,7 @@
 
 void sdaubler_loop(void);
 
-int Sdaubler_display(iPixelSequence *ps) {
+int Sdaubler_display(Sdaubler_iImageTrain *imt) {
 
 	int e = 0;
 
@@ -21,7 +21,7 @@ int Sdaubler_display(iPixelSequence *ps) {
 	// convert image
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-	e = Sdaubler_convert(ps, &surface);
+	e = Sdaubler_convert(imt, &surface);
 	if (e) return e;
 
 	/*

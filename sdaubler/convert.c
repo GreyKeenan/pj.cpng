@@ -2,7 +2,7 @@
 #include "./error.h"
 
 
-int Sdaubler_convert(iPixelSequence *pxs, SDL_Surface *destination) {
+int Sdaubler_convert(Sdaubler_iImageTrain *imt, SDL_Surface *destination) {
 	SDL_Surface *surface = NULL;
 
 	surface = SDL_CreateRGBSurface(

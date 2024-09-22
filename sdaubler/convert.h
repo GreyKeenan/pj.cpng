@@ -3,8 +3,8 @@
 
 #include "SDL2/SDL.h"
 
-#include "iPixelSequence/iPixelSequence_forw.h"
+#include "./iImageTrain_forw.h"
 
-int Sdaubler_convert(iPixelSequence *pxs, SDL_Surface *destination);
+int Sdaubler_convert(Sdaubler_iImageTrain *imt, SDL_Surface *destination);
 
 #endif
