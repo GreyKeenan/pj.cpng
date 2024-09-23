@@ -203,7 +203,7 @@ Zlib
 			when compression method == 8:
 				is log2(lz77_window_size - 8)
 				CANNOT be > 7
-	1B FLG flags
+	 FLG flags
 		5b validation value
 			ensures that these 2 bytes, as a 16bit uint, MSB being CMF, is divisible by 31 (x % 31 = 0)
 		1b FDICT = 0 (for PNGs)
@@ -243,9 +243,200 @@ consists of a series of blocks:
 uncompressed
 ==================================================
 
-(LSB first:)
+(LSB to MSB)
+
+* uncompressed data always starts byte-aligned
 
 2B length
 2B 1s complement of length, for validataion
 
 [length]B raw bytes of data
+
+
+fixed
+==================================================
+
+(n) fixedTreeCodes
+1 fixedTreeCode 256 "end of block"
+
+
+dynamic
+==================================================
+
+5b num_literal_codeLengths
+5b num_distance_codeLengths
+4b num_meta_codeLengths
+
+(num_meta_codelengths + 4) * 3 bits
+	int3s corresponding to metaTree codeLengths
+	given in metaTree's special sorted order
+num_literal_codeLengths + 257 metaTreeCodes
+num_distance_codeLengths + 1 distanceTreeCodes
+
+(n) dynamicTreeCodes
+1 dynamicTreeCode 256 "end of block"
+
+
+Tree Representation Options
+==================================================
+
+defining the trees
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+fixed tree:
+	tree created for the fixed-huffman-codes compression method
+
+~~fixed-distance tree:~~
+	unnecessary because fixed distance codes are just 5-bit ints
+
+
+meta tree:
+	tree created to decode the sequence of codeLengths which define the dynamic tree
+
+dynamic tree:
+	tree created to decode data in dynamic-huffman-codes compression method
+
+distance tree:
+	tree to decode distance codes in dynamic-huffman-codes compression method
+
+
+tree rules
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+fixed tree
+--------------------------------------------------
+codeLength_min = 7
+codeLength_max = 9
+num_unique_values = 288 // 0 through 287
+
+fixed tree has, well, fixed structure
+take from the DEFLATE specification:
+	Lit Value          Bits        Codes
+	---------          ----        -----
+	  0 through 143     8          00110000 through 10111111
+	144 through 255     9          110010000 through 111111111
+	256 through 279     7          0000000 through 0010111
+	280 through 287     8          11000000 through 11000111
+
+
+meta tree
+--------------------------------------------------
+codeLength_min = 1
+codeLength_max = 7 // meta codeLengths are given as int3s
+num_unique_values = 19 // 0 through 18
+
+values are sorted in this order:
+	16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
+	
+	this is relevant for deciphering the codes when decoding, AND for !{something else I cant remember}!
+
+dynamic tree
+--------------------------------------------------
+codeLength_min = 1
+codeLength_max = 15 // higher codes cannot be represented in the meta tree
+num_unique_values = 288 // 0 through 287
+
+
+distance tree
+--------------------------------------------------
+codeLength_min = 1
+codeLength_max = 15 // capped for same reason as dynamic tree
+num_unique_values = 30 // 0 through 29
+
+
+representations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+these are some general ways to represent the trees in memory/code
+this doesnt include combinations of these methods
+im sure there are more yk
+
+it comes down to prioritizing performance vs memory footprint
+	considering the images themselves end up being loaded into memory, uncompressed ...
+
+
+num_unique_codeLengths = codeLength_max - codeLength_min + 1
+
+
+instant
+--------------------------------------------------
+
+lookup: O(1)
+
+entries: 2^(codeLength_max)
+entry bits:
+	ceilLog2(num_unique_values) + ceilLog2(num_unique_codeLengths)
+
+- fixedTree:	512entries * (9 + 2)
+- metaTree:	128entries * (5 + 3)
+- dynamicTree:	32k * (9 + 4)
+- distanceTree:	32k * (5 + 4)
+
+entries are stored so that a (codeLength_max)-int-index can directly locate the corresponding entry.
+	detailed here: [https://www.infinitepartitions.com/art001.html]
+
+Honestly, is probably worth it to go this route since the images will be loaded into memory uncompressed anyways.
+I mean, the difference between O(1) and anything else is infinite.
+But, the way that the codes overdraw bits to get the indexes complicates everything a bit.
+	I'm going to start off by trying some of the other methods, but maybe return to this later.
+
+
+unbalanced binary tree
+--------------------------------------------------
+
+lookup: O(log n)
+
+entries: num_unique_values - 1
+entry bits:
+	(ceilLog2(num_unique_values) + 2) * 2
+	OR
+	(ceilLog2(num_unique_values + 1) + 1) * 2
+
+- fixedTree:	287entries *  ( 11 or 10 ) * 2		5740b -> 718B	|or	861B
+- metaTree:	18entries *  ( 7 or 6 ) * 2		 216b -> 27B	|or	36B
+- dynamicTree:	287entries *  ( 11 or 10 ) * 2		5740b -> 718B	|or	861B
+- distanceTree:	29entries * ( 7 or 6 ) * 2		 348b -> 44B	|or	58B
+
+entries are stored as nodes in a binary tree. their L/R values can be NULL, VALUE, or NODEIDX
+	one method encodes NULL as a unique L/R value, other encodes NULL as a separate bit
+
+
+linear per code
+--------------------------------------------------
+
+lookup: O(n) each code
+
+entries: num_unique_values
+entry bits:
+	ceilLog2(num_unique_values) + ceilLog2(num_unique_codeLengths)
+
+- fixedTree:	288entries * (9 + 2)		3168b -> 396B
+- metaTree:	19 * (5 + 3)			 152b -> 19B
+- dynamicTree:	288entries * (9 + 4)		3744b -> 48B
+- distanceTree:	30 * (5 + 4)			 270b -> 34B
+
+entries are sorted based on their codelengths, so only have to go through the list once per code
+
+
+linear per bit
+--------------------------------------------------
+
+lookup: O(n) each bit of a code
+
+entries: num_unique_values
+entry bits:
+	ceilLog2(num_unique_codeLengths)
+
+- fixedTree:	288entries * 2 		464b -> 58B
+- metaTree:	19 * 3			 42b -> 6B
+- dynamicTree:	288entries * 4		928b -> 116B
+- distanceTree:	30 * 4			120b -> 15B
+
+entries are sorted where their index == their corresponding value. Saves space but have to scan entire list each bit of a code.
+
+
+honourable mentions
+--------------------------------------------------
+
+balanced binary tree
+	basically as much space as instant, but 0(n). Totally wasnt one of the first things I thought of.
