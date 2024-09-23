@@ -20,13 +20,17 @@ enum mike_decompress_State_Ids {
 	, BLOCKHEADER
 	
 	, UNCOMPRESSED
+	, FIXED
+	, DYNAMIC
 
+	/*
 	, DECODINGSTATIC
 
 	, BUILDINGMETATREE
 	, BUILDINGMAINTREE
 	, BUILDINGDISTANCETREE
 	, DECODINGDYNAMIC
+	*/
 
 	, END
 };
@@ -42,6 +46,9 @@ int mike_decompress_doUncompressed(mike_Decompress_State *state, uint8_t byte);
 int mike_decompress_doAdler32(mike_Decompress_State *state, uint8_t byte);
 
 int mike_decompress_doBlockHeader(mike_Decompress_State *state, bool bit);
+
+int mike_decompress_doFixed(mike_Decompress_State *state, bool bit);
+int mike_decompress_doDynamic(mike_Decompress_State *state, bool bit);
 
 
 int mike_Decompress_step(mike_Decompress_State *state, uint8_t byte) { //do I need to return a bits-of-byte-read for the final thing?
