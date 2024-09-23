@@ -1,0 +1,6 @@
+#ifndef MIKE_DECOMPRESS_HUFFMEN_iTREE_FORW_H
+#define MIKE_DECOMPRESS_HUFFMEN_iTREE_FORW_H
+
+typedef struct Mike_Decompress_Huffmen_iTree Mike_Decompress_Huffmen_iTree;
+
+#endif
