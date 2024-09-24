@@ -388,14 +388,26 @@ lookup: O(log n)
 
 entries: num_unique_values - 1
 entry bits:
-	(ceilLog2(num_unique_values) + 2) * 2
+	~~{
+	ceilLog2(num_unique_values) + 2) * 2
 	OR
 	(ceilLog2(num_unique_values + 1) + 1) * 2
+	}~~
 
+	(ceilLog2(num_unique_values) + 1) * 2
+		prev was thinking that needed to represent 1 more value as NULL. NULL can be ROOT though.
+
+~~{
 - fixedTree:	287entries *  ( 11 or 10 ) * 2		5740b -> 718B	|or	861B
 - metaTree:	18entries *  ( 7 or 6 ) * 2		 216b -> 27B	|or	36B
 - dynamicTree:	287entries *  ( 11 or 10 ) * 2		5740b -> 718B	|or	861B
 - distanceTree:	29entries * ( 7 or 6 ) * 2		 348b -> 44B	|or	58B
+}~~
+
+- fixedTree:	287entries * 10 * 2		5740b -> 718B	|or	861B
+- metaTree:	18entries * 6 * 2		 216b -> 27B	|or	36B
+- dynamicTree:	287entries * 10 * 2		5740b -> 718B	|or	861B
+- distanceTree:	29entries * 6 * 2		 348b -> 44B	|or	58B
 
 entries are stored as nodes in a binary tree. their L/R values can be NULL, VALUE, or NODEIDX
 	one method encodes NULL as a unique L/R value, other encodes NULL as a separate bit
