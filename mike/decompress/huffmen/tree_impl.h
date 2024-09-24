@@ -16,9 +16,13 @@ struct Mike_Decompress_Huffmen_Tree {
 	node bit layout
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-	[leading high-bit zeroes][childBitLength-bit rightChild][1-bit rightChildType][childBitLength-bit leftchild][1-bit leftChildType]
+	[leading high-bits for padding][childBitLength-bit rightChild][1-bit rightChildType][childBitLength-bit leftchild][1-bit leftChildType]
 
 	expected to load the bytes into an uint32 & bitshift/mask to get out values
+
+	bytes are in LSB-first order
+
+	leading high-bits may or may not be 0s
 
 	NULL value consists of a type of NODE + a value of ROOT
 		since nothing points back to the ROOT

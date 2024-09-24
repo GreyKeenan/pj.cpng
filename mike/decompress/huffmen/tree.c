@@ -113,8 +113,7 @@ static inline int mike_decompress_huffmen_tree_readEntireNode(const struct Mike_
 	}
 
 	uint32_t n = 0;
-	uint8_t *nodeData = self->data + node * self->nodeBytes;
-
+	uint8_t *nodeData = self->data + (uint32_t)node * self->nodeBytes;
 	for (int i = 0; i < self->nodeBytes; ++i) {
 		n = (n << 8) | nodeData[i];
 	}
@@ -130,12 +129,9 @@ static inline int mike_decompress_huffmen_tree_setEntireNode(struct Mike_Decompr
 		return Mike_Decompress_Huffmen_Tree_OUTOFBOUNDS;
 	}
 
-	uint8_t *nodeData = self->data + nodeIndex * self->nodeBytes;
-	nodeData += self->nodeBytes - 1; //point to last byte aka LSB of nodeData
-
+	uint8_t *nodeData = self->data + (uint32_t)nodeIndex * self->nodeBytes;
 	for (int i = 0; i < self->nodeBytes; ++i) {
-		*nodeData = (node >> (i * 8)) & 0xff;
-		nodeData--;
+		nodeData[i] = (node >> (i * 8)) & 0xff;
 	}
 
 	return 0;
