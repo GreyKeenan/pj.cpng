@@ -9,11 +9,17 @@
 static inline int mike_decompress_huffmen_tree_readEntireNode(const struct Mike_Decompress_Huffmen_Tree *self, uint16_t node, uint32_t *destination);
 static inline int mike_decompress_huffmen_tree_setEntireNode(struct Mike_Decompress_Huffmen_Tree *self, uint16_t nodeIndex, uint32_t node);
 
+/*
 static inline uint16_t mike_decompress_huffmen_tree_shiftOutLeft(const struct Mike_Decompress_Huffmen_Tree *self, uint32_t entireNode) {
 	return (entireNode >> (self->childBitLength + 1)) & ((1 >> (self->childBitLength + 1)) - 1);
 }
 static inline uint16_t mike_decompress_huffmen_tree_shiftOutRight(const struct Mike_Decompress_Huffmen_Tree *self, uint32_t entireNode) {
 	return entireNode & ((1 >> (self->childBitLength + 1)) - 1);
+}
+*/
+
+static inline uint16_t mike_decompress_huffmen_tree_shiftOut(uint16_t node, _Bool handedness, uint8_t bitLength) {
+	return (node >> ((bitLength + 1) * handedness)) & ((1 >> bitLength + 1) - 1);
 }
 
 
@@ -65,8 +71,8 @@ int Mike_Decompress_Huffmen_Tree_walk(const struct Mike_Decompress_Huffmen_Tree 
 	e = mike_decompress_huffmen_tree_readEntireNode(self, fromNode, &entire_fromNode);
 	if (e) return e;
 
+	/*
 	uint16_t child = 0;
-
 	switch (handedness) {
 		case 0:
 			child = mike_decompress_huffmen_tree_shiftOutLeft(self, entire_fromNode);
@@ -75,6 +81,8 @@ int Mike_Decompress_Huffmen_Tree_walk(const struct Mike_Decompress_Huffmen_Tree 
 			child = mike_decompress_huffmen_tree_shiftOutRight(self, entire_fromNode);
 			break;
 	}
+	*/
+	uint16_t child = mike_decompress_huffmen_tree_shiftOut(entire_fromNode, handedness, self->childBitLength);
 
 	_Bool type_isValue = child & 1;
 	child = child >> 1;
@@ -123,7 +131,7 @@ static inline int mike_decompress_huffmen_tree_setEntireNode(struct Mike_Decompr
 	}
 
 	uint8_t *nodeData = self->data + nodeIndex * self->nodeBytes;
-	nodeData += self->nodeBytes - 1; //point at last byte aka LSB
+	nodeData += self->nodeBytes - 1; //point to last byte aka LSB of nodeData
 
 	for (int i = 0; i < self->nodeBytes; ++i) {
 		*nodeData = (node >> (i * 8)) & 0xff;
