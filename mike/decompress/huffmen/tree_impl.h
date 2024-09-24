@@ -33,9 +33,8 @@ struct Mike_Decompress_Huffmen_Tree {
 
 		external node indexes passed around by funcs index by nodeCount, not by actual bytes in arr
 	*/
-	uint16_t cap;
-		// byteLength of array at *data, regardless of how many nodes are in it
 
+	uint16_t maxNodeCount;
 	uint16_t nodeCount;
 	/*
 		num of nodes

@@ -3,22 +3,26 @@
 
 #include <stdint.h>
 
-int Mike_Decompress_Huffmen_Tree_init(struct Mike_Decompress_Huffmen_Tree *self, uint8_t *data, uint16_t cap, uint16_t nodeCount, uint8_t nodeBytes, uint8_t childBitLength);
+struct Mike_Decompress_Huffmen_Tree;
+
+
+int Mike_Decompress_Huffmen_Tree_init(struct Mike_Decompress_Huffmen_Tree *self, uint8_t *data, uint16_t cap, uint16_t uniqueValueCount, uint8_t nodeBytes, uint8_t childBitLength);
 /*
 	validates values
-	initializes ROOT node
+		see definition for details
+	initializes ROOT node w/ NULL children
 
 	returns 0 on success
-		failed validation error values TBD
+		see definition implementation for validation error return vals
 */
 
-#define Mike_Decompress_Huffmen_Tree_BADVALUE -5
-#define Mike_Decompress_Huffmen_Tree_TOOMANYKIDS -4
-#define Mike_Decompress_Huffmen_Tree_HALT -3
-#define Mike_Decompress_Huffmen_Tree_OUTOFBOUNDS -2
-#define Mike_Decompress_Huffmen_Tree_COLLISION -1
-#define Mike_Decompress_Huffmen_Tree_ISNODE 1
 #define Mike_Decompress_Huffmen_Tree_ISLEAF 2
+#define Mike_Decompress_Huffmen_Tree_ISNODE 1
+#define Mike_Decompress_Huffmen_Tree_COLLISION -1
+#define Mike_Decompress_Huffmen_Tree_OUTOFBOUNDS -2
+#define Mike_Decompress_Huffmen_Tree_HALT -3
+#define Mike_Decompress_Huffmen_Tree_TOOMANYKIDS -3
+#define Mike_Decompress_Huffmen_Tree_BADVALUE -3
 
 int Mike_Decompress_Huffmen_Tree_walk(const struct Mike_Decompress_Huffmen_Tree *self, uint16_t fromNode, _Bool handedness, uint16_t *destination);
 /*
@@ -44,7 +48,7 @@ int Mike_Decompress_Huffmen_Tree_birthChild(struct Mike_Decompress_Huffmen_Tree 
 		TOOMANYKIDS if theres no more space in array for another node
 */
 
-int Mike_Decompress_Huffmen_Tree_setChild(struct Mike_Decompress_Huffmen_Tree *self, uint16_t fromNode, _Bool handedness, uint16_t value);
+int Mike_Decompress_Huffmen_Tree_setLeafChild(struct Mike_Decompress_Huffmen_Tree *self, uint16_t fromNode, _Bool handedness, uint16_t value);
 /*
 	sets child of fromNode as leaf w/ value
 	returns 0 on success
