@@ -16,7 +16,7 @@ struct Mike_Decompress_Huffmen_Tree {
 	node bit layout
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-	[leading high-bit zeroes][1-bit leftChildType][childBitLength-bit leftchild][1-bit rightChildType][childBitLength-bit rightChild]
+	[leading high-bit zeroes][childBitLength-bit leftchild][1-bit leftChildType][childBitLength-bit rightChild][1-bit rightChildType]
 
 	expected to load the bytes into an uint32 & bitshift/mask to get out values
 
