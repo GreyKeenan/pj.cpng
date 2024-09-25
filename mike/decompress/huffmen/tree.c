@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include <math.h>
 
-#define IMPOSSIBLE -100
+#define IMPOSSIBLE Mike_Decompress_Huffmen_Tree_IMPOSSIBLE
 
 
 static inline int mike_decompress_huffmen_tree_getNode32(const struct Mike_Decompress_Huffmen_Tree *self, uint16_t nodeIndex, uint32_t *destination);
@@ -55,7 +55,10 @@ int Mike_Decompress_Huffmen_Tree_init(struct Mike_Decompress_Huffmen_Tree *self,
 		.nodeBytes = nodeBytes,
 		.childBitLength = childBitLength
 	};
-	return mike_decompress_huffmen_tree_setNode32(self, Mike_Decompress_Huffmen_Tree_ROOT, 0);
+	if (mike_decompress_huffmen_tree_setNode32(self, Mike_Decompress_Huffmen_Tree_ROOT, 0)) {
+		return IMPOSSIBLE;
+	}
+	return 0;
 }
 
 // main functionality

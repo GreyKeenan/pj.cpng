@@ -10,23 +10,29 @@ int Mike_Decompress_Huffmen_Tree_init(struct Mike_Decompress_Huffmen_Tree *self,
 /*
 	validates values
 		see definition for details
-	initializes ROOT node w/ NULL children
+
+	initializes ROOT node w/ NULL children values
 
 	returns 0 on success
-		see definition implementation for validation error return vals
+		returns various non-macroed vals for validation failures
+		returns 
 */
 
 #define Mike_Decompress_Huffmen_Tree_ISLEAF 2
 #define Mike_Decompress_Huffmen_Tree_ISNODE 1
-#define Mike_Decompress_Huffmen_Tree_COLLISION -1
-#define Mike_Decompress_Huffmen_Tree_OUTOFBOUNDS -2
-#define Mike_Decompress_Huffmen_Tree_HALT -3
+
+#define Mike_Decompress_Huffmen_Tree_OUTOFBOUNDS -1
+#define Mike_Decompress_Huffmen_Tree_HALT -2
+#define Mike_Decompress_Huffmen_Tree_COLLISION -2
 #define Mike_Decompress_Huffmen_Tree_TOOMANYKIDS -3
 #define Mike_Decompress_Huffmen_Tree_BADVALUE -3
 
-int Mike_Decompress_Huffmen_Tree_walk(const struct Mike_Decompress_Huffmen_Tree *self, uint16_t fromNode, _Bool handedness, uint16_t *destination);
+#define Mike_Decompress_Huffmen_Tree_IMPOSSIBLE -100
+	//returned when an error occurs where it shouldnt be possible
+
+int Mike_Decompress_Huffmen_Tree_walk(const struct Mike_Decompress_Huffmen_Tree *self, uint16_t parentIndex, _Bool lr, uint16_t *destination);
 /*
-	gets the node/value of the child of fromNode
+	gets the node/value of the child of parent node
 	returns:
 		ISNODE if child is a node
 			&& gives child index to *destination
@@ -34,29 +40,25 @@ int Mike_Decompress_Huffmen_Tree_walk(const struct Mike_Decompress_Huffmen_Tree 
 			&& gives value to *destination
 
 		OUTOFBOUNDS if fromNode is out of range
-			out of range defined as past nodeCount, even if within cap
 		HALT if child is null index (root)
 */
 
-int Mike_Decompress_Huffmen_Tree_birthChild(struct Mike_Decompress_Huffmen_Tree *self, uint16_t *fromNode, _Bool handedness);
+int Mike_Decompress_Huffmen_Tree_birthNode(struct Mike_Decompress_Huffmen_Tree *self, uint16_t parentIndex, _Bool lr, uint16_t *newborn);
 /*
-	creates new node as child of fromNode
-	returns 0 on success & gives child index to *fromNode
-		OUTOFBOUNDS if fromNode is out of range
-			out of range defined as past nodeCount, even if within cap
-		COLLISION if child value being set is not null
+	creates new node as child of parent node
+	returns 0 on success & gives newborn index to *newborn
+		OUTOFBOUNDS if parentIndex is out of range
+		COLLISION if attempting to set a child value that is not null
 		TOOMANYKIDS if theres no more space in array for another node
 */
 
-int Mike_Decompress_Huffmen_Tree_setLeafChild(struct Mike_Decompress_Huffmen_Tree *self, uint16_t fromNode, _Bool handedness, uint16_t value);
+int Mike_Decompress_Huffmen_Tree_growLeaf(struct Mike_Decompress_Huffmen_Tree *self, uint16_t parentIndex, _Bool lr, uint16_t value);
 /*
-	sets child of fromNode as leaf w/ value
+	sets child value of parent node as a LEAF
 	returns 0 on success
-		OUTOFBOUNDS if fromNode is out of range
-			out of range defined as past nodeCount, even if within cap
-		COLLISION if child value being set is not null
-		BADVALUE if value is invalid
-			invalid defined here as: value > 2^self.childBitLength - 1
+		OUTOFBOUNDS if parentIndex is out of range
+		COLLISION if attempting to set a child value that is not null
+		BADVALUE if value is invalid / too large to fit within childBitLength
 */
 
 #endif
