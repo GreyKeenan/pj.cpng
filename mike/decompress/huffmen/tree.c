@@ -143,7 +143,7 @@ static inline int mike_decompress_huffmen_tree_getNode32(const struct Mike_Decom
 	uint32_t n = 0;
 	uint8_t *nodeData = self->data + (uint32_t)nodeIndex * self->nodeBytes;
 	for (int i = 0; i < self->nodeBytes; ++i) {
-		n |= (uint32_t)nodeData[i] << i;
+		n |= (uint32_t)nodeData[i] << i * 8;
 	}
 
 	*destination = n;
