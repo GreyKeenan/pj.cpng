@@ -13,13 +13,11 @@ int main() {
 
 	struct Mike_Decompress_Huffmen_Tree tree = {0};
 
-	#define CAP 1000
+	#define CAP 3 * 287
 	uint8_t data[CAP];
 
-	e = Mike_Decompress_Huffmen_Tree_init(&tree, data, CAP, 287, 3, 9);
-	if (e) {
-		printf("error: %d\n", e);
-	}
+	e = Mike_Decompress_Huffmen_Tree_init(&tree, data, CAP, 288);
+	printf("%d\n", e);
 
 	printTree(tree);
 

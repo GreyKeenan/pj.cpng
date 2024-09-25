@@ -22,35 +22,30 @@ static inline void mike_decompress_huffmen_tree_Node32_shiftIn(uint32_t *node, _
 */
 
 
-int Mike_Decompress_Huffmen_Tree_init(struct Mike_Decompress_Huffmen_Tree *self, uint8_t *data, uint16_t cap, uint16_t uniqueValueCount, uint8_t nodeBytes, uint8_t childBitLength) {
-
-	uint16_t maxNodeCount = uniqueValueCount - 1;
-	if (!uniqueValueCount) {
-		return 7;
-	}
-	if (uniqueValueCount >> childBitLength) {
-		return 6;
-	}
-
+int Mike_Decompress_Huffmen_Tree_init(struct Mike_Decompress_Huffmen_Tree *self, uint8_t *data, uint16_t cap, uint16_t maxLeaves) {
 	if (data == NULL) {
 		return 1;
 	}
-	if (!maxNodeCount || !nodeBytes || !childBitLength) {
+	if (maxLeaves < 2) {
 		return 2;
 	}
+
+	uint16_t maxNodes = maxLeaves - 1;
+
+	uint8_t childBitLength = ceil(log2(maxLeaves));
+	uint8_t nodeBytes = ceil(((childBitLength + 1) * 2) /(float) 8);
+	
 	if (nodeBytes > 4) {
 		return 3;
 	}
-	if (ceil((childBitLength * 2 + 2) /(float) 8) > nodeBytes) {
+	if ((uint32_t)maxNodes * nodeBytes > cap) {
 		return 4;
 	}
-	if (cap < maxNodeCount * nodeBytes) {
-		return 5;
-	}
+
 
 	*self = (struct Mike_Decompress_Huffmen_Tree) {
 		.data = data,
-		.maxNodeCount = maxNodeCount,
+		.maxNodeCount = maxNodes,
 		.nodeCount = 1,
 		.nodeBytes = nodeBytes,
 		.childBitLength = childBitLength
@@ -60,6 +55,7 @@ int Mike_Decompress_Huffmen_Tree_init(struct Mike_Decompress_Huffmen_Tree *self,
 	}
 	return 0;
 }
+
 
 // main functionality
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -6,16 +6,26 @@
 struct Mike_Decompress_Huffmen_Tree;
 
 
-int Mike_Decompress_Huffmen_Tree_init(struct Mike_Decompress_Huffmen_Tree *self, uint8_t *data, uint16_t cap, uint16_t uniqueValueCount, uint8_t nodeBytes, uint8_t childBitLength);
+int Mike_Decompress_Huffmen_Tree_init(struct Mike_Decompress_Huffmen_Tree *self, uint8_t *data, uint16_t cap, uint16_t maxLeaves);
 /*
-	validates values
-		see definition for details
+	data: ptr to an amt of memory which will fit the tree
+	cap: length of data's memory in bytes
+	maxLeaves: the maximum number of leaves the tree can support / how many codes there will be if its a properly constructed huffman tree
 
-	initializes ROOT node w/ NULL children values
+	calculates
+		maxNodes
+		childBitLength
+		nodeBytes
+	validates that tree will fit within cap
+
+	initializes the ROOT of the tree as NULL so is ready to birthNode/growLeaf
 
 	returns 0 on success
-		returns various non-macroed vals for validation failures
-		returns 
+		see definition for validation failure return values
+
+	TODO
+		a little weird because, in order to create the memory, you need maxNodes & nodeBytes values anyways.
+		makes sense for the specific use case here, but in theory a measure(maxLeaves) function (or just allocating memory for within the struct) would probably be more effective
 */
 
 #define Mike_Decompress_Huffmen_Tree_ISLEAF 2
