@@ -11,7 +11,7 @@
 static inline int mike_decompress_huffmen_tree_getNode32(const struct Mike_Decompress_Huffmen_Tree *self, uint16_t nodeIndex, uint32_t *destination);
 static inline int mike_decompress_huffmen_tree_setNode32(struct Mike_Decompress_Huffmen_Tree *self, uint16_t nodeIndex, uint32_t node32);
 
-static inline uint16_t mike_decompress_huffmen_tree_Node32_shiftOut(uint32_t node, _Bool lr, uint8_t childBitLength)
+static inline uint16_t mike_decompress_huffmen_tree_Node32_shiftOut(uint32_t node, _Bool lr, uint8_t childBitLength);
 /*
 	returns the value & type of lr child in the form:
 		[0 high-bits][childBitLength bits value][1-bit type]
@@ -55,7 +55,7 @@ int Mike_Decompress_Huffmen_Tree_init(struct Mike_Decompress_Huffmen_Tree *self,
 		.nodeBytes = nodeBytes,
 		.childBitLength = childBitLength
 	};
-	return mike_decompress_huffmen_setEntireNode(self, Mike_Decompress_Huffmen_Tree_ROOT, 0);
+	return mike_decompress_huffmen_tree_setNode32(self, Mike_Decompress_Huffmen_Tree_ROOT, 0);
 }
 
 // main functionality
@@ -67,7 +67,7 @@ int Mike_Decompress_Huffmen_Tree_walk(const struct Mike_Decompress_Huffmen_Tree 
 	e = mike_decompress_huffmen_tree_getNode32(self, parentIndex, &parent32);
 	if (e) return e;
 
-	uint16_t child = mike_decompess_huffmen_tree_Node32_shiftOut(parent32, lr, self->childBitLength);
+	uint16_t child = mike_decompress_huffmen_tree_Node32_shiftOut(parent32, lr, self->childBitLength);
 	if (!child) {
 		return Mike_Decompress_Huffmen_Tree_HALT;
 	}
@@ -77,12 +77,56 @@ int Mike_Decompress_Huffmen_Tree_walk(const struct Mike_Decompress_Huffmen_Tree 
 	return type_isLeaf ? Mike_Decompress_Huffmen_Tree_ISLEAF : Mike_Decompress_Huffmen_Tree_ISNODE;
 }
 
-int Mike_Decompress_Huffmen_Tree_birthNode(struct Mike_Decompress_Huffmen_Tree *self, uint16_t parentIndex, _Bool lr, uint16_t *destination) {
-	return IMPOSSIBLE;
-}
+int Mike_Decompress_Huffmen_Tree_birthNode(struct Mike_Decompress_Huffmen_Tree *self, uint16_t parentIndex, _Bool lr, uint16_t *newborn) {
 
+	if (self->nodeCount >= self->maxNodeCount) {
+		return Mike_Decompress_Huffmen_Tree_TOOMANYKIDS;
+	}
+
+	int e = 0;
+	uint32_t parent32 = 0;
+	e = mike_decompress_huffmen_tree_getNode32(self, parentIndex, &parent32);
+	if (e) return e;
+
+	uint16_t child = mike_decompress_huffmen_tree_Node32_shiftOut(parent32, lr, self->childBitLength);
+	if (child) {
+		return Mike_Decompress_Huffmen_Tree_COLLISION;
+	}
+
+	uint16_t newbornIndex = self->nodeCount;
+	self->nodeCount++;
+
+	e = mike_decompress_huffmen_tree_setNode32(self, newbornIndex, 0);
+	if (e) return IMPOSSIBLE;
+	
+	mike_decompress_huffmen_tree_Node32_shiftIn(&parent32, lr, newbornIndex, Mike_Decompress_Huffmen_Tree_TYPE_NODE, self->childBitLength);
+	e = mike_decompress_huffmen_tree_setNode32(self, parentIndex, parent32);
+	if (e) return IMPOSSIBLE;
+
+	*newborn = newbornIndex;
+	return 0;
+}
 int Mike_Decompress_Huffmen_Tree_growLeaf(struct Mike_Decompress_Huffmen_Tree *self, uint16_t parentIndex, _Bool lr, uint16_t value) {
-	return IMPOSSIBLE;
+
+	if (value >> self->childBitLength) {
+		return Mike_Decompress_Huffmen_Tree_BADVALUE;
+	}
+
+	int e = 0;
+	uint32_t parent32 = 0;
+	e = mike_decompress_huffmen_tree_getNode32(self, parentIndex, &parent32);
+	if (e) return e;
+
+	uint16_t child = mike_decompress_huffmen_tree_Node32_shiftOut(parent32, lr, self->childBitLength);
+	if (child) {
+		return Mike_Decompress_Huffmen_Tree_COLLISION;
+	}
+
+	mike_decompress_huffmen_tree_Node32_shiftIn(&parent32, lr, value, Mike_Decompress_Huffmen_Tree_TYPE_LEAF, self->childBitLength);
+	e = mike_decompress_huffmen_tree_setNode32(self, parentIndex, parent32);
+	if (e) return e;
+
+	return 0;
 }
 
 // lower
@@ -109,17 +153,17 @@ static inline int mike_decompress_huffmen_tree_setNode32(struct Mike_Decompress_
 
 	uint8_t *nodeData = self->data + (uint32_t)nodeIndex * self->nodeBytes;
 	for (int i = 0; i < self->nodeBytes; ++i) {
-		nodeData[i] = n & 0xff;
-		n >>= 8;
+		nodeData[i] = node32 & 0xff;
+		node32 >>= 8;
 	}
 
 	return 0;
 }
 
 static inline uint16_t mike_decompress_huffmen_tree_Node32_shiftOut(uint32_t node, _Bool lr, uint8_t childBitLength) {
-	return (node >> (childBitLength + 1) * handedness) & ((1 << childBitLength + 1) - 1);
+	return (node >> (childBitLength + 1) * lr) & ((1 << childBitLength + 1) - 1);
 }
-static inline void mike_decompress_huffmen_tree_Node32_shiftIn(uint32_t *node, _Bool lr, uint32_t value, _Bool type, uint8_t childBitLength) {
+static inline void mike_decompress_huffmen_tree_Node32_shiftIn(uint32_t *node, _Bool lr, uint16_t value, _Bool type, uint8_t childBitLength) {
 	*node = (*node & ((1 << childBitLength + 1) - 1 << (childBitLength + 1) * !lr)) | (((uint32_t)value << 1 | type) << (childBitLength + 1) * lr);
 	/*
 		childBitLength++;
