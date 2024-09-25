@@ -5,21 +5,20 @@
 #include <stddef.h>
 #include <math.h>
 
+#define IMPOSSIBLE -255
+
 
 static inline int mike_decompress_huffmen_tree_readEntireNode(const struct Mike_Decompress_Huffmen_Tree *self, uint16_t node, uint32_t *destination);
 static inline int mike_decompress_huffmen_tree_setEntireNode(struct Mike_Decompress_Huffmen_Tree *self, uint16_t nodeIndex, uint32_t node);
 
-/*
-static inline uint16_t mike_decompress_huffmen_tree_shiftOutLeft(const struct Mike_Decompress_Huffmen_Tree *self, uint32_t entireNode) {
-	return (entireNode >> (self->childBitLength + 1)) & ((1 >> (self->childBitLength + 1)) - 1);
-}
-static inline uint16_t mike_decompress_huffmen_tree_shiftOutRight(const struct Mike_Decompress_Huffmen_Tree *self, uint32_t entireNode) {
-	return entireNode & ((1 >> (self->childBitLength + 1)) - 1);
-}
-*/
-
 static inline uint16_t mike_decompress_huffmen_tree_shiftOut(uint16_t node, _Bool handedness, uint8_t bitLength) {
-	return (node >> ((bitLength + 1) * handedness)) & ((1 >> bitLength + 1) - 1);
+	return (node >> ((bitLength + 1) * handedness)) & ((1 << bitLength + 1) - 1);
+}
+static inline uint32_t mike_decompress_huffmen_tree_setChildValue(uint32_t initialNode, _Bool handedness, uint16_t value, uint8_t bitLength) {
+	bitLength++;
+	initialNode &= ((1 << bitLength) - 1) << bitLength * !handedness;
+	initialNode |= value << bitLength * handedness;
+	return initialNode;
 }
 
 
@@ -49,11 +48,6 @@ int Mike_Decompress_Huffmen_Tree_init(struct Mike_Decompress_Huffmen_Tree *self,
 		return 5;
 	}
 
-	//set both ROOT's children as null
-	for (int i = 0; i < nodeBytes; ++i) {
-		data[i] = 0;
-	}
-
 	*self = (struct Mike_Decompress_Huffmen_Tree) {
 		.data = data,
 		.maxNodeCount = maxNodeCount,
@@ -61,7 +55,7 @@ int Mike_Decompress_Huffmen_Tree_init(struct Mike_Decompress_Huffmen_Tree *self,
 		.nodeBytes = nodeBytes,
 		.childBitLength = childBitLength
 	};
-	return 0;
+	return mike_decompress_huffmen_setEntireNode(self, Mike_Decompress_Huffmen_Tree_ROOT, 0);
 }
 
 int Mike_Decompress_Huffmen_Tree_walk(const struct Mike_Decompress_Huffmen_Tree *self, uint16_t fromNode, _Bool handedness, uint16_t *destination) {
@@ -71,17 +65,6 @@ int Mike_Decompress_Huffmen_Tree_walk(const struct Mike_Decompress_Huffmen_Tree 
 	e = mike_decompress_huffmen_tree_readEntireNode(self, fromNode, &entire_fromNode);
 	if (e) return e;
 
-	/*
-	uint16_t child = 0;
-	switch (handedness) {
-		case 0:
-			child = mike_decompress_huffmen_tree_shiftOutLeft(self, entire_fromNode);
-			break;
-		case 1:
-			child = mike_decompress_huffmen_tree_shiftOutRight(self, entire_fromNode);
-			break;
-	}
-	*/
 	uint16_t child = mike_decompress_huffmen_tree_shiftOut(entire_fromNode, handedness, self->childBitLength);
 
 	_Bool type_isValue = child & 1;
@@ -100,10 +83,62 @@ int Mike_Decompress_Huffmen_Tree_walk(const struct Mike_Decompress_Huffmen_Tree 
 	return Mike_Decompress_Huffmen_Tree_ISNODE;
 }
 int Mike_Decompress_Huffmen_Tree_birthChild(struct Mike_Decompress_Huffmen_Tree *self, uint16_t *fromNode, _Bool handedness) {
-	return -10;
+
+	//check for room
+	if (self->nodeCount >= self->maxNodeCount) {
+		return Mike_Decompress_Huffmen_Tree_TOOMANYKIDS;
+	}
+
+	//read fromNode
+	int e = 0;
+	uint32_t entire_fromNode = 0;
+	e = mike_decompress_huffmen_tree_readEntireNode(self, *fromNode, &entire_fromNode);
+	if (e) return e;
+
+	//get relevant child of fromNode & check if null
+	uint16_t child = mike_decompress_huffmen_tree_shiftOut(entire_fromNode, handednes, self->childBitLength);
+	if (child) {
+		return Mike_Decompress_Huffmen_Tree_COLLISION;
+	}
+	child >>= 1;
+
+	//create a new node at the end of the array of data
+	self->nodeCount++;
+	e = huffmen_tree_setEntireNode(self, self->nodeCount - 1, 0);
+	if (e) return IMPOSSIBLE;
+
+	//set fromNode's child value to the index of the new node
+	uint16_t value = self->nodeCount - 1 << 1;
+	entire_fromNode = mike_decompress_huffmen_tree_setChildValue(entire_fromNode, handedness, value, self->childBitLength);
+	e = mike_decompress_huffmen_tree_setEntireNode(self, *fromNode, entire_fromNode);
+	if (e) return IMPOSSIBLE;
+
+	//give the index of the new node back
+	*fromNode = self->nodeCount - 1;
+	return 0;
 }
 int Mike_Decompress_Huffmen_Tree_setLeafChild(struct Mike_Decompress_Huffmen_Tree *self, uint16_t fromNode, _Bool handedness, uint16_t value) {
-	return -10;
+
+	//read fromNode
+	int e = 0;
+	uint32_t entire_fromNode = 0;
+	e = mike_decompress_huffmen_tree_readEntireNode(self, fromNode, &entire_fromNode);
+	if (e) return e;
+
+	//get relevant child of fromNode & check if null
+	uint16_t child = mike_decompress_huffmen_tree_shiftOut(entire_fromNode, handednes, self->childBitLength);
+	if (child) {
+		return Mike_Decompress_Huffmen_Tree_COLLISION;
+	}
+	child >>= 1;
+
+	//set fromNode's child value to the new value
+	value = (value << 1) | 1;
+	entire_fromNode = mike_decompress_huffmen_tree_setChildValue(entire_fromNode, handedness, value, self->childBitLength);
+	e = mike_decompress_huffmen_tree_setEntireNode(self, fromNode, entire_fromNode);
+	if (e) return IMPOSSIBLE;
+
+	return 0;
 }
 
 
