@@ -76,7 +76,7 @@ int Mike_Decompress_Huffmen_Tree_walk(const struct Mike_Decompress_Huffmen_Tree 
 	return type_isLeaf ? Mike_Decompress_Huffmen_Tree_ISLEAF : Mike_Decompress_Huffmen_Tree_ISNODE;
 }
 
-int Mike_Decompress_Huffmen_Tree_birthNode(struct Mike_Decompress_Huffmen_Tree *self, uint16_t parentIndex, _Bool lr, uint16_t *newborn) {
+int Mike_Decompress_Huffmen_Tree_birthNode(struct Mike_Decompress_Huffmen_Tree *self, uint16_t parentIndex, _Bool lr, uint16_t *nNewborn) {
 
 	if (self->nodeCount >= self->maxNodeCount) {
 		return Mike_Decompress_Huffmen_Tree_TOOMANYKIDS;
@@ -102,7 +102,9 @@ int Mike_Decompress_Huffmen_Tree_birthNode(struct Mike_Decompress_Huffmen_Tree *
 	e = mike_decompress_huffmen_tree_setNode32(self, parentIndex, parent32);
 	if (e) return IMPOSSIBLE;
 
-	*newborn = newbornIndex;
+	if (nNewborn != NULL) {
+		*nNewborn = newbornIndex;
+	}
 	return 0;
 }
 int Mike_Decompress_Huffmen_Tree_growLeaf(struct Mike_Decompress_Huffmen_Tree *self, uint16_t parentIndex, _Bool lr, uint16_t value) {

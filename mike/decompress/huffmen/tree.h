@@ -53,10 +53,10 @@ int Mike_Decompress_Huffmen_Tree_walk(const struct Mike_Decompress_Huffmen_Tree 
 		HALT if child is null index (root)
 */
 
-int Mike_Decompress_Huffmen_Tree_birthNode(struct Mike_Decompress_Huffmen_Tree *self, uint16_t parentIndex, _Bool lr, uint16_t *newborn);
+int Mike_Decompress_Huffmen_Tree_birthNode(struct Mike_Decompress_Huffmen_Tree *self, uint16_t parentIndex, _Bool lr, uint16_t *nNewborn);
 /*
 	creates new node as child of parent node
-	returns 0 on success & gives newborn index to *newborn
+	returns 0 on success & gives newborn index to *nNewborn
 		OUTOFBOUNDS if parentIndex is out of range
 		COLLISION if attempting to set a child value that is not null
 		TOOMANYKIDS if theres no more space in array for another node

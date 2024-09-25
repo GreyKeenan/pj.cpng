@@ -27,7 +27,7 @@ int main() {
 
 	printTree(tree);
 
-	e = Mike_Decompress_Huffmen_Tree_birthNode(&tree, 0, false, &db);
+	e = Mike_Decompress_Huffmen_Tree_birthNode(&tree, 0, false, NULL);
 	printf("%d\n", e);
 
 	printTree(tree);
