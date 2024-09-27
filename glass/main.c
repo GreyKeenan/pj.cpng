@@ -4,7 +4,9 @@
 #include "./ihdr_impl.h"
 
 #include "./dechunk.h"
-//#include "./defilter.h"
+#include "./defilter.h"
+
+#include "./scanlineImage_impl.h"
 
 
 #include "./expandingWriter.h"
@@ -36,6 +38,12 @@ int Glass_decode(struct iByteTrain *bt, struct Glass_ScanlineImage *destination)
 	struct ExpandingWriter writer = {0};
 
 	struct Puff_iNostalgicWriter nw = {0};
+
+	struct AutophagicSequence aph = {0};
+	struct iByteTrain fBt = {0};
+	struct iByteLayer fBl = {0};
+
+	uint8_t *data = NULL;
 
 	// PNG header
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -78,7 +86,46 @@ int Glass_decode(struct iByteTrain *bt, struct Glass_ScanlineImage *destination)
 		writer.writePosition, writer.cap
 	);
 
+	// defiltering
+	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+	if (writer.nData == NULL) { //shouldnt be possible
+		return Glass_decode_ERROR_IMPOSSIBLE;
+	}
+	data = writer.nData;
+
+	aph = AutophagicSequence_create(data, writer.writePosition, writer.cap);
+	fBt = AutophagicSequence_as_iByteTrain(&aph);
+	fBl = AutophagicSequence_as_iByteLayer(&aph);
+
+	e = Glass_defilter(ihdr, &fBt, &fBl);
+	if (e) goto finalize;
+
+	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+	printf("unfilteredData: length:%d, cap:%d\n", aph.writePosition, aph.cap);
+	printf("\t(overwrote filteredData)\n");
+
+	if (ihdr.interlaceMethod != 0) {
+		printf("TODO ERR: adam7 interlace not supported\n");
+		return Glass_decode_ERROR;
+	}
+	if (ihdr.colorType == 3) {
+		printf("TODO ERR: indexed-color images not supported\n");
+		return Glass_decode_ERROR;
+	}
+
+	// give data
+	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+	*destination = (struct Glass_ScanlineImage) {
+		.width = ihdr.width, .height = ihdr.height,
+		.colorType = ihdr.colorType, .bitDepth = ihdr.bitDepth,
+		.data = data, .length = aph.writePosition
+	};
+	writer.nData = NULL;
+
+	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	finalize:
 	if (writer.nData != NULL) {
