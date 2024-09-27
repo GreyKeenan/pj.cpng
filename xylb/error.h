@@ -1,35 +1,23 @@
-#ifndef MIKE_DECOMPRESS_ERROR_H
-#define MIKE_DECOMPRESS_ERROR_H
+#ifndef XYLB_ERROR_H
+#define XYLB_ERROR_H
 
-#include "mike/error.h"
+#include <limits.h>
 
-enum Mike_Decompress_Error {
-	Mike_Decompress_Error_TYPE = Mike_ERRORTYPE_DECOMPRESS
-	
-	, Mike_Decompress_END
-		// END is returned when the final byte is processed AND when subsequent bytes are fed in.
+enum Xylb_decompress_Error {
+	Xylb_decompress_IMPOSSIBLE = INT_MAX
+	, Xylb_decompress_END = 1
 
-	, Mike_Decompress_ERROR
-	, Mike_Decompress_ERROR_STATE_UNKNOWN
+	, Xylb_decompress_ERROR
 
-	, Mike_Decompress_ERROR_WRITER_WRITE
-	, Mike_Decompress_ERROR_WRITER_NOSTALGIZE
+	, Xylb_decompress_ERROR_HEADERING_BYTESREAD
+	, Xylb_decompress_ERROR_COMPRESSIONMETHOD
+	, Xylb_decompress_ERROR_WINDOWSIZE
+	, Xylb_decompress_ERROR_HASDICT
+	, Xylb_decompress_ERROR_SHIRT
 
-	, Mike_Decompress_ERROR_ZLIBHEADER_OVERREAD
-	, Mike_Decompress_ERROR_ZLIBHEADER_COMPRESSIONMETHOD
-	, Mike_Decompress_ERROR_ZLIBHEADER_WINDOWSIZE
-	, Mike_Decompress_ERROR_ZLIBHEADER_VALIDATION
-	, Mike_Decompress_ERROR_ZLIBHEADER_HASDICT
+	, Xylb_decompress_ERROR_ADLERING_BYTESREAD
+	, Xylb_decompress_ERROR_ADLER32
 
-	, Mike_Decompress_ERROR_BLOCKHEADER_OVERREAD
-	, Mike_Decompress_ERROR_BLOCKHEADER_COMPRESSIONTYPE
-
-	, Mike_Decompress_ERROR_UNCOMPRESSED_LENGTH_OVERREAD
-	, Mike_Decompress_ERROR_UNCOMPRESSED_NLEN
-	, Mike_Decompress_ERROR_UNCOMPRESSED_OVERREAD
-
-	, Mike_Decompress_ERROR_ADLER32_OVERREAD
-	, Mike_Decompress_ERROR_ADLER32_FAILED
 };
 
 #endif
