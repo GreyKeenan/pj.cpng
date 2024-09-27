@@ -5,7 +5,7 @@
 
 #define iByteTrain_ENDOFTHELINE -1
 
-static inline int iByteTrain_chewchew(iByteTrain *self, uint8_t *nDestination) {
+static inline int iByteTrain_chewchew(struct iByteTrain *self, uint8_t *nDestination) {
 	return self->chewchew(self->vself, nDestination);
 }
 
