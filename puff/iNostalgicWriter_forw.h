@@ -1,6 +1,6 @@
-#ifndef MIKE_DECOMPRESS_INOSTALGICWRITER_FORW_H
-#define MIKE_DECOMPRESS_INOSTALGICWRITER_FORW_H
+#ifndef PUFF_INOSTALGICWRITER_FORW_H
+#define PUFF_INOSTALGICWRITER_FORW_H
 
-typedef struct Mike_Decompress_iNostalgicWriter Mike_Decompress_iNostalgicWriter;
+typedef struct Puff_iNostalgicWriter Puff_iNostalgicWriter;
 
 #endif

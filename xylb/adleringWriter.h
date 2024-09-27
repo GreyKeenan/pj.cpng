@@ -8,7 +8,7 @@
 
 struct Xylb_AdleringWriter Xylb_AdleringWriter_new(struct Puff_iNostalgicWriter nostalgicWriter);
 
-static inline uint32_t Xylb_AdleringWriter_getAdler(struct Xylm_AdleringWriter *self) {
+static inline uint32_t Xylb_AdleringWriter_getAdler(struct Xylb_AdleringWriter *self) {
 	return (self->adler.s2 << 16) + self->adler.s1;
 }
 

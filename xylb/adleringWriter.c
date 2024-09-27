@@ -16,7 +16,7 @@ struct Xylb_AdleringWriter Xylb_AdleringWriter_new(struct Puff_iNostalgicWriter 
 int Xylb_AdleringWriter_write(void *vself, uint8_t byte) {
 	struct Xylb_AdleringWriter *self = vself;
 
-	int e = Puff_iNostalgicWriter_write(self->nostalgicWriter, byte);
+	int e = Puff_iNostalgicWriter_write(&self->nostalgicWriter, byte);
 	if (e) return e;
 
 	Xylb_AdleringWriter_doAdler(self, byte);
@@ -24,7 +24,7 @@ int Xylb_AdleringWriter_write(void *vself, uint8_t byte) {
 }
 int Xylb_AdleringWriter_nostalgize(const void *vself, uint8_t *destination, uint32_t distanceBack) {
 	const struct Xylb_AdleringWriter *self = vself;
-	return Puff_iNostalgicWriter_nostalgize(self->nostalgicWriter, destination, distanceBack);
+	return Puff_iNostalgicWriter_nostalgize(&self->nostalgicWriter, destination, distanceBack);
 }
 
 

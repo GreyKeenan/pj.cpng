@@ -1,5 +1,5 @@
-#ifndef XYLB_ADLERINGWRITER_H
-#define XYLB_ADLERINGWRITER_H
+#ifndef XYLB_ADLERINGWRITER_IMPL_H
+#define XYLB_ADLERINGWRITER_IMPL_H
 
 #include "puff/iNostalgicWriter_impl.h"
 

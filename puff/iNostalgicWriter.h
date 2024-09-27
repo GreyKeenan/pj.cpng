@@ -1,12 +1,12 @@
-#ifndef MIKE_DECOMPRESS_INOSTALGICWRITER_H
-#define MIKE_DECOMPRESS_INOSTALGICWRITER_H
+#ifndef PUFF_INOSTALGICWRITER_H
+#define PUFF_INOSTALGICWRITER_H
 
 #include "./iNostalgicWriter_impl.h"
 
-static inline int Mike_Decompress_iNostalgicWriter_write(struct Mike_Decompress_iNostalgicWriter *self, uint8_t byte) {
+static inline int Puff_iNostalgicWriter_write(struct Puff_iNostalgicWriter *self, uint8_t byte) {
 	return self->write(self->vself, byte);
 }
-static inline int Mike_Decompress_iNostalgicWriter_nostalgize(const struct Mike_Decompress_iNostalgicWriter *self, uint8_t *destination, uint32_t distanceBack) {
+static inline int Puff_iNostalgicWriter_nostalgize(const struct Puff_iNostalgicWriter *self, uint8_t *destination, uint32_t distanceBack) {
 	return self->nostalgize(self->vself, destination, distanceBack);
 }
 

@@ -3,6 +3,8 @@
 #include "./error.h"
 #include "./state_impl.h"
 
+#include "./adleringWriter.h"
+
 #define STATE_HEADERING 0
 #define STATE_DEFLATING 1
 #define STATE_ADLERING 2
@@ -77,7 +79,7 @@ static inline int Xylb_decompress_doAdlering(struct Xylb_State *state, uint8_t b
 		return 0;
 	}
 
-	uint32_t a = Xylb_AdleringWriter_getAdler(state->adleringWriter);
+	uint32_t a = Xylb_AdleringWriter_getAdler(&state->adleringWriter);
 	if (state->target != a) {
 		return Xylb_decompress_ERROR_ADLER32;
 	}
