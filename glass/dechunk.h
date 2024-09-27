@@ -1,11 +1,10 @@
 #ifndef GLASS_DECHUNK_H
 #define GLASS_DECHUNK_H
 
-#include "Glass/decompress/iNostalgicWriter_forw.h"
-#include "Glass/ihdr_forw.h"
+struct iByteTrain;
+struct Puff_iNostalgicWriter;
+struct Glass_Ihdr;
 
-#include "utils/iByteTrain_forw.h"
-
-int Glass_Dechunk_go(iByteTrain *bt, Glass_Ihdr *ihdr, Glass_Decompress_iNostalgicWriter *nw);
+int Glass_dechunk(struct iByteTrain *bt, struct Glass_Ihdr *ihdr, struct Puff_iNostalgicWriter nw);
 
 #endif

@@ -5,6 +5,11 @@
 
 #include "./adleringWriter.h"
 
+#include "puff/main.h"
+#include "puff/error.h"
+#include "puff/iNostalgicWriter.h"
+#include "puff/iNostalgicWriter_impl.h"
+
 #define STATE_HEADERING 0
 #define STATE_DEFLATING 1
 #define STATE_ADLERING 2
@@ -83,11 +88,23 @@ static inline int Xylb_decompress_doAdlering(struct Xylb_State *state, uint8_t b
 	if (state->target != a) {
 		return Xylb_decompress_ERROR_ADLER32;
 	}
-	
 
-	return 102;
+	state->id = STATE_END;
+	return Xylb_decompress_END;
 }
 
 static inline int Xylb_decompress_doDeflating(struct Xylb_State *state, uint8_t byte) {
-	return 101;
+
+	int e = Puff_step(&state->puffState, byte);
+	switch (e) {
+		case 0:
+			break;
+		case Puff_step_END:
+			state->id = STATE_ADLERING;
+			break;
+		default:
+			return e + 100; //TODO TEMP
+	}
+
+	return 0;
 }

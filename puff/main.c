@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #include "./main.h"
 
 #include "./error.h"
@@ -107,7 +109,9 @@ static inline int Puff_step_doUncompressed(struct Puff_State *state, uint8_t byt
 			case 3:
 				invertedLength = ((uint16_t)byte << 8) | state->uncompressed_invertedLengthByte0;
 
-				if (~invertedLength != state->uncompressed_length) {
+				//printf("length: 0x%x, invertedLength: 0x%x\n", state->uncompressed_length, invertedLength);
+
+				if ((uint16_t)~invertedLength != state->uncompressed_length) {
 					return Puff_step_ERROR_NLEN;
 				}
 
@@ -120,13 +124,16 @@ static inline int Puff_step_doUncompressed(struct Puff_State *state, uint8_t byt
 		return 0;
 	}
 
-
 	Puff_iNostalgicWriter_write(&state->nostalgicWriter, byte);
 	state->bytesRead++;
+	//printf("bytesRead: %d out of: %d\n", state->bytesRead, state->uncompressed_length);
 	if (state->bytesRead >= state->uncompressed_length) {
+		
+		//printf("finished reading uncommpressed data idiot.\n");
+		
 		if (state->isLastBlock) {
-			state->id = Puff_step_END;
-			return 0;
+			state->id = STATE_END;
+			return Puff_step_END;
 		}
 
 		state->id = STATE_BLOCKHEADER;

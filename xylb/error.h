@@ -4,8 +4,8 @@
 #include <limits.h>
 
 enum Xylb_decompress_Error {
-	Xylb_decompress_IMPOSSIBLE = INT_MAX
-	, Xylb_decompress_END = 1
+	Xylb_decompress_END = 1
+	, Xylb_decompress_IMPOSSIBLE
 
 	, Xylb_decompress_ERROR
 

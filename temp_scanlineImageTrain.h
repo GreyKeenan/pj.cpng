@@ -1,7 +1,7 @@
 //TEMPORARY
 
 struct Imbridge {
-	Mike_ScanlineImage *image;
+	Glass_ScanlineImage *image;
 
 	uint64_t position;
 };

@@ -1,10 +1,9 @@
 #ifndef GLASS_MAIN_H
 #define GLASS_MAIN_H
 
-#include "./scanlineImage_forw.h"
+struct Glass_ScanlineImage;
+struct iByteTrain;
 
-#include "utils/iByteTrain_forw.h"
-
-int Glass_decode(iByteTrain *bt, Glass_ScanlineImage *destination);
+int Glass_decode(struct iByteTrain *bt, struct Glass_ScanlineImage *destination);
 
 #endif

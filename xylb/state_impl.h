@@ -3,11 +3,13 @@
 
 #include "./adleringWriter_impl.h"
 
+#include "puff/state_impl.h"
+
 #include <stdint.h>
 
 struct Xylb_State {
 
-	int8_t id : 2;
+	uint8_t id : 2;
 	uint8_t bytesRead : 3;
 	uint8_t cminfo;
 
@@ -17,6 +19,7 @@ struct Xylb_State {
 
 	struct Xylb_AdleringWriter adleringWriter;
 
+	struct Puff_State puffState;
 
 };
 

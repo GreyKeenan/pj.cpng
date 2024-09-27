@@ -3,6 +3,8 @@
 
 #include "./iNostalgicWriter_impl.h"
 
+#include <stdio.h>
+
 static inline int Puff_iNostalgicWriter_write(struct Puff_iNostalgicWriter *self, uint8_t byte) {
 	return self->write(self->vself, byte);
 }

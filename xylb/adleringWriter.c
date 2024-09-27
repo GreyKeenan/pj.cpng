@@ -1,3 +1,4 @@
+
 #include "./adleringWriter.h"
 
 #include "puff/iNostalgicWriter.h"
@@ -7,6 +8,7 @@ static inline void Xylb_AdleringWriter_doAdler(struct Xylb_AdleringWriter *self,
 
 
 struct Xylb_AdleringWriter Xylb_AdleringWriter_new(struct Puff_iNostalgicWriter nostalgicWriter) {
+
 	return (struct Xylb_AdleringWriter) {
 		.nostalgicWriter = nostalgicWriter,
 		.adler.s1 = 1
