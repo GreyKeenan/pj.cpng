@@ -6,17 +6,9 @@
 #include "utils/iByteTrain_impl.h"
 #include "utils/iByteTrain.h"
 
-#include "mike/mike.h"
-#include "mike/scanlineImage_impl.h"
-#include "mike/scanlineImage_forw.h"
-
-/*
-#include "iPixelSequence/iPixelSequence.h"
-#include "iPixelSequence/iPixelSequence_impl.h"
-#include "iPixelSequence/iPixelSequence_forw.h"
-#include "iPixelSequence/pixel_forw.h"
-#include "iPixelSequence/pixel_impl.h"
-*/
+#include "glass/main.h"
+#include "glass/scanlineImage_impl.h"
+#include "glass/scanlineImage_forw.h"
 
 #include "sdaubler/display.h"
 #include "sdaubler/iImageTrain_impl.h"
@@ -62,7 +54,7 @@ int main(int argc, const char **argv) {
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	struct iByteTrain bt = {0};
 	//FILE *f = FILE_as_iByteTrain("pngs/PNG_transparency_demonstration.png", &bt);
-	FILE *f = FILE_as_iByteTrain("pngs/uncompressed.png", &bt);
+	FILE *f = FILE_as_iByteTrain("assets/uncompressed.png", &bt);
 	if (f == NULL) {
 		printf("cant open file\n");
 		return 1;
@@ -70,10 +62,10 @@ int main(int argc, const char **argv) {
 	
 	// decode
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	struct Mike_ScanlineImage image = {0};
+	struct Glass_ScanlineImage image = {0};
 
-	int e = Mike_decode(&bt, &image);
-	printf("\nmike final error status: 0x%x\n\n", e);
+	int e = Glass_decode(&bt, &image);
+	printf("\nmike final error status: %d\n\n", e);
 	if (e) return e;
 
 	fclose(f);
