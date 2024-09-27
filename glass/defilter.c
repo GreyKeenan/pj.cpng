@@ -3,7 +3,7 @@
 #include "./defilter.h"
 #include "./error.h"
 
-#include "mike/ihdr_impl.h"
+#include "Glass/ihdr_impl.h"
 
 #include "utils/iByteTrain.h"
 #include "utils/iByteLayer.h"
@@ -15,11 +15,11 @@
 
 #define FILTERTYPE_MAX 4
 
-static inline uint8_t mike_defilter_a(uint64_t i, uint8_t bytesPerPixel, uint8_t *scanline);
-static inline uint8_t mike_defilter_c(uint64_t c, uint8_t bytesPerPixel);
-static inline uint8_t mike_defilter_paeth(uint8_t a, uint8_t b, uint8_t c);
+static inline uint8_t Glass_defilter_a(uint64_t i, uint8_t bytesPerPixel, uint8_t *scanline);
+static inline uint8_t Glass_defilter_c(uint64_t c, uint8_t bytesPerPixel);
+static inline uint8_t Glass_defilter_paeth(uint8_t a, uint8_t b, uint8_t c);
 
-int mike_Defilter_go(mike_Ihdr ihdr, iByteTrain *bt, iByteLayer *bl) {
+int Glass_Defilter_go(Glass_Ihdr ihdr, iByteTrain *bt, iByteLayer *bl) {
 
 	int e = 0;
 	uint8_t byte = 0;
@@ -45,7 +45,7 @@ int mike_Defilter_go(mike_Ihdr ihdr, iByteTrain *bt, iByteLayer *bl) {
 			samplesPerPixel = 4;
 			break;
 		default:
-			e = Mike_Defilter_ERROR_COLORTYPE;
+			e = Glass_Defilter_ERROR_COLORTYPE;
 			goto finalize;
 	}
 	uint8_t bitsPerPixel = samplesPerPixel * ihdr.bitDepth;
@@ -65,7 +65,7 @@ int mike_Defilter_go(mike_Ihdr ihdr, iByteTrain *bt, iByteLayer *bl) {
 
 	scanline = malloc(scanlineLength);
 	if (scanline == NULL) {
-		e = Mike_Defilter_ERROR_MALLOC;
+		e = Glass_Defilter_ERROR_MALLOC;
 		goto finalize;
 	}
 	memset(scanline, 0, scanlineLength);
@@ -73,7 +73,7 @@ int mike_Defilter_go(mike_Ihdr ihdr, iByteTrain *bt, iByteLayer *bl) {
 
 	for (uint32_t j = 0; j < ihdr.height; ++j) {
 		if (iByteTrain_chewchew(bt, &filterType)) {
-			e = Mike_Defilter_ERROR_EOTL;
+			e = Glass_Defilter_ERROR_EOTL;
 			goto finalize;
 		}
 		printf("filterType: %x\n", filterType);
@@ -81,30 +81,30 @@ int mike_Defilter_go(mike_Ihdr ihdr, iByteTrain *bt, iByteLayer *bl) {
 		c = 0;
 		for (uint64_t i = 0; i < scanlineLength; ++i) {
 			if (iByteTrain_chewchew(bt, &byte)) {
-				e = Mike_Defilter_ERROR_EOTL;
+				e = Glass_Defilter_ERROR_EOTL;
 				goto finalize;
 			}
 
 			switch (filterType) {
 				case 0: break;
 				case 1:
-					byte += mike_defilter_a(i, bytesPerPixel, scanline);
+					byte += Glass_defilter_a(i, bytesPerPixel, scanline);
 					break;
 				case 2:
 					byte += scanline[i];
 					break;
 				case 3:
-					byte += (mike_defilter_a(i, bytesPerPixel, scanline) + scanline[i]) >> 1;
+					byte += (Glass_defilter_a(i, bytesPerPixel, scanline) + scanline[i]) >> 1;
 					break;
 				case 4:
-					byte += mike_defilter_paeth(
-						mike_defilter_a(i, bytesPerPixel, scanline),
+					byte += Glass_defilter_paeth(
+						Glass_defilter_a(i, bytesPerPixel, scanline),
 						scanline[i],
-						mike_defilter_c(c, bytesPerPixel)
+						Glass_defilter_c(c, bytesPerPixel)
 					);
 					break;
 				default:
-					e = Mike_Defilter_ERROR_FILTERTYPE;
+					e = Glass_Defilter_ERROR_FILTERTYPE;
 					goto finalize;
 			}
 
@@ -126,14 +126,14 @@ int mike_Defilter_go(mike_Ihdr ihdr, iByteTrain *bt, iByteLayer *bl) {
 	return e;
 }
 
-static inline uint8_t mike_defilter_a(uint64_t i, uint8_t bytesPerPixel, uint8_t *scanline) {
+static inline uint8_t Glass_defilter_a(uint64_t i, uint8_t bytesPerPixel, uint8_t *scanline) {
 	if (i < bytesPerPixel) return 0;
 	return scanline[i - bytesPerPixel];
 }
-static inline uint8_t mike_defilter_c(uint64_t c, uint8_t bytesPerPixel) {
+static inline uint8_t Glass_defilter_c(uint64_t c, uint8_t bytesPerPixel) {
 	return (c >> (8 * (bytesPerPixel - 1))) & 0xff;
 }
-static inline uint8_t mike_defilter_paeth(uint8_t a, uint8_t b, uint8_t c) {
+static inline uint8_t Glass_defilter_paeth(uint8_t a, uint8_t b, uint8_t c) {
 	uint16_t p = a + b - c;
 	uint16_t pa = abs(p - a);
 	uint16_t pb = abs(p - b);

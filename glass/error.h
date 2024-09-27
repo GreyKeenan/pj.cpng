@@ -1,75 +1,62 @@
-#ifndef Mike_ERROR_H
-#define Mike_ERROR_H
+#ifndef GLASS_ERROR_H
+#define GLASS_ERROR_H
 
-enum Mike_Error {
-	Mike_ERROR = 1
+enum Glass_Error {
+	Glass_ERROR = 1
 
-	, Mike_ERROR_EOTL
-	, Mike_ERROR_NOTPNG
+	, Glass_ERROR_EOTL
+	, Glass_ERROR_NOTPNG
 
 };
 
-#define Mike_ERRORTYPE_DECHUNK 0x1000
-#define Mike_ERRORTYPE_DECOMPRESS 0x2000
-#define Mike_ERRORTYPE_DEFILTER 0x3000
+#define Glass_ERRORTYPE_DECHUNK 0x1000
+#define Glass_ERRORTYPE_DECOMPRESS 0x2000
+#define Glass_ERRORTYPE_DEFILTER 0x3000
 /*
 	easy way to ensure errors are unique btwn these sections
 	subject to change
 
 */
 
+enum Glass_Dechunk_Error {
+	Glass_Dechunk_Error_TYPE = Glass_ERRORTYPE_DECHUNK
 
-#endif
-#ifndef MIKE_DECHUNK_ERROR_H
-#define MIKE_DECHUNK_ERROR_H
+	, Glass_Dechunk_ERROR
+	, Glass_Dechunk_ERROR_EOTL
+	, Glass_Dechunk_ERROR_INT32
 
-#include "mike/error.h"
+	, Glass_Dechunk_ERROR_IHDR_NOT
+	, Glass_Dechunk_ERROR_IHDR_LENGTH
+	, Glass_Dechunk_ERROR_IHDR_COLORTYPE
+	, Glass_Dechunk_ERROR_IHDR_BITDEPTH
+	, Glass_Dechunk_ERROR_IHDR_COMPRESSIONMETHOD
+	, Glass_Dechunk_ERROR_IHDR_FILTERMETHOD
+	, Glass_Dechunk_ERROR_IHDR_INTERLACEMETHOD
+	, Glass_Dechunk_ERROR_IHDR_NONSEQUENTIAL
+	, Glass_Dechunk_ERROR_IHDR_EXTRA
 
-enum Mike_Dechunk_Error {
-	Mike_Dechunk_Error_TYPE = Mike_ERRORTYPE_DECHUNK
+	, Glass_Dechunk_ERROR_PLTE_ORDER
+	, Glass_Dechunk_ERROR_PLTE_MISSING
 
-	, Mike_Dechunk_ERROR
-	, Mike_Dechunk_ERROR_EOTL
-	, Mike_Dechunk_ERROR_INT32
+	, Glass_Dechunk_ERROR_IDAT_MISSING
+	, Glass_Dechunk_ERROR_DEFLATE_INCOMPLETE
 
-	, Mike_Dechunk_ERROR_IHDR_NOT
-	, Mike_Dechunk_ERROR_IHDR_LENGTH
-	, Mike_Dechunk_ERROR_IHDR_COLORTYPE
-	, Mike_Dechunk_ERROR_IHDR_BITDEPTH
-	, Mike_Dechunk_ERROR_IHDR_COMPRESSIONMETHOD
-	, Mike_Dechunk_ERROR_IHDR_FILTERMETHOD
-	, Mike_Dechunk_ERROR_IHDR_INTERLACEMETHOD
-	, Mike_Dechunk_ERROR_IHDR_NONSEQUENTIAL
-	, Mike_Dechunk_ERROR_IHDR_EXTRA
-
-	, Mike_Dechunk_ERROR_PLTE_ORDER
-	, Mike_Dechunk_ERROR_PLTE_MISSING
-
-	, Mike_Dechunk_ERROR_IDAT_MISSING
-	, Mike_Dechunk_ERROR_DEFLATE_INCOMPLETE
-
-	, Mike_Dechunk_ERROR_CHUNK_UNKNOWN_CRITICAL
+	, Glass_Dechunk_ERROR_CHUNK_UNKNOWN_CRITICAL
 
 
-	, Mike_Dechunk_Error_MAX
+	, Glass_Dechunk_Error_MAX
 };
 
-#endif
-#ifndef MIKE_DEFILTER_ERROR_H
-#define MIKE_DEFILTER_ERROR_H
+enum Glass_Defilter_Error {
+	Glass_Defilter_Error_TYPE = Glass_ERRORTYPE_DEFILTER
 
-#include "mike/error.h"
+	, Glass_Defilter_ERROR
+	, Glass_Defilter_ERROR_EOTL
 
-enum Mike_Defilter_Error {
-	Mike_Defilter_Error_TYPE = Mike_ERRORTYPE_DEFILTER
+	, Glass_Defilter_ERROR_MALLOC
 
-	, Mike_Defilter_ERROR
-	, Mike_Defilter_ERROR_EOTL
-
-	, Mike_Defilter_ERROR_MALLOC
-
-	, Mike_Defilter_ERROR_COLORTYPE
-	, Mike_Defilter_ERROR_FILTERTYPE
+	, Glass_Defilter_ERROR_COLORTYPE
+	, Glass_Defilter_ERROR_FILTERTYPE
 
 };
 #endif

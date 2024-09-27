@@ -1,6 +1,6 @@
-#ifndef MIKE_SCANLINEIMAGE_FORW_H
-#define MIKE_SCANLINEIMAGE_FORW_H
+#ifndef GLASS_SCANLINEIMAGE_FORW_H
+#define GLASS_SCANLINEIMAGE_FORW_H
 
-typedef struct Mike_ScanlineImage Mike_ScanlineImage;
+typedef struct Glass_ScanlineImage Glass_ScanlineImage;
 
 #endif

@@ -3,14 +3,14 @@
 #include "./dechunk.h"
 #include "./error.h"
 
-#include "mike/ihdr_impl.h"
+#include "Glass/ihdr_impl.h"
 
-#include "mike/decompress/decompress.h"
-#include "mike/decompress/error.h"
-#include "mike/decompress/state_impl.h"
+#include "Glass/decompress/decompress.h"
+#include "Glass/decompress/error.h"
+#include "Glass/decompress/state_impl.h"
 
-#include "mike/decompress/iNostalgicWriter_forw.h"
-#include "mike/decompress/iNostalgicWriter.h"
+#include "Glass/decompress/iNostalgicWriter_forw.h"
+#include "Glass/decompress/iNostalgicWriter.h"
 
 #include "utils/iByteTrain.h"
 
@@ -26,14 +26,14 @@
 #define IHDR_COLORTYPE_INDEXED 3
 
 
-int mike_dechunk_readInt32(iByteTrain *bt, uint32_t *destination);
+int Glass_dechunk_readInt32(iByteTrain *bt, uint32_t *destination);
 
-static inline int mike_dechunk_readName(iByteTrain *bt, uint8_t* destination);
-static inline bool mike_dechunk_compareName(uint8_t *a, uint8_t *b);
-int mike_dechunk_eatCRC(iByteTrain *bt); //TODO
+static inline int Glass_dechunk_readName(iByteTrain *bt, uint8_t* destination);
+static inline bool Glass_dechunk_compareName(uint8_t *a, uint8_t *b);
+int Glass_dechunk_eatCRC(iByteTrain *bt); //TODO
 
 
-int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicWriter *nw) {
+int Glass_Dechunk_go(iByteTrain *bt, Glass_Ihdr *ihdr, Glass_Decompress_iNostalgicWriter *nw) {
 
 	int e = 0;
 	uint8_t byte = 0;
@@ -41,48 +41,48 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 	uint32_t chunkLength = 0;
 	uint8_t chunkName[CHUNK_NAME_LENGTH + 1] = {0}; // extra space so can print as string
 
-	struct mike_Decompress_State destate = {0};
+	struct Glass_Decompress_State destate = {0};
 	destate.nw = nw;
 
 	// IHDR
 	// ==================================================
 
-	e = mike_dechunk_readInt32(bt, &chunkLength);
+	e = Glass_dechunk_readInt32(bt, &chunkLength);
 	if (e) goto finalize;
 	if (chunkLength != IHDR_LENGTH) {
-		e = Mike_Dechunk_ERROR_IHDR_LENGTH;
+		e = Glass_Dechunk_ERROR_IHDR_LENGTH;
 		goto finalize;
 	}
-	e = mike_dechunk_readName(bt, chunkName);
+	e = Glass_dechunk_readName(bt, chunkName);
 	if (e) goto finalize;
-	if (!mike_dechunk_compareName(chunkName, (uint8_t*)"IHDR")) {
-		e = Mike_Dechunk_ERROR_IHDR_NOT;
+	if (!Glass_dechunk_compareName(chunkName, (uint8_t*)"IHDR")) {
+		e = Glass_Dechunk_ERROR_IHDR_NOT;
 		goto finalize;
 	}
 
-	e = mike_dechunk_readInt32(bt, &ihdr->width);
+	e = Glass_dechunk_readInt32(bt, &ihdr->width);
 	if (e) goto finalize;
-	e = mike_dechunk_readInt32(bt, &ihdr->height);
+	e = Glass_dechunk_readInt32(bt, &ihdr->height);
 	if (e) goto finalize;
 
 	if (iByteTrain_chewchew(bt, &ihdr->bitDepth)) {
-		e = Mike_Dechunk_ERROR_EOTL;
+		e = Glass_Dechunk_ERROR_EOTL;
 		goto finalize;
 	}
 	if (iByteTrain_chewchew(bt, &ihdr->colorType)) {
-		e = Mike_Dechunk_ERROR_EOTL;
+		e = Glass_Dechunk_ERROR_EOTL;
 		goto finalize;
 	}
 	if (iByteTrain_chewchew(bt, &ihdr->compressionMethod)) {
-		e = Mike_Dechunk_ERROR_EOTL;
+		e = Glass_Dechunk_ERROR_EOTL;
 		goto finalize;
 	}
 	if (iByteTrain_chewchew(bt, &ihdr->filterMethod)) {
-		e = Mike_Dechunk_ERROR_EOTL;
+		e = Glass_Dechunk_ERROR_EOTL;
 		goto finalize;
 	}
 	if (iByteTrain_chewchew(bt, &ihdr->interlaceMethod)) {
-		e = Mike_Dechunk_ERROR_EOTL;
+		e = Glass_Dechunk_ERROR_EOTL;
 		goto finalize;
 	}
 	switch (ihdr->colorType) {
@@ -95,7 +95,7 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 				case 16:
 					break;
 				default: 
-					e = Mike_Dechunk_ERROR_IHDR_BITDEPTH;
+					e = Glass_Dechunk_ERROR_IHDR_BITDEPTH;
 					goto finalize;
 			}
 			break;
@@ -107,7 +107,7 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 				case 8:
 					break;
 				default:
-					e = Mike_Dechunk_ERROR_IHDR_BITDEPTH;
+					e = Glass_Dechunk_ERROR_IHDR_BITDEPTH;
 					goto finalize;
 			}
 			break;
@@ -119,28 +119,28 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 				case 16:
 					break;
 				default:
-					e = Mike_Dechunk_ERROR_IHDR_BITDEPTH;
+					e = Glass_Dechunk_ERROR_IHDR_BITDEPTH;
 					goto finalize;
 			}
 			break;
 		default:
-			e = Mike_Dechunk_ERROR_IHDR_COLORTYPE; //invalid
+			e = Glass_Dechunk_ERROR_IHDR_COLORTYPE; //invalid
 			goto finalize;
 	}
 	if (ihdr->compressionMethod != 0) {
-		e = Mike_Dechunk_ERROR_IHDR_COMPRESSIONMETHOD;
+		e = Glass_Dechunk_ERROR_IHDR_COMPRESSIONMETHOD;
 		goto finalize;
 	}
 	if (ihdr->filterMethod != 0) {
-		e = Mike_Dechunk_ERROR_IHDR_FILTERMETHOD;
+		e = Glass_Dechunk_ERROR_IHDR_FILTERMETHOD;
 		goto finalize;
 	}
 	if (ihdr->interlaceMethod > 1) {
-		e = Mike_Dechunk_ERROR_IHDR_INTERLACEMETHOD;
+		e = Glass_Dechunk_ERROR_IHDR_INTERLACEMETHOD;
 		goto finalize;
 	}
 
-	e = mike_dechunk_eatCRC(bt);
+	e = Glass_dechunk_eatCRC(bt);
 	if (e) goto finalize;
 
 	// following chunks
@@ -152,10 +152,10 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 	#define PREVIOUSWASIDAT 0x04
 	#define DEFLATEOVER 0x08
 	while (1) {
-		e = mike_dechunk_readInt32(bt, &chunkLength);
+		e = Glass_dechunk_readInt32(bt, &chunkLength);
 		if (e) goto finalize;
 
-		e = mike_dechunk_readName(bt, chunkName);
+		e = Glass_dechunk_readName(bt, chunkName);
 		if (e) goto finalize;
 
 		if (chunkName[0] & CHUNK_ISLOWERCASE) {
@@ -163,26 +163,26 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 
 			for (uint32_t i = 0; i < chunkLength; ++i) {
 				if (iByteTrain_chewchew(bt, NULL)) {
-					e = Mike_Dechunk_ERROR_EOTL;
+					e = Glass_Dechunk_ERROR_EOTL;
 					goto finalize;
 				}
 			}
-			e = mike_dechunk_eatCRC(bt);
+			e = Glass_dechunk_eatCRC(bt);
 			if (e) goto finalize;
 			continue;
 		}
 
-		if (mike_dechunk_compareName(chunkName, (uint8_t*)"IDAT")) {
+		if (Glass_dechunk_compareName(chunkName, (uint8_t*)"IDAT")) {
 			if ((flags & HAVEIDAT) && !(flags & PREVIOUSWASIDAT)) {
-				e = Mike_Dechunk_ERROR_IHDR_NONSEQUENTIAL;
+				e = Glass_Dechunk_ERROR_IHDR_NONSEQUENTIAL;
 				goto finalize;
 			}
 			if (ihdr->colorType == IHDR_COLORTYPE_INDEXED && !(flags & HAVEPLTE)) {
-				e = Mike_Dechunk_ERROR_PLTE_MISSING;
+				e = Glass_Dechunk_ERROR_PLTE_MISSING;
 				goto finalize;
 			}
 			if (flags & DEFLATEOVER) {
-				e = Mike_Dechunk_ERROR_IHDR_EXTRA;
+				e = Glass_Dechunk_ERROR_IHDR_EXTRA;
 				goto finalize;
 			}
 			flags = flags | HAVEIDAT;
@@ -192,16 +192,16 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 			// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			for (uint32_t i = 0; i < chunkLength; ++i) {
 				if (iByteTrain_chewchew(bt, &byte)) {
-					e = Mike_Dechunk_ERROR_EOTL;
+					e = Glass_Dechunk_ERROR_EOTL;
 					goto finalize;
 				}
 				//printf("%x", byte);
-				e = mike_Decompress_step(&destate, byte);
+				e = Glass_Decompress_step(&destate, byte);
 				switch (e) {
 					case 0:
 						//printf("\n");
 						break;
-					case Mike_Decompress_END:
+					case Glass_Decompress_END:
 						//printf("\t!\n");
 						flags = flags | DEFLATEOVER;
 						break;
@@ -210,7 +210,7 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 			}
 			// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-			e = mike_dechunk_eatCRC(bt);
+			e = Glass_dechunk_eatCRC(bt);
 			if (e) goto finalize;
 
 			continue;
@@ -218,9 +218,9 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 
 		flags = flags & ~PREVIOUSWASIDAT;
 
-		if (mike_dechunk_compareName(chunkName, (uint8_t*)"PLTE")) {
+		if (Glass_dechunk_compareName(chunkName, (uint8_t*)"PLTE")) {
 			if (HAVEIDAT) {
-				e = Mike_Dechunk_ERROR_PLTE_ORDER;
+				e = Glass_Dechunk_ERROR_PLTE_ORDER;
 				goto finalize;
 			}
 			// ...
@@ -229,32 +229,32 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 			// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			for (uint32_t i = 0; i < chunkLength; ++i) {
 				if (iByteTrain_chewchew(bt, NULL)){ 
-					e = Mike_Dechunk_ERROR_EOTL;
+					e = Glass_Dechunk_ERROR_EOTL;
 					goto finalize;
 				}
 			}
-			e = mike_dechunk_eatCRC(bt);
+			e = Glass_dechunk_eatCRC(bt);
 			if (e) goto finalize;
 			// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			continue;
 		}
-		if (mike_dechunk_compareName(chunkName, (uint8_t*)"IEND")) {
-			e = mike_dechunk_eatCRC(bt);
+		if (Glass_dechunk_compareName(chunkName, (uint8_t*)"IEND")) {
+			e = Glass_dechunk_eatCRC(bt);
 			if (e) goto finalize;
 
 			break;
 		}
 
-		e = Mike_Dechunk_ERROR_CHUNK_UNKNOWN_CRITICAL;
+		e = Glass_Dechunk_ERROR_CHUNK_UNKNOWN_CRITICAL;
 		goto finalize;
 	}
 
 	if (!(flags & HAVEIDAT)) {
-		e = Mike_Dechunk_ERROR_IDAT_MISSING;
+		e = Glass_Dechunk_ERROR_IDAT_MISSING;
 		goto finalize;
 	}
 	if (!(flags & DEFLATEOVER)) {
-		e = Mike_Dechunk_ERROR_DEFLATE_INCOMPLETE;
+		e = Glass_Dechunk_ERROR_DEFLATE_INCOMPLETE;
 		goto finalize;
 	}
 
@@ -264,7 +264,7 @@ int mike_Dechunk_go(iByteTrain *bt, mike_Ihdr *ihdr, Mike_Decompress_iNostalgicW
 }
 
 
-int mike_dechunk_readInt32(iByteTrain *bt, uint32_t *destination) {
+int Glass_dechunk_readInt32(iByteTrain *bt, uint32_t *destination) {
 	/*
 		reads a big-endian uint32 as outlined in PNG spec
 		guarantees that the value is only an int31 as per spec
@@ -274,28 +274,28 @@ int mike_dechunk_readInt32(iByteTrain *bt, uint32_t *destination) {
 
 	for (int i = 0; i < 4; ++i) {
 		if (iByteTrain_chewchew(bt, &byte)) {
-			return Mike_Dechunk_ERROR_EOTL;
+			return Glass_Dechunk_ERROR_EOTL;
 		}
 		n = (n << 8) | byte;
 	}
 
 	if (n & 0x80000000) {
-		return Mike_Dechunk_ERROR_INT32;
+		return Glass_Dechunk_ERROR_INT32;
 	}
 
 	*destination = n;
 	return 0;
 }
-static inline int mike_dechunk_readName(iByteTrain *bt, uint8_t* destination) {
+static inline int Glass_dechunk_readName(iByteTrain *bt, uint8_t* destination) {
 	for (int i = 0; i < CHUNK_NAME_LENGTH; ++i) {
 		if (iByteTrain_chewchew(bt, destination + i)) {
-			return Mike_Dechunk_ERROR_EOTL;
+			return Glass_Dechunk_ERROR_EOTL;
 		}
 	}
 	printf("chunk: %s\n", destination);
 	return 0;
 }
-static inline bool mike_dechunk_compareName(uint8_t *a, uint8_t *b) {
+static inline bool Glass_dechunk_compareName(uint8_t *a, uint8_t *b) {
 	for (int i = 0; i < CHUNK_NAME_LENGTH; ++i) {
 		if (a[i] != b[i]) {
 			return false;
@@ -303,9 +303,9 @@ static inline bool mike_dechunk_compareName(uint8_t *a, uint8_t *b) {
 	}
 	return true;
 }
-int mike_dechunk_eatCRC(iByteTrain *bt) {
+int Glass_dechunk_eatCRC(iByteTrain *bt) {
 	for (int i = 0; i < CHUNK_CRC_LENGTH; ++i) {
-		if (iByteTrain_chewchew(bt, NULL)) return Mike_Dechunk_ERROR_EOTL;
+		if (iByteTrain_chewchew(bt, NULL)) return Glass_Dechunk_ERROR_EOTL;
 	}
 	return 0;
 }

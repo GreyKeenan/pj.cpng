@@ -1,16 +1,17 @@
 #include <stdio.h>
 
-#include "./mike.h"
+#include "./main.h"
 #include "./error.h"
 #include "./ihdr_impl.h"
 #include "./scanlineImage_impl.h"
 
-#include "./dechunk/dechunk.h"
+#include "./dechunk.h"
 
+//TODO
 #include "./decompress/iNostalgicWriter_forw.h"
 #include "./decompress/iNostalgicWriter.h"
 
-#include "./defilter/defilter.h"
+#include "./defilter.h"
 
 #include "utils/expandingWriter_forw.h"
 #include "utils/expandingWriter.h"
@@ -30,11 +31,11 @@
 #include <stdlib.h>
 
 
-int Mike_ExpandingWriter_nostalgize(const void *vself, uint8_t *destination, uint32_t distanceBack) {
+int Glass_ExpandingWriter_nostalgize(const void *vself, uint8_t *destination, uint32_t distanceBack) {
 	const ExpandingWriter *self = vself;
 
 	if (distanceBack > self->writePosition) {
-		return Mike_Decompress_iNostalgicWriter_TOOFAR;
+		return Glass_Decompress_iNostalgicWriter_TOOFAR;
 	}
 
 	if (self->nData == NULL) {
@@ -43,26 +44,26 @@ int Mike_ExpandingWriter_nostalgize(const void *vself, uint8_t *destination, uin
 	*destination = self->nData[self->writePosition - distanceBack];
 	return 0;
 }
-static inline Mike_Decompress_iNostalgicWriter Mike_ExpandingWriter_as_iNostalgicWriter(ExpandingWriter *self) {
-	return (Mike_Decompress_iNostalgicWriter) {
+static inline Glass_Decompress_iNostalgicWriter Glass_ExpandingWriter_as_iNostalgicWriter(ExpandingWriter *self) {
+	return (Glass_Decompress_iNostalgicWriter) {
 		.vself = self,
 		.write = &ExpandingWriter_write,
-		.nostalgize = &Mike_ExpandingWriter_nostalgize
+		.nostalgize = &Glass_ExpandingWriter_nostalgize
 	};
 }
 
 #define PNG_HEADER_LENGTH 8
-const uint8_t mike_PNG_header[PNG_HEADER_LENGTH] = {0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A};
+const uint8_t Glass_PNG_header[PNG_HEADER_LENGTH] = {0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A};
 
-int Mike_decode(iByteTrain *bt, Mike_ScanlineImage *destination) {
+int Glass_decode(iByteTrain *bt, Glass_ScanlineImage *destination) {
 
 	int e = 0;
 	uint8_t byte = 0;
 
-	struct mike_Ihdr ihdr = {0};
+	struct Glass_Ihdr ihdr = {0};
 
 	struct ExpandingWriter writer = {0};
-	struct Mike_Decompress_iNostalgicWriter nw = {0};
+	struct Glass_Decompress_iNostalgicWriter nw = {0};
 
 	struct AutophagicSequence aph = {0};
 	struct iByteTrain fBt = {0};
@@ -74,12 +75,12 @@ int Mike_decode(iByteTrain *bt, Mike_ScanlineImage *destination) {
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	for (int i = 0; i < PNG_HEADER_LENGTH; ++i) {
 		if (iByteTrain_chewchew(bt, &byte)) {
-			e = Mike_ERROR_EOTL;
+			e = Glass_ERROR_EOTL;
 			goto finalize;
 		}
 		
-		if (byte != mike_PNG_header[i]) {
-			e = Mike_ERROR_NOTPNG;
+		if (byte != Glass_PNG_header[i]) {
+			e = Glass_ERROR_NOTPNG;
 			goto finalize;
 		}
 	}
@@ -89,9 +90,9 @@ int Mike_decode(iByteTrain *bt, Mike_ScanlineImage *destination) {
 
 	#define STEP 512
 	writer = ExpandingWriter_create(NULL, 0, 0, STEP);
-	nw = Mike_ExpandingWriter_as_iNostalgicWriter(&writer);
+	nw = Glass_ExpandingWriter_as_iNostalgicWriter(&writer);
 
-	e = mike_Dechunk_go(bt, &ihdr, &nw);
+	e = Glass_Dechunk_go(bt, &ihdr, &nw);
 	if (e) goto finalize;
 
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -111,7 +112,7 @@ int Mike_decode(iByteTrain *bt, Mike_ScanlineImage *destination) {
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	if (writer.nData == NULL) { //shouldnt be possible
-		return Mike_ERROR;
+		return Glass_ERROR;
 	}
 	data = writer.nData;
 
@@ -119,7 +120,7 @@ int Mike_decode(iByteTrain *bt, Mike_ScanlineImage *destination) {
 	fBt = AutophagicSequence_as_iByteTrain(&aph);
 	fBl = AutophagicSequence_as_iByteLayer(&aph);
 
-	e = mike_Defilter_go(ihdr, &fBt, &fBl);
+	e = Glass_Defilter_go(ihdr, &fBt, &fBl);
 	if (e) goto finalize;
 
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -129,17 +130,17 @@ int Mike_decode(iByteTrain *bt, Mike_ScanlineImage *destination) {
 
 	if (ihdr.interlaceMethod != 0) {
 		printf("TODO ERR: adam7 interlace not supported\n");
-		return Mike_ERROR;
+		return Glass_ERROR;
 	}
 	if (ihdr.colorType == 3) {
 		printf("TODO ERR: indexed-color images not supported\n");
-		return Mike_ERROR;
+		return Glass_ERROR;
 	}
 
 	// give data
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-	*destination = (struct Mike_ScanlineImage) {
+	*destination = (struct Glass_ScanlineImage) {
 		.width = ihdr.width, .height = ihdr.height,
 		.colorType = ihdr.colorType, .bitDepth = ihdr.bitDepth,
 		.data = data, .length = aph.writePosition

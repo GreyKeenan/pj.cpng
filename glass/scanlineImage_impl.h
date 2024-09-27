@@ -1,9 +1,9 @@
-#ifndef MIKE_SCANLINEIMAGE_IMPL_H
-#define MIKE_SCANLINEIMAGE_IMPL_H
+#ifndef GLASS_SCANLINEIMAGE_IMPL_H
+#define GLASS_SCANLINEIMAGE_IMPL_H
 
 #include <stdint.h>
 
-struct Mike_ScanlineImage {
+struct Glass_ScanlineImage {
 	uint64_t length;
 	uint8_t *data;
 	
