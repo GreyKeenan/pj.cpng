@@ -21,6 +21,9 @@ static inline int Puff_step_doUncompressed(struct Puff_State *state, uint8_t byt
 static inline int Puff_step_doFixed(struct Puff_State *state, _Bool bit);
 static inline int Puff_step_doDynamic(struct Puff_State *state, _Bool bit);
 
+int Puff_measureLengthSymbol(uint16_t length, uint16_t *baseValue, uint8_t *numExtraBits);
+int Puff_measureDistanceSymbol(uint8_t distance, uint16_t *baseValue, uint8_t *numExtraBits);
+
 int Puff_step(struct Puff_State *state, uint8_t byte) {
 
 	int e = 0;
@@ -239,6 +242,26 @@ int Puff_measureLengthSymbol(uint16_t length, uint16_t *baseValue, uint8_t *numE
 	
 	*numExtraBits = extraBits;
 	*baseValue = (2 << df) + (l % 4 * (1 << extraBits)) + MIN;
+
+	return 0;
+}
+
+int Puff_measureDistanceSymbol(uint8_t distance, uint16_t *baseValue, uint8_t *numExtraBits) {
+	if (distance > 29) {
+		return 1;
+	}
+
+	if (distance < 4) {
+		*numExtraBits = 0;
+		*baseValue = distance + 1;
+		return 0;
+	}
+
+	uint8_t df = distance / 2;
+	uint8_t extraBits = df - 1;
+
+	*numExtraBits = extraBits;
+	*baseValue = (1 << df) + ( (distance % 2) * (1 << extraBits) ) + 1;
 
 	return 0;
 }
