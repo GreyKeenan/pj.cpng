@@ -1,6 +1,0 @@
-#ifndef MIKE_DECOMPRESS_HUFFMEN_TREE_FORW_H
-#define MIKE_DECOMPRESS_HUFFMEN_TREE_FORW_H
-
-typedef struct Mike_Decompress_Huffmen_Tree Mike_Decompress_Huffmen_Tree;
-
-#endif

@@ -5,29 +5,29 @@
 #include "../tree_impl.h"
 #include "../tree.h"
 
-void printTree(struct Mike_Decompress_Huffmen_Tree tree);
+void printTree(struct Puff_Huffmen_Tree tree);
 
 int main() {
 	int e = 0;
 	uint16_t db = 0;
 
-	struct Mike_Decompress_Huffmen_Tree tree = {0};
+	struct Puff_Huffmen_Tree tree = {0};
 
 	#define CAP 3 * 287
 	uint8_t data[CAP];
 
-	e = Mike_Decompress_Huffmen_Tree_init(&tree, data, CAP, 288);
+	e = Puff_Huffmen_Tree_init(&tree, data, CAP, 288);
 	printf("%d\n", e);
 
 	printTree(tree);
 
-	//e = Mike_Decompress_Huffmen_Tree_walk(&tree, 0, 1, &db);
-	e = Mike_Decompress_Huffmen_Tree_growLeaf(&tree, 0, true, 1);
+	//e = Puff_Huffmen_Tree_walk(&tree, 0, 1, &db);
+	e = Puff_Huffmen_Tree_growLeaf(&tree, 0, true, 1);
 	printf("%d\n", e);
 
 	printTree(tree);
 
-	e = Mike_Decompress_Huffmen_Tree_birthNode(&tree, 0, false, NULL);
+	e = Puff_Huffmen_Tree_birthNode(&tree, 0, false, NULL);
 	printf("%d\n", e);
 
 	printTree(tree);
@@ -37,7 +37,7 @@ int main() {
 }
 
 
-void printTree(struct Mike_Decompress_Huffmen_Tree tree) {
+void printTree(struct Puff_Huffmen_Tree tree) {
 	printf(
 		"Tree {"
 		"\n	data: %p"

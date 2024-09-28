@@ -5,11 +5,11 @@
 #include <stddef.h>
 #include <math.h>
 
-#define IMPOSSIBLE Mike_Decompress_Huffmen_Tree_IMPOSSIBLE
+#define IMPOSSIBLE Puff_Huffmen_Tree_IMPOSSIBLE
 
 
-static inline int mike_decompress_huffmen_tree_getNode32(const struct Mike_Decompress_Huffmen_Tree *self, uint16_t nodeIndex, uint32_t *destination);
-static inline int mike_decompress_huffmen_tree_setNode32(struct Mike_Decompress_Huffmen_Tree *self, uint16_t nodeIndex, uint32_t node32);
+static inline int mike_decompress_huffmen_tree_getNode32(const struct Puff_Huffmen_Tree *self, uint16_t nodeIndex, uint32_t *destination);
+static inline int mike_decompress_huffmen_tree_setNode32(struct Puff_Huffmen_Tree *self, uint16_t nodeIndex, uint32_t node32);
 
 static inline uint16_t mike_decompress_huffmen_tree_Node32_shiftOut(uint32_t node, _Bool lr, uint8_t childBitLength);
 /*
@@ -22,7 +22,7 @@ static inline void mike_decompress_huffmen_tree_Node32_shiftIn(uint32_t *node, _
 */
 
 
-int Mike_Decompress_Huffmen_Tree_init(struct Mike_Decompress_Huffmen_Tree *self, uint8_t *data, uint16_t cap, uint16_t maxLeaves) {
+int Puff_Huffmen_Tree_init(struct Puff_Huffmen_Tree *self, uint8_t *data, uint16_t cap, uint16_t maxLeaves) {
 	if (data == NULL) {
 		return 1;
 	}
@@ -43,14 +43,14 @@ int Mike_Decompress_Huffmen_Tree_init(struct Mike_Decompress_Huffmen_Tree *self,
 	}
 
 
-	*self = (struct Mike_Decompress_Huffmen_Tree) {
+	*self = (struct Puff_Huffmen_Tree) {
 		.data = data,
 		.maxNodeCount = maxNodes,
 		.nodeCount = 1,
 		.nodeBytes = nodeBytes,
 		.childBitLength = childBitLength
 	};
-	if (mike_decompress_huffmen_tree_setNode32(self, Mike_Decompress_Huffmen_Tree_ROOT, 0)) {
+	if (mike_decompress_huffmen_tree_setNode32(self, Puff_Huffmen_Tree_ROOT, 0)) {
 		return IMPOSSIBLE;
 	}
 	return 0;
@@ -60,7 +60,7 @@ int Mike_Decompress_Huffmen_Tree_init(struct Mike_Decompress_Huffmen_Tree *self,
 // main functionality
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-int Mike_Decompress_Huffmen_Tree_walk(const struct Mike_Decompress_Huffmen_Tree *self, uint16_t parentIndex, _Bool lr, uint16_t *destination) {
+int Puff_Huffmen_Tree_walk(const struct Puff_Huffmen_Tree *self, uint16_t parentIndex, _Bool lr, uint16_t *destination) {
 	int e = 0;
 	uint32_t parent32 = 0;
 	e = mike_decompress_huffmen_tree_getNode32(self, parentIndex, &parent32);
@@ -68,18 +68,18 @@ int Mike_Decompress_Huffmen_Tree_walk(const struct Mike_Decompress_Huffmen_Tree 
 
 	uint16_t child = mike_decompress_huffmen_tree_Node32_shiftOut(parent32, lr, self->childBitLength);
 	if (!child) {
-		return Mike_Decompress_Huffmen_Tree_HALT;
+		return Puff_Huffmen_Tree_HALT;
 	}
 
 	_Bool type_isLeaf = child & 1;
 	*destination = child >> 1;
-	return type_isLeaf ? Mike_Decompress_Huffmen_Tree_ISLEAF : Mike_Decompress_Huffmen_Tree_ISNODE;
+	return type_isLeaf ? Puff_Huffmen_Tree_ISLEAF : Puff_Huffmen_Tree_ISNODE;
 }
 
-int Mike_Decompress_Huffmen_Tree_birthNode(struct Mike_Decompress_Huffmen_Tree *self, uint16_t parentIndex, _Bool lr, uint16_t *nNewborn) {
+int Puff_Huffmen_Tree_birthNode(struct Puff_Huffmen_Tree *self, uint16_t parentIndex, _Bool lr, uint16_t *nNewborn) {
 
 	if (self->nodeCount >= self->maxNodeCount) {
-		return Mike_Decompress_Huffmen_Tree_TOOMANYKIDS;
+		return Puff_Huffmen_Tree_TOOMANYKIDS;
 	}
 
 	int e = 0;
@@ -89,7 +89,7 @@ int Mike_Decompress_Huffmen_Tree_birthNode(struct Mike_Decompress_Huffmen_Tree *
 
 	uint16_t child = mike_decompress_huffmen_tree_Node32_shiftOut(parent32, lr, self->childBitLength);
 	if (child) {
-		return Mike_Decompress_Huffmen_Tree_COLLISION;
+		return Puff_Huffmen_Tree_COLLISION;
 	}
 
 	uint16_t newbornIndex = self->nodeCount;
@@ -98,7 +98,7 @@ int Mike_Decompress_Huffmen_Tree_birthNode(struct Mike_Decompress_Huffmen_Tree *
 	e = mike_decompress_huffmen_tree_setNode32(self, newbornIndex, 0);
 	if (e) return IMPOSSIBLE;
 	
-	mike_decompress_huffmen_tree_Node32_shiftIn(&parent32, lr, newbornIndex, Mike_Decompress_Huffmen_Tree_TYPE_NODE, self->childBitLength);
+	mike_decompress_huffmen_tree_Node32_shiftIn(&parent32, lr, newbornIndex, Puff_Huffmen_Tree_TYPE_NODE, self->childBitLength);
 	e = mike_decompress_huffmen_tree_setNode32(self, parentIndex, parent32);
 	if (e) return IMPOSSIBLE;
 
@@ -107,10 +107,10 @@ int Mike_Decompress_Huffmen_Tree_birthNode(struct Mike_Decompress_Huffmen_Tree *
 	}
 	return 0;
 }
-int Mike_Decompress_Huffmen_Tree_growLeaf(struct Mike_Decompress_Huffmen_Tree *self, uint16_t parentIndex, _Bool lr, uint16_t value) {
+int Puff_Huffmen_Tree_growLeaf(struct Puff_Huffmen_Tree *self, uint16_t parentIndex, _Bool lr, uint16_t value) {
 
 	if (value >> self->childBitLength) {
-		return Mike_Decompress_Huffmen_Tree_BADVALUE;
+		return Puff_Huffmen_Tree_BADVALUE;
 	}
 
 	int e = 0;
@@ -120,10 +120,10 @@ int Mike_Decompress_Huffmen_Tree_growLeaf(struct Mike_Decompress_Huffmen_Tree *s
 
 	uint16_t child = mike_decompress_huffmen_tree_Node32_shiftOut(parent32, lr, self->childBitLength);
 	if (child) {
-		return Mike_Decompress_Huffmen_Tree_COLLISION;
+		return Puff_Huffmen_Tree_COLLISION;
 	}
 
-	mike_decompress_huffmen_tree_Node32_shiftIn(&parent32, lr, value, Mike_Decompress_Huffmen_Tree_TYPE_LEAF, self->childBitLength);
+	mike_decompress_huffmen_tree_Node32_shiftIn(&parent32, lr, value, Puff_Huffmen_Tree_TYPE_LEAF, self->childBitLength);
 	e = mike_decompress_huffmen_tree_setNode32(self, parentIndex, parent32);
 	if (e) return e;
 
@@ -133,9 +133,9 @@ int Mike_Decompress_Huffmen_Tree_growLeaf(struct Mike_Decompress_Huffmen_Tree *s
 // lower
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-static inline int mike_decompress_huffmen_tree_getNode32(const struct Mike_Decompress_Huffmen_Tree *self, uint16_t nodeIndex, uint32_t *destination) {
+static inline int mike_decompress_huffmen_tree_getNode32(const struct Puff_Huffmen_Tree *self, uint16_t nodeIndex, uint32_t *destination) {
 	if (nodeIndex >= self->nodeCount) {
-		return Mike_Decompress_Huffmen_Tree_OUTOFBOUNDS;
+		return Puff_Huffmen_Tree_OUTOFBOUNDS;
 	}
 
 	uint32_t n = 0;
@@ -147,9 +147,9 @@ static inline int mike_decompress_huffmen_tree_getNode32(const struct Mike_Decom
 	*destination = n;
 	return 0;
 }
-static inline int mike_decompress_huffmen_tree_setNode32(struct Mike_Decompress_Huffmen_Tree *self, uint16_t nodeIndex, uint32_t node32) {
+static inline int mike_decompress_huffmen_tree_setNode32(struct Puff_Huffmen_Tree *self, uint16_t nodeIndex, uint32_t node32) {
 	if (nodeIndex >= self->nodeCount) {
-		return Mike_Decompress_Huffmen_Tree_OUTOFBOUNDS;
+		return Puff_Huffmen_Tree_OUTOFBOUNDS;
 	}
 
 	uint8_t *nodeData = self->data + (uint32_t)nodeIndex * self->nodeBytes;

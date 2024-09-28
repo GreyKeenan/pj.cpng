@@ -1,13 +1,13 @@
-#ifndef MIKE_DECOMPRESS_HUFFMEN_TREE_IMPL_H
-#define MIKE_DECOMPRESS_HUFFMEN_TREE_IMPL_H
+#ifndef PUFF_HUFFMEN_TREE_IMPL_H
+#define PUFF_HUFFMEN_TREE_IMPL_H
 
 #include <stdint.h>
 
-#define Mike_Decompress_Huffmen_Tree_TYPE_NODE 0
-#define Mike_Decompress_Huffmen_Tree_TYPE_LEAF 1
-#define Mike_Decompress_Huffmen_Tree_ROOT 0
+#define Puff_Huffmen_Tree_TYPE_NODE 0
+#define Puff_Huffmen_Tree_TYPE_LEAF 1
+#define Puff_Huffmen_Tree_ROOT 0
 
-struct Mike_Decompress_Huffmen_Tree {
+struct Puff_Huffmen_Tree {
 /*
 	O(log n) lookup of codes
 
