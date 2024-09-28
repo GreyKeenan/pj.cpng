@@ -36,6 +36,8 @@ struct Puff_State {
 	struct Puff_MetaTree metaTree;
 	struct Puff_DistanceTree distanceTree;
 	*/
+
+	uint16_t currentNodeIndex;
 };
 
 #endif

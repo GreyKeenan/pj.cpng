@@ -7,6 +7,7 @@
 
 #include "./iNostalgicWriter.h"
 
+#include "./huffmen/tree.h"
 #include "./huffmen/fixedTree.h"
 
 #define STATE_BLOCKHEADER 0
@@ -24,8 +25,9 @@ int Puff_step(struct Puff_State *state, uint8_t byte) {
 
 	int e = 0;
 	_Bool bit = 0;
+	//printf("[B%x]:", byte);
 
-	for (int i = 1; i != 0; i <<= 1) {
+	for (uint8_t i = 1; i != 0; i <<= 1) {
 
 		bit = byte & i;
 
@@ -92,6 +94,7 @@ static inline int Puff_step_doBlockHeader(struct Puff_State *state, _Bool bit) {
 						state->fixedTreeInitiated = 1;
 					}
 					state->id = STATE_FIXED;
+					state->currentNodeIndex = 0; //TODO ROOT
 					break;
 				case 2:
 					printf("dynamic!\n");
@@ -159,6 +162,24 @@ static inline int Puff_step_doUncompressed(struct Puff_State *state, uint8_t byt
 	return 0;
 }
 static inline int Puff_step_doFixed(struct Puff_State *state, _Bool bit) {
+
+	uint16_t child = 0;
+
+	int e = Puff_Tree_walk(&state->fixedTree.tree, state->currentNodeIndex, bit, &child);
+	switch (e) {
+		case Puff_Tree_ISNODE:
+			state->currentNodeIndex = child;
+			printf("%d", bit);
+			return 0;
+		case Puff_Tree_ISLEAF:
+			state->currentNodeIndex = 0; //TODO ROOT
+			printf("%d) value: %d\n", bit, child);
+			return 0;
+		case Puff_Tree_OUTOFBOUNDS:
+		case Puff_Tree_HALT:
+		default:
+			return Puff_step_ERROR_FIXED_WALK;
+	}
 
 	return Puff_step_ERROR_IMPOSSIBLE;
 }
