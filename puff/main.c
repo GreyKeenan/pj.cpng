@@ -75,7 +75,7 @@ static inline int Puff_step_doBlockHeader(struct Puff_State *state, _Bool bit) {
 			state->bitsRead++;
 			break;
 		case 2:
-			switch ((uint8_t)state->compressionTypeBit0 & (bit << 1)) {
+			switch ((uint8_t)state->compressionTypeBit0 | (bit << 1)) {
 				case 0:
 					state->bitsRead = 0;
 					state->id = STATE_UNCOMPRESSED;
