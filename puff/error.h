@@ -16,10 +16,12 @@ enum Puff_step_Error {
 
 	, Puff_step_ERROR_UNCOMPRESSED_LENGTH_BYTESREAD
 	, Puff_step_ERROR_NLEN
+	, Puff_step_ERROR_UNCOMPRESSED_WRITE
 
 	
 	, Puff_step_ERROR_FIXED_INIT
 	, Puff_step_ERROR_FIXED_WALK
+	, Puff_step_ERROR_FIXED_WRITE
 
 
 	, Puff_step_DIRECTIVE_FINISHBYTE

@@ -141,7 +141,8 @@ static inline int Puff_step_doUncompressed(struct Puff_State *state, uint8_t byt
 		return 0;
 	}
 
-	Puff_iNostalgicWriter_write(&state->nostalgicWriter, byte);
+	int e = Puff_iNostalgicWriter_write(&state->nostalgicWriter, byte);
+	if (e) return Puff_step_ERROR_UNCOMPRESSED_WRITE;
 	state->bytesRead++;
 	//printf("bytesRead: %d out of: %d\n", state->bytesRead, state->uncompressed_length);
 	if (state->bytesRead >= state->uncompressed_length) {
@@ -165,6 +166,9 @@ static inline int Puff_step_doFixed(struct Puff_State *state, _Bool bit) {
 
 	uint16_t child = 0;
 
+	uint16_t baseLength = 0;
+	uint8_t extraBits = 0;
+
 	int e = Puff_Tree_walk(&state->fixedTree.tree, state->currentNodeIndex, bit, &child);
 	switch (e) {
 		case Puff_Tree_ISNODE:
@@ -174,6 +178,28 @@ static inline int Puff_step_doFixed(struct Puff_State *state, _Bool bit) {
 		case Puff_Tree_ISLEAF:
 			state->currentNodeIndex = 0; //TODO ROOT
 			printf("%d) value: %d\n", bit, child);
+
+			if (child < 256) {
+				e = Puff_iNostalgicWriter_write(&state->nostalgicWriter, child);
+				if (e) return Puff_step_ERROR_FIXED_WRITE;
+				return 0;
+			}
+			if (child == 256) { // end code
+				if (state->isLastBlock) {
+					state->id = STATE_END;
+					return Puff_step_END;
+				}
+				state->id = STATE_BLOCKHEADER;
+				return 0;
+			}
+			//printf("ahh it cant handle length/distance pairs yet everybody panic\n");
+
+			e = Puff_measureLengthSymbol(child, &baseLength, &extraBits);
+			if (e) return e;
+
+			// ...
+
+
 			return 0;
 		case Puff_Tree_OUTOFBOUNDS:
 		case Puff_Tree_HALT:
@@ -185,4 +211,34 @@ static inline int Puff_step_doFixed(struct Puff_State *state, _Bool bit) {
 }
 static inline int Puff_step_doDynamic(struct Puff_State *state, _Bool bit) {
 	return Puff_step_ERROR_IMPOSSIBLE;
+}
+
+
+#define MIN 3
+int Puff_measureLengthSymbol(uint16_t length, uint16_t *baseValue, uint8_t *numExtraBits) {
+
+	if (length == 285) {
+		*numExtraBits = 0;
+		*baseValue = 258;
+		return 0;
+	}
+	if (length < 257 || 285 < length) {
+		return 1;
+	}
+
+	uint16_t l = length - 257;
+
+	if (l < 8) {
+		*numExtraBits = 0;
+		*baseValue = l + MIN;
+		return 0;
+	}
+
+	uint8_t df = l / 4;
+	uint8_t extraBits = df - 1;
+	
+	*numExtraBits = extraBits;
+	*baseValue = (2 << df) + (l % 4 * (1 << extraBits)) + MIN;
+
+	return 0;
 }
