@@ -1,13 +1,13 @@
-#ifndef PUFF_HUFFMEN_TREE_IMPL_H
-#define PUFF_HUFFMEN_TREE_IMPL_H
+#ifndef PUFF_TREE_IMPL_H
+#define PUFF_TREE_IMPL_H
 
 #include <stdint.h>
 
-#define Puff_Huffmen_Tree_TYPE_NODE 0
-#define Puff_Huffmen_Tree_TYPE_LEAF 1
-#define Puff_Huffmen_Tree_ROOT 0
+#define Puff_Tree_TYPE_NODE 0
+#define Puff_Tree_TYPE_LEAF 1
+#define Puff_Tree_ROOT 0
 
-struct Puff_Huffmen_Tree {
+struct Puff_Tree {
 /*
 	O(log n) lookup of codes
 
