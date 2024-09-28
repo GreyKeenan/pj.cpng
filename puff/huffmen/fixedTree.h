@@ -3,6 +3,6 @@
 
 struct Puff_LiteralTree;
 
-static inline int Puff_FixedTree_init(struct Puff_LiteralTree *self);
+int Puff_FixedTree_init(struct Puff_LiteralTree *self);
 
 #endif

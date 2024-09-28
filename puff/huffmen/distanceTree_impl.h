@@ -11,7 +11,7 @@
 
 struct Puff_DistanceTree {
 	uint8_t data[Puff_DistanceTree_LENGTH];
-	struft Puff_Tree tree;
+	struct Puff_Tree tree;
 };
 
 #endif

@@ -5,9 +5,13 @@
 #include "../tree_impl.h"
 #include "../tree.h"
 
+#include "../fixedTree.h"
+#include "../literalTree_impl.h"
+
 void printTree(struct Puff_Tree tree);
 
 int main() {
+	/*
 	int e = 0;
 	uint16_t db = 0;
 
@@ -31,6 +35,12 @@ int main() {
 	printf("%d\n", e);
 
 	printTree(tree);
+	*/
+
+	struct Puff_LiteralTree fixedTree = {0};
+
+	int e = Puff_FixedTree_init(&fixedTree);
+	printf("e%d\n", e);
 
 
 	return 0;

@@ -6,7 +6,7 @@ test: ../testing
 		-iquote . \
 		\
 		main.c \
-			../tree.c \
+			../../all.c \
 		-lm \
 
 run:
