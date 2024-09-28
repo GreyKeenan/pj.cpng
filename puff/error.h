@@ -17,6 +17,10 @@ enum Puff_step_Error {
 	, Puff_step_ERROR_UNCOMPRESSED_LENGTH_BYTESREAD
 	, Puff_step_ERROR_NLEN
 
+	
+	, Puff_step_ERROR_FIXED_INIT
+
+
 	, Puff_step_DIRECTIVE_FINISHBYTE
 		//should never occur outside the module
 };

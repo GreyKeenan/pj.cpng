@@ -7,6 +7,8 @@
 
 #include "./iNostalgicWriter.h"
 
+#include "./huffmen/fixedTree.h"
+
 #define STATE_BLOCKHEADER 0
 #define STATE_UNCOMPRESSED 1
 #define STATE_FIXED 2
@@ -75,16 +77,28 @@ static inline int Puff_step_doBlockHeader(struct Puff_State *state, _Bool bit) {
 			state->bitsRead++;
 			break;
 		case 2:
+			state->bitsRead = 0;
 			switch ((uint8_t)state->compressionTypeBit0 | (bit << 1)) {
 				case 0:
-					state->bitsRead = 0;
+					printf("uncompressed!\n");
 					state->id = STATE_UNCOMPRESSED;
 					return Puff_step_DIRECTIVE_FINISHBYTE;
 				case 1:
+					printf("fixed!\n");
+					if (!state->fixedTreeInitiated) {
+						if (Puff_FixedTree_init(&state->fixedTree)) {
+							return Puff_step_ERROR_FIXED_INIT;
+						}
+						state->fixedTreeInitiated = 1;
+					}
+					state->id = STATE_FIXED;
+					break;
 				case 2:
+					printf("dynamic!\n");
 				default:
 					return Puff_step_ERROR_COMPRESSIONTYPE;
 			}
+			break;
 		default:
 			return Puff_step_ERROR_BLOCKHEADER_BITSREAD;
 	}
@@ -145,6 +159,7 @@ static inline int Puff_step_doUncompressed(struct Puff_State *state, uint8_t byt
 	return 0;
 }
 static inline int Puff_step_doFixed(struct Puff_State *state, _Bool bit) {
+
 	return Puff_step_ERROR_IMPOSSIBLE;
 }
 static inline int Puff_step_doDynamic(struct Puff_State *state, _Bool bit) {

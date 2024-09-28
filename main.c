@@ -53,8 +53,10 @@ int main(int argc, const char **argv) {
 	// file
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	struct iByteTrain bt = {0};
-	//FILE *f = FILE_as_iByteTrain("pngs/PNG_transparency_demonstration.png", &bt);
-	FILE *f = FILE_as_iByteTrain("assets/uncompressed.png", &bt);
+	//FILE *f = FILE_as_iByteTrain("assets/PNG_transparency_demonstration.png", &bt);
+	//FILE *f = FILE_as_iByteTrain("assets/uncompressed.png", &bt);
+	//FILE *f = FILE_as_iByteTrain("assets/zlib_cl6.png", &bt);
+	FILE *f = FILE_as_iByteTrain("assets/my_zlibFixed.png", &bt);
 	if (f == NULL) {
 		printf("cant open file\n");
 		return 1;

@@ -3,6 +3,10 @@
 
 #include "./iNostalgicWriter_impl.h"
 
+#include "./huffmen/literalTree_impl.h"
+#include "./huffmen/metaTree_impl.h"
+#include "./huffmen/distanceTree_impl.h"
+
 #include <stdint.h>
 
 struct Puff_State {
@@ -14,6 +18,8 @@ struct Puff_State {
 	uint8_t lengthObtained : 1;
 		// used by UNCOMPRESSED state
 
+	uint8_t fixedTreeInitiated : 1;
+
 	uint8_t bitsRead;
 	uint16_t bytesRead;
 		// used by UNCOMPRESSED state
@@ -22,6 +28,14 @@ struct Puff_State {
 	uint8_t uncompressed_invertedLengthByte0;
 
 	struct Puff_iNostalgicWriter nostalgicWriter;
+
+
+	struct Puff_LiteralTree fixedTree;
+	/*
+	struct Puff_LiteralTree dynamicTree;
+	struct Puff_MetaTree metaTree;
+	struct Puff_DistanceTree distanceTree;
+	*/
 };
 
 #endif
