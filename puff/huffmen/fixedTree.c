@@ -37,7 +37,7 @@ int Puff_FixedTree_init(struct Puff_LiteralTree *self) {
 		uint8_t length = Puff_FixedTree_CodeLengths[j];
 		for (int i = 0; i < Puff_FixedTree_CodeLengthCounts[j]; ++i) {
 			e = Puff_FixedTree_enterCode(self, codeStarters[j], length, offset + i);
-			if (e) return 2;
+			if (e) return e;
 
 			codeStarters[j]++;
 		}
@@ -50,7 +50,32 @@ int Puff_FixedTree_init(struct Puff_LiteralTree *self) {
 
 static inline int Puff_FixedTree_enterCode(struct Puff_LiteralTree *self, uint16_t code, uint8_t codeLength, uint16_t value) {
 
-	printf("entering code: 0x%x(%d) : %d\n", code, codeLength, value);
+	//printf("entering code: 0x%x(%d) : %d\n", code, codeLength, value);
+
+	uint16_t nodeIndex = Puff_Tree_ROOT;
+	uint16_t child = 0;
+
+	for (int i = 1 << (codeLength - 1); i != 0; i >>= 1) {
+		if (i == 1) {
+			if (Puff_Tree_growLeaf(&self->tree, nodeIndex, code & i, value)) {
+				return 4;
+			}
+			continue;
+		}
+		switch (Puff_Tree_walk(&self->tree, nodeIndex, code & i, &child)) {
+			case Puff_Tree_ISNODE:
+				nodeIndex = child;
+				break;
+			case Puff_Tree_HALT:
+				if (Puff_Tree_birthNode(&self->tree, nodeIndex, code & i, &child)) {
+					return 3;
+				}
+				nodeIndex = child;
+				break;
+			default:
+				return 2;
+		}
+	}
 
 	return 0;
 }
