@@ -70,20 +70,20 @@ int Puff_step(struct Puff_State *state, uint8_t byte) {
 
 
 static inline int Puff_step_doBlockHeader(struct Puff_State *state, _Bool bit) {
-	switch (state->bitsRead) {
+	switch (state->blockHeader.bitsRead) {
 		case 0:
 			state->isLastBlock = bit;
 
-			state->bitsRead++;
+			state->blockHeader.bitsRead++;
 			break;
 		case 1:
-			state->compressionTypeBit0 = bit;
+			state->blockHeader.compressionTypeBit0 = bit;
 
-			state->bitsRead++;
+			state->blockHeader.bitsRead++;
 			break;
 		case 2:
-			state->bitsRead = 0;
-			switch ((uint8_t)state->compressionTypeBit0 | (bit << 1)) {
+			state->blockHeader.bitsRead = 0;
+			switch ((uint8_t)state->blockHeader.compressionTypeBit0 | (bit << 1)) {
 				case 0:
 					printf("uncompressed!\n");
 					state->id = STATE_UNCOMPRESSED;
@@ -91,13 +91,13 @@ static inline int Puff_step_doBlockHeader(struct Puff_State *state, _Bool bit) {
 				case 1:
 					printf("fixed!\n");
 					if (!state->fixedTreeInitiated) {
-						if (Puff_FixedTree_init(&state->fixedTree)) {
+						if (Puff_FixedTree_init(&state->trees.fixed)) {
 							return Puff_step_ERROR_FIXED_INIT;
 						}
 						state->fixedTreeInitiated = 1;
 					}
 					state->id = STATE_FIXED;
-					state->currentNodeIndex = 0; //TODO ROOT
+					state->trees.nodeIndex = 0; //TODO ROOT
 					break;
 				case 2:
 					printf("dynamic!\n");
@@ -111,32 +111,32 @@ static inline int Puff_step_doBlockHeader(struct Puff_State *state, _Bool bit) {
 	return 0;
 }
 static inline int Puff_step_doUncompressed(struct Puff_State *state, uint8_t byte) {
-	if (!state->lengthObtained) {
+	if (!state->uncompressed.lengthObtained) {
 		uint16_t invertedLength = 0;
-		switch (state->bytesRead) {
+		switch (state->uncompressed.bytesRead) {
 			case 0:
-				state->uncompressed_length = byte;
-				state->bytesRead++;
+				state->uncompressed.length = byte;
+				state->uncompressed.bytesRead++;
 				break;
 			case 1:
-				state->uncompressed_length |= (uint16_t)byte << 8;
-				state->bytesRead++;
+				state->uncompressed.length |= (uint16_t)byte << 8;
+				state->uncompressed.bytesRead++;
 				break;
 			case 2:
-				state->uncompressed_invertedLengthByte0 = byte;
-				state->bytesRead++;
+				state->uncompressed.invertedLengthLSB = byte;
+				state->uncompressed.bytesRead++;
 				break;
 			case 3:
-				invertedLength = ((uint16_t)byte << 8) | state->uncompressed_invertedLengthByte0;
+				invertedLength = ((uint16_t)byte << 8) | state->uncompressed.invertedLengthLSB;
 
 				//printf("length: 0x%x, invertedLength: 0x%x\n", state->uncompressed_length, invertedLength);
 
-				if ((uint16_t)~invertedLength != state->uncompressed_length) {
+				if ((uint16_t)~invertedLength != state->uncompressed.length) {
 					return Puff_step_ERROR_NLEN;
 				}
 
-				state->lengthObtained = 1;
-				state->bytesRead = 0;
+				state->uncompressed.lengthObtained = 1;
+				state->uncompressed.bytesRead = 0;
 				break;
 			default:
 				return Puff_step_ERROR_UNCOMPRESSED_LENGTH_BYTESREAD;
@@ -146,9 +146,9 @@ static inline int Puff_step_doUncompressed(struct Puff_State *state, uint8_t byt
 
 	int e = Puff_iNostalgicWriter_write(&state->nostalgicWriter, byte);
 	if (e) return Puff_step_ERROR_UNCOMPRESSED_WRITE;
-	state->bytesRead++;
+	state->uncompressed.bytesRead++;
 	//printf("bytesRead: %d out of: %d\n", state->bytesRead, state->uncompressed_length);
-	if (state->bytesRead >= state->uncompressed_length) {
+	if (state->uncompressed.bytesRead >= state->uncompressed.length) {
 		
 		//printf("finished reading uncommpressed data idiot.\n");
 		
@@ -158,8 +158,8 @@ static inline int Puff_step_doUncompressed(struct Puff_State *state, uint8_t byt
 		}
 
 		state->id = STATE_BLOCKHEADER;
-		state->lengthObtained = 0;
-		state->bytesRead = 0;
+		state->uncompressed.lengthObtained = 0;
+		state->uncompressed.bytesRead = 0;
 		return 0;
 	}
 
@@ -172,14 +172,14 @@ static inline int Puff_step_doFixed(struct Puff_State *state, _Bool bit) {
 	uint16_t baseLength = 0;
 	uint8_t extraBits = 0;
 
-	int e = Puff_Tree_walk(&state->fixedTree.tree, state->currentNodeIndex, bit, &child);
+	int e = Puff_Tree_walk(&state->trees.fixed.tree, state->trees.nodeIndex, bit, &child);
 	switch (e) {
 		case Puff_Tree_ISNODE:
-			state->currentNodeIndex = child;
+			state->trees.nodeIndex = child;
 			printf("%d", bit);
 			return 0;
 		case Puff_Tree_ISLEAF:
-			state->currentNodeIndex = 0; //TODO ROOT
+			state->trees.nodeIndex = 0; //TODO ROOT
 			printf("%d) value: %d\n", bit, child);
 
 			if (child < 256) {
@@ -201,6 +201,7 @@ static inline int Puff_step_doFixed(struct Puff_State *state, _Bool bit) {
 			if (e) return e;
 
 			// ...
+			// how to store state of getting extra distance bits/length bits
 
 
 			return 0;
