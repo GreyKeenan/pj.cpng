@@ -22,6 +22,9 @@ enum Puff_step_Error {
 	, Puff_step_ERROR_FIXED_INIT
 	, Puff_step_ERROR_FIXED_WALK
 	, Puff_step_ERROR_FIXED_WRITE
+	, Puff_step_ERROR_FIXED_COLLECTFOR
+	, Puff_step_ERROR_FIXED_MEASURE_LENGTH
+	, Puff_step_ERROR_FIXED_MEASURE_DISTANCE
 
 
 	, Puff_step_DIRECTIVE_FINISHBYTE

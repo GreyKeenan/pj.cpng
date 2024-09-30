@@ -219,7 +219,9 @@ int Glass_dechunk(struct iByteTrain *bt, struct Glass_Ihdr *ihdr, struct Puff_iN
 						//printf("\t!\n");
 						flags = flags | DEFLATEOVER;
 						break;
-					default: goto finalize;
+					default:
+						e *= -1;
+						goto finalize;
 				}
 			}
 			// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

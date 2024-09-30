@@ -9,10 +9,14 @@
 
 #include <stdint.h>
 
+#define Puff_State_COLLECTFOR_LENGTH 0
+#define Puff_State_COLLECTFOR_DISTANCE 1
+#define Puff_State_COLLECTFOR_FIXEDDISTANCE 2
+
 struct Puff_State {
 	uint8_t id : 4;
 	uint8_t isLastBlock : 1;
-	uint8_t fixedTreeInitiated : 1; //TODO just initiate it when the State is created
+	uint8_t fixedTreeInitiated : 1; //TODO fixed tree should really be like a singleton type thing right?
 	struct Puff_iNostalgicWriter nostalgicWriter;
 	
 	struct {
@@ -29,18 +33,22 @@ struct Puff_State {
 
 	struct {
 		uint16_t nodeIndex;
+		/*
+			used to store node index for any of the four trees below, depending on the rest of the state:
+		*/
 
 		struct Puff_LiteralTree fixed;
 		struct Puff_LiteralTree dynamic;
 		struct Puff_MetaTree meta;
 		struct Puff_DistanceTree distance;
 	} trees;
+
 	struct {
 		uint16_t bits;
 		uint8_t collect;
 		/*
 			0 = not currently collecting bits
-			1 + indicates to collect bits, then decrease by 1
+			1+ indicates to collect bits, then decrease by 1
 				length extra bits: 1-5
 				fixed-ct distance code bits: 1-5
 				distance extra bits: 1-13
@@ -51,7 +59,11 @@ struct Puff_State {
 			1 = distance code extra bits
 			2 = fixed-ct distance code bits (its a 5-bit uint)
 		*/
-	} extraBits;
+	} extraBits; // vars for reading extra bits after length/distance codes & for fixed tree distance codes
+	struct {
+		uint16_t length;
+		uint16_t distance;
+	} lizard; // stores length/distance data as extra bits are counted up before being able to nostalgize
 
 
 };
