@@ -62,10 +62,24 @@ int Imbridge_choochoo(void *vself, uint32_t *nDestination) {
 					return 2;
 			}
 			break;
+		case 6: //rgba
+			switch (self->image->bitDepth) {
+				case 8:
+					for (int i = 0; i < 4; ++i) {
+						if (Imbridge_chewchew(self, &byte)) {
+							return 4;
+						}
+						pixel = (pixel << 8) | byte;
+					}
+					break;
+				case 16:
+				default:
+					return 5;
+			}
+			break;
 		case 0: //grey
 		case 3: //index
 		case 4: //greya
-		case 6: //rgba
 		default:
 			return 1;
 	}
