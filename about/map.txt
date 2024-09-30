@@ -1,0 +1,224 @@
+
+! last updated 240929
+
+Index:
+| Overview
+|   Decoding the PNG
+|   Displaying the PNG
+| Glass_decode()
+|   ...
+| Xylb_decompress()
+|   zlib header
+|   Passing along to Puff/DEFLATE
+|   zlib ADLER32
+|   Completed state
+| Puff_step()
+|   Blockheader
+|   Uncompressed
+|   Fixed
+|   Dynamic
+|   Completed state
+
+
+Overview
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+This document generally lays out how to PNG data is processed in my program.
+
+Decoding the PNG
+==================================================
+
+this is the main body of the thing
+also what this file focuses on outlining
+
+There are 3 main parts which decode the PNG
+	1. Glass
+	2. Xylb
+	3. Puff
+
+Briefly, PNG specification adds functionality surrounding the Zlib cm8 specification, which uses the underlying DEFLATE specification
+
+	Glass is responsible for all the PNG-specific wrappings.
+		it verifies the PNG header and IHDR
+		it parses through PNG chunks
+		it defilters the PNG after it has been decompressed
+
+	Xylb handles the zlib stuff
+		it verifies the ZLIB header
+		it computes & verifies the ADLER32 to ensure the data has been decompressed properly
+	
+	Puff handles the DEFLATE stuff
+		the deflate block headers
+		uncompressed, fixed-trees, and dynamic-trees
+
+Because the zlib data, and thereby the DEFLATE data, does not occur sequentially within PNGs (it can be split btwn different IDAT chunks), Xylb and Puff are created in a way where their current state is stored in a struct, and the decoding process can be resumed from that struct a single byte at a time.
+
+More detail about each of these 3 sections follows below.
+
+
+Displaying the PNG
+==================================================
+
+functionality in the 'Sdaubler' module
+fairly thrown-together, not really the focus of this exercise
+
+it takes an interface in order to convert a sequence of pixels into a SDL_Surface, which can then be displayed as an SDL_Texture ofc
+
+
+
+Glass_decode()
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+chain of events starts with Glass_decode()
+	it is given an iByteTrain, which feeds it the sequence of bytes that are a PNG
+
+verifies:
+	the PNG header
+
+creates an ExpandingWriter as an Puff_iNostalgicWriter
+
+_decode() calls to Glass_dechunk()
+
+	_dechunk() takes an iNostalgicWriter to write the data to
+
+	_dechunk processes the chunks of the png
+
+	IHDR first
+		validates valid combination of measurements
+
+
+	creates a struct Xylb_State
+		initializes it with the iNostalgicWriter
+			(TODO?) iNostalgicWriter could belong to _dechunk instead of _decode
+
+	processes following chunks
+		skips all ancillary chunks
+		TODO PLTE chunk errs rn
+
+		as it encounters IDAT chunks, it feeds that data to Xylb_decompress() using the Xylb_State
+			(see below)
+
+	verifies that idat has been obtained that Xylb_decompress() reached the end of its expected data
+
+
+At this point, the data has been de-zlibbed/de-DEFLATE-ed
+
+TODO the defiltering is done here. Write out how.
+
+
+
+Xylb_decompress()
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+in order to allow _decompress() to be called separately, as diff IDAT chunks occur, the state is stored in Xylb_State, and 'reopened' each time _decompress() is called
+	(that applies to Puff as well)
+
+	so, _decompress() is called on 1 byte at a time
+
+first it determines the current state:
+	0. doing the zlib header
+	1. passing along to Puff to DEFLATE the data
+	2. checking the ADLER32 checksum
+	3. completed
+
+
+zlib header
+==================================================
+
+checks for the correct compression method, windowsize, and flag/dict info that PNGs should have
+
+
+Passing along to Puff/DEFLATE
+==================================================
+
+just passes along the call to Puff_step()
+	(see below)
+and checks its return to see if DEFLATE data is complete
+	if it is, sets next state to doing the ADLER32
+
+Puff_State is contained within Xylb_State
+
+
+zlib ADLER32
+==================================================
+
+Xylb creates a new Puff_iNostalgicWriter wrapping the one it was given. The new writer computes the ADLER32 as it goes, each time Puff writes data to it.
+	to ensure Puff isnt doing zlib-specific stuff
+
+After the DEFLATE data is over, there are 4 more ZLIB bytes which make up the target ADLER32
+In this state, _decompress() compares the computed adler32 to the target
+
+After verifying the Adler, sets _State to the 'completed' state
+
+returns a value indicating that the end of the zlib data has been reached
+	(this returns when the last byte is processed, not only when subsequent calls are made)
+
+
+Completed state
+==================================================
+
+once in this state, nothing happens on subsequent calls other than returning a value indicating completion
+
+	(TODO) consider 2 different 'end' return values. One for this first end, and other for subsequent calls
+
+allowing calling past completion is handy because the containing IDAT chunks may have trailing empty bytes, according to PNG spec
+
+
+Puff_step()
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+recall, is called 1 byte at a time, with its state stored in Puff_State
+
+states:
+	1. blockheader
+	2. uncompressed
+	3. fixed
+	4. dynamic
+	5. completed
+
+_step() is called one byte at a time. however, DEFLATE data is not byte-aligned (besides uncompressed)
+	
+	_step() loops through the bits of the byte and calls its functionality 1 bit at a time
+	EXCEPT uncompressd, which is byte aligned
+	
+	it also has a 'directive' which is just a return value that indicates that the rest of the current byte is blank/irrelevant
+		this is used when starting 'uncompressed'
+
+
+Blockheader
+==================================================
+
+DEFLATE block headers are 3 bits
+
+checks the 'isLastBlock' bit. Sets it in _State
+
+checks the compression type
+	sets state accordingly, or errs if is RESERVED value
+
+if the compression type is uncompressed, returns DIRECTIVE_FINISHBYTE to align the bytes
+
+
+Uncompressed
+==================================================
+
+read & verify the length (4B)
+
+write (length) bytes to iNostalgicWriter
+
+when at end of uncompressed block:
+	if isLastBlock
+		state = complete
+		return END indicator
+			is returned here rather than on subsequent calls, just like Xylb
+	otherwise
+		state = blockheader
+		(reset data)
+
+
+
+Fixed
+==================================================
+
+Dynamic
+==================================================
+

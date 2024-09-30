@@ -1,0 +1,64 @@
+
+
+bit/byte order
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+* these orderings differ from Zlib and PNG. Even though DEFLATE is within those two, DEFLATE's orderings are preserved.
+
+multi-byte values are read LSB-first
+multi-bit integers are read LSb-first
+multi-bit *huffman codes* are read MSb-first
+when reading bits, they are read from the LSb of the byte to the MSb of the byte.
+
+take this example:
+
+	byte[0] = hgfedcba
+	byte[1] = ponmlkji
+	byte[2] = xwvutsrq
+
+	byte numbering 0-2 represents the order that they are read from the data stream
+	if byte0 & byte1 were an int16 together, byte0 is the LSB and byte1 is the LSB
+	when reading bits sequentally, the correct order is represented as alphabetical order here
+
+trees can be 'walked' in alphabetical-bit-order
+
+multi-bit ints are *read* LSb-first
+	the spec mentions that they are *stored* MSb-first, but since you read from the LSb, they are *read* LSb first
+
+	aka:
+		hgfedcba
+		00110110
+
+		^ would give you the bits:
+		0, 1, 1, 0, 1, 1, 0, 0 ...
+
+		but this would still represent the int: 0x36
+
+
+
+This ^ was confusing a couple times because of the distinction between *stored* order and *read* order. be careful.
+
+the 5-bit fixed-tree distance codes are CODES not INTS. This means that they are ~~stored~~ read MSb-first.
+the n-bit values following length/distance symbols are INTS. they are *read* LSb-first.
+	compression type is also an INT, ofc
+
+^ kind of annoying imo
+
+
+
+distance/length specifics
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+distance codes are counted backwards *from the next writing position, not from the previous written byte*
+
+for example, say the following bytes have been written so far:
+
+	00 01 02 03 04 05 06 07 08 09 [where the next byte will be written]
+
+	a distanceBack of '1' would be 0x09, not 0x08
+	a distance back of '4' would be 0x06, not 0x05
+	etc
+
+lengths write from (including) the byte the distanceBack starts on, *not after* it
+	
+	using the above example, if length 3 and distance 4, the copied bytes would be: 0x06 0x07 0x08
