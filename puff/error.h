@@ -25,6 +25,7 @@ enum Puff_step_Error {
 	, Puff_step_ERROR_FIXED_COLLECTFOR
 	, Puff_step_ERROR_FIXED_MEASURE_LENGTH
 	, Puff_step_ERROR_FIXED_MEASURE_DISTANCE
+	, Puff_step_ERROR_FIXED_LZ77IFY
 
 
 	, Puff_step_DIRECTIVE_FINISHBYTE

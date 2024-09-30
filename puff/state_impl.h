@@ -53,11 +53,17 @@ struct Puff_State {
 				fixed-ct distance code bits: 1-5
 				distance extra bits: 1-13
 		*/
+		uint8_t maxCollect;
+		/*
+			a count of the num of bits that will be collected
+			(when you set collect, also set totalCollected to the same value)
+			maybe a bit messy but am using it for reversing the bit order
+		*/
 		uint8_t collectFor;
 		/*
 			0 = length code extra bits
 			1 = distance code extra bits
-			2 = fixed-ct distance code bits (its a 5-bit uint)
+			2 = fixed-ct distance code bits (its a 5-bit ~~uint~~ CODE NOT INT)
 		*/
 	} extraBits; // vars for reading extra bits after length/distance codes & for fixed tree distance codes
 	struct {

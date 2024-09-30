@@ -21,6 +21,17 @@ static inline int Puff_step_doUncompressed(struct Puff_State *state, uint8_t byt
 static inline int Puff_step_doFixed(struct Puff_State *state, _Bool bit);
 static inline int Puff_step_doDynamic(struct Puff_State *state, _Bool bit);
 
+static inline uint16_t Puff_reverseInt16(uint16_t n, uint8_t bitLength) {
+	n = (n << 8) | (n >> 8);
+	n = ((n << 4) & 0xf0f0) | ((n >> 4) & 0x0f0f);
+	n = ((n << 2) & 0xcccc) | ((n >> 2) & 0x3333);
+	n = ((n << 1) & 0xaaaa) | ((n >> 1) & 0x5555);
+
+	n >>= 16 - bitLength;
+
+	return n;
+}
+
 int Puff_measureLengthSymbol(uint16_t length, uint16_t *baseValue, uint8_t *numExtraBits);
 int Puff_measureDistanceSymbol(uint8_t distance, uint16_t *baseValue, uint8_t *numExtraBits);
 int Puff_lz77ify(struct Puff_iNostalgicWriter *nw, uint16_t length, uint16_t distance);
@@ -187,18 +198,23 @@ static inline int Puff_step_doFixed(struct Puff_State *state, _Bool bit) {
 		switch (state->extraBits.collectFor) {
 			case Puff_State_COLLECTFOR_LENGTH:
 				printf("l ");
+				state->extraBits.bits = Puff_reverseInt16(state->extraBits.bits, state->extraBits.maxCollect);
 				state->lizard.length += state->extraBits.bits;
 
 				state->extraBits.collect = 5;
+				state->extraBits.maxCollect = state->extraBits.collect;
 				state->extraBits.collectFor = Puff_State_COLLECTFOR_FIXEDDISTANCE;
 
 				break;
 			case Puff_State_COLLECTFOR_DISTANCE:
 				printf("d ");
+				state->extraBits.bits = Puff_reverseInt16(state->extraBits.bits, state->extraBits.maxCollect);
 				state->lizard.distance += state->extraBits.bits;
 
 				// actually nostalgize
 				printf("l%d, d%d\n", state->lizard.length, state->lizard.distance);
+				e = Puff_lz77ify(&state->nostalgicWriter, state->lizard.length, state->lizard.distance);
+				if (e) return Puff_step_ERROR_FIXED_LZ77IFY;
 
 				break;
 			case Puff_State_COLLECTFOR_FIXEDDISTANCE:
@@ -208,12 +224,15 @@ static inline int Puff_step_doFixed(struct Puff_State *state, _Bool bit) {
 				if (e) return Puff_step_ERROR_FIXED_MEASURE_DISTANCE;
 
 				if (state->extraBits.collect) {
+					state->extraBits.maxCollect = state->extraBits.collect;
 					state->extraBits.collectFor = Puff_State_COLLECTFOR_DISTANCE;
 					break;
 				}
 
 				// actually nostalgize
 				printf("l%d, d%d\n", state->lizard.length, state->lizard.distance);
+				e = Puff_lz77ify(&state->nostalgicWriter, state->lizard.length, state->lizard.distance);
+				if (e) return Puff_step_ERROR_FIXED_LZ77IFY;
 
 				break;
 			default:
@@ -260,11 +279,13 @@ static inline int Puff_step_doFixed(struct Puff_State *state, _Bool bit) {
 			state->extraBits.bits = 0;
 
 			if (state->extraBits.collect) {
+				state->extraBits.maxCollect = state->extraBits.collect;
 				state->extraBits.collectFor = Puff_State_COLLECTFOR_LENGTH;
 				return 0;
 			}
 
 			state->extraBits.collect = 5;
+			state->extraBits.maxCollect = state->extraBits.collect;
 			state->extraBits.collectFor = Puff_State_COLLECTFOR_FIXEDDISTANCE;
 			return 0;
 		case Puff_Tree_OUTOFBOUNDS:
@@ -331,5 +352,31 @@ int Puff_measureDistanceSymbol(uint8_t distance, uint16_t *baseValue, uint8_t *n
 
 
 int Puff_lz77ify(struct Puff_iNostalgicWriter *nw, uint16_t length, uint16_t distance) {
+
+	if (length < 3 || 258 < length) {
+		return 1;
+	}
+	if (distance < 1 || 32768 < distance) {
+		return 2;
+	}
+
+	int e = 0;
+	uint8_t byte = 0;
+
+	for (int i = 0; i < length; ++i) {
+		e = Puff_iNostalgicWriter_nostalgize(nw, &byte, distance);
+		if (e) return 3;
+
+		printf("rpt:%x ", byte);
+
+		e = Puff_iNostalgicWriter_write(nw, byte);
+		if (e) return 4;
+	}
+
+	printf("\n");
 	
+	return 0;
 }
+
+
+
