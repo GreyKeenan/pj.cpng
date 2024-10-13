@@ -16,31 +16,47 @@
 #define STATE_DYNAMIC 3
 #define STATE_END 4
 
-static inline int Puff_step_doBlockHeader(struct Puff_State *state, _Bool bit);
-static inline int Puff_step_doUncompressed(struct Puff_State *state, uint8_t byte);
-static inline int Puff_step_doFixed(struct Puff_State *state, _Bool bit);
-static inline int Puff_step_doDynamic(struct Puff_State *state, _Bool bit);
+// Headers
+// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-static inline uint16_t Puff_reverseInt16(uint16_t n, uint8_t bitLength) {
-	n = (n << 8) | (n >> 8);
-	n = ((n << 4) & 0xf0f0) | ((n >> 4) & 0x0f0f);
-	n = ((n << 2) & 0xcccc) | ((n >> 2) & 0x3333);
-	n = ((n << 1) & 0xaaaa) | ((n >> 1) & 0x5555);
+// States
+// ==================================================
 
-	n >>= 16 - bitLength;
+// BlockHeader
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+static inline int Puff_stepBlockHeader(struct Puff_State *state, _Bool bit);
+static inline int Puff_stepBlockHeader_final(struct Puff_State *state, _Bool bit);
 
-	return n;
-}
+// Uncompressed
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+static inline int Puff_stepUncompressed(struct Puff_State *state, uint8_t byte);
+static inline int Puff_stepUncompressed_getLength(struct Puff_State *state, uint8_t byte);
 
+// Fixed
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+static inline int Puff_stepFixed(struct Puff_State *state, _Bool bit);
+static inline int Puff_stepFixed_collectBits(struct Puff_State *state, _Bool bit);
+static inline int Puff_stepFixed_handleLeaf(struct Puff_State *state, uint16_t child);
+
+// Dynamic
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+static inline int Puff_stepDynamic(struct Puff_State *state, _Bool bit);
+
+// utilities
+// ==================================================
 int Puff_measureLengthSymbol(uint16_t length, uint16_t *baseValue, uint8_t *numExtraBits);
 int Puff_measureDistanceSymbol(uint8_t distance, uint16_t *baseValue, uint8_t *numExtraBits);
 int Puff_lz77ify(struct Puff_iNostalgicWriter *nw, uint16_t length, uint16_t distance);
+static inline uint16_t Puff_reverseInt16(uint16_t n, uint8_t bitLength);
+
+
+// top function
+// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 int Puff_step(struct Puff_State *state, uint8_t byte) {
 
 	int e = 0;
 	_Bool bit = 0;
-	//printf("[B%x]:", byte);
 
 	for (uint8_t i = 1; i != 0; i <<= 1) {
 
@@ -50,19 +66,19 @@ int Puff_step(struct Puff_State *state, uint8_t byte) {
 			case STATE_END:
 				return Puff_step_END;
 			case STATE_BLOCKHEADER:
-				e = Puff_step_doBlockHeader(state, bit);
+				e = Puff_stepBlockHeader(state, bit);
 				break;
 			case STATE_FIXED:
-				e = Puff_step_doFixed(state, bit);
+				e = Puff_stepFixed(state, bit);
 				break;
 			case STATE_DYNAMIC:
-				e = Puff_step_doDynamic(state, bit);
+				e = Puff_stepDynamic(state, bit);
 				break;
 			case STATE_UNCOMPRESSED:
 				if (i != 1) {
 					return Puff_step_ERROR_UNALIGNEDUNCOMPRESSED;
 				}
-				return Puff_step_doUncompressed(state, byte);
+				return Puff_stepUncompressed(state, byte);
 			default:
 				return Puff_step_ERROR_STATE;
 		}
@@ -80,89 +96,69 @@ int Puff_step(struct Puff_State *state, uint8_t byte) {
 	return 0;
 }
 
+// States
+// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-static inline int Puff_step_doBlockHeader(struct Puff_State *state, _Bool bit) {
+// BlockHeader
+// ==================================================
+
+static inline int Puff_stepBlockHeader(struct Puff_State *state, _Bool bit) {
 	switch (state->blockHeader.bitsRead) {
 		case 0:
 			state->isLastBlock = bit;
 
 			state->blockHeader.bitsRead++;
-			break;
+			return 0;
 		case 1:
 			state->blockHeader.compressionTypeBit0 = bit;
 
 			state->blockHeader.bitsRead++;
-			break;
+			return 0;
 		case 2:
-			state->blockHeader.bitsRead = 0;
-			switch ((uint8_t)state->blockHeader.compressionTypeBit0 | (bit << 1)) {
-				case 0:
-					printf("uncompressed!\n");
-					state->id = STATE_UNCOMPRESSED;
-					return Puff_step_DIRECTIVE_FINISHBYTE;
-				case 1:
-					printf("fixed!\n");
-					if (!state->fixedTreeInitiated) {
-						if (Puff_FixedTree_init(&state->trees.fixed)) {
-							return Puff_step_ERROR_FIXED_INIT;
-						}
-						state->fixedTreeInitiated = 1;
-					}
-					state->id = STATE_FIXED;
-					state->trees.nodeIndex = 0; //TODO ROOT
-					break;
-				case 2:
-					printf("dynamic!\n");
-				default:
-					return Puff_step_ERROR_COMPRESSIONTYPE;
-			}
-			break;
+			return Puff_stepBlockHeader_final(state, bit);
 		default:
 			return Puff_step_ERROR_BLOCKHEADER_BITSREAD;
 	}
-	return 0;
 }
-static inline int Puff_step_doUncompressed(struct Puff_State *state, uint8_t byte) {
-	if (!state->uncompressed.lengthObtained) {
-		uint16_t invertedLength = 0;
-		switch (state->uncompressed.bytesRead) {
-			case 0:
-				state->uncompressed.length = byte;
-				state->uncompressed.bytesRead++;
-				break;
-			case 1:
-				state->uncompressed.length |= (uint16_t)byte << 8;
-				state->uncompressed.bytesRead++;
-				break;
-			case 2:
-				state->uncompressed.invertedLengthLSB = byte;
-				state->uncompressed.bytesRead++;
-				break;
-			case 3:
-				invertedLength = ((uint16_t)byte << 8) | state->uncompressed.invertedLengthLSB;
-
-				//printf("length: 0x%x, invertedLength: 0x%x\n", state->uncompressed_length, invertedLength);
-
-				if ((uint16_t)~invertedLength != state->uncompressed.length) {
-					return Puff_step_ERROR_NLEN;
+static inline int Puff_stepBlockHeader_final(struct Puff_State *state, _Bool bit) {
+	state->blockHeader.bitsRead = 0;
+	switch ((uint8_t)state->blockHeader.compressionTypeBit0 | (bit << 1)) {
+		case 0:
+			printf("uncompressed!\n");
+			state->id = STATE_UNCOMPRESSED;
+			return Puff_step_DIRECTIVE_FINISHBYTE;
+		case 1:
+			printf("fixed!\n");
+			if (!state->fixedTreeInitiated) {
+				if (Puff_FixedTree_init(&state->trees.fixed)) {
+					return Puff_step_ERROR_FIXED_INIT;
 				}
+				state->fixedTreeInitiated = 1;
+			}
+			state->id = STATE_FIXED;
+			state->trees.nodeIndex = 0; //TODO ROOT
+			return 0;
+		case 2:
+			printf("dynamic!\n");
+		default:
+			return Puff_step_ERROR_COMPRESSIONTYPE;
+	}
+}
 
-				state->uncompressed.lengthObtained = 1;
-				state->uncompressed.bytesRead = 0;
-				break;
-			default:
-				return Puff_step_ERROR_UNCOMPRESSED_LENGTH_BYTESREAD;
-		}
-		return 0;
+
+// Uncompressed
+// ==================================================
+
+static inline int Puff_stepUncompressed(struct Puff_State *state, uint8_t byte) {
+	if (!state->uncompressed.lengthObtained) {
+		return Puff_stepUncompressed_getLength(state, byte);
 	}
 
 	int e = Puff_iNostalgicWriter_write(&state->nostalgicWriter, byte);
 	if (e) return Puff_step_ERROR_UNCOMPRESSED_WRITE;
 	state->uncompressed.bytesRead++;
-	//printf("bytesRead: %d out of: %d\n", state->bytesRead, state->uncompressed_length);
+
 	if (state->uncompressed.bytesRead >= state->uncompressed.length) {
-		
-		//printf("finished reading uncommpressed data idiot.\n");
 		
 		if (state->isLastBlock) {
 			state->id = STATE_END;
@@ -177,76 +173,48 @@ static inline int Puff_step_doUncompressed(struct Puff_State *state, uint8_t byt
 
 	return 0;
 }
-static inline int Puff_step_doFixed(struct Puff_State *state, _Bool bit) {
+static inline int Puff_stepUncompressed_getLength(struct Puff_State *state, uint8_t byte) {
+	uint16_t invertedLength = 0;
+	switch (state->uncompressed.bytesRead) {
+		case 0:
+			state->uncompressed.length = byte;
+			state->uncompressed.bytesRead++;
+			break;
+		case 1:
+			state->uncompressed.length |= (uint16_t)byte << 8;
+			state->uncompressed.bytesRead++;
+			break;
+		case 2:
+			state->uncompressed.invertedLengthLSB = byte;
+			state->uncompressed.bytesRead++;
+			break;
+		case 3:
+			invertedLength = ((uint16_t)byte << 8) | state->uncompressed.invertedLengthLSB;
 
-	int e = 0;
+			if ((uint16_t)~invertedLength != state->uncompressed.length) {
+				return Puff_step_ERROR_NLEN;
+			}
 
-	// collecting extra bits
-	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+			state->uncompressed.lengthObtained = 1;
+			state->uncompressed.bytesRead = 0;
+			break;
+		default:
+			return Puff_step_ERROR_UNCOMPRESSED_LENGTH_BYTESREAD;
+	}
+	return 0;
+}
+
+// Fixed
+// ==================================================
+
+static inline int Puff_stepFixed(struct Puff_State *state, _Bool bit) {
 
 	if (state->extraBits.collect) {
-		state->extraBits.bits = (state->extraBits.bits << 1) | bit;
-		state->extraBits.collect--;
-
-		printf("%d", bit);
-
-		if (state->extraBits.collect) {
-			return 0;
-		}
-		printf("]");
-
-		switch (state->extraBits.collectFor) {
-			case Puff_State_COLLECTFOR_LENGTH:
-				printf("l ");
-				state->extraBits.bits = Puff_reverseInt16(state->extraBits.bits, state->extraBits.maxCollect);
-				state->lizard.length += state->extraBits.bits;
-
-				state->extraBits.collect = 5;
-				state->extraBits.maxCollect = state->extraBits.collect;
-				state->extraBits.collectFor = Puff_State_COLLECTFOR_FIXEDDISTANCE;
-
-				break;
-			case Puff_State_COLLECTFOR_DISTANCE:
-				printf("d ");
-				state->extraBits.bits = Puff_reverseInt16(state->extraBits.bits, state->extraBits.maxCollect);
-				state->lizard.distance += state->extraBits.bits;
-
-				// actually nostalgize
-				printf("l%d, d%d\n", state->lizard.length, state->lizard.distance);
-				e = Puff_lz77ify(&state->nostalgicWriter, state->lizard.length, state->lizard.distance);
-				if (e) return Puff_step_ERROR_FIXED_LZ77IFY;
-
-				break;
-			case Puff_State_COLLECTFOR_FIXEDDISTANCE:
-				printf("f ");
-
-				e = Puff_measureDistanceSymbol(state->extraBits.bits, &state->lizard.distance, &state->extraBits.collect);
-				if (e) return Puff_step_ERROR_FIXED_MEASURE_DISTANCE;
-
-				if (state->extraBits.collect) {
-					state->extraBits.maxCollect = state->extraBits.collect;
-					state->extraBits.collectFor = Puff_State_COLLECTFOR_DISTANCE;
-					break;
-				}
-
-				// actually nostalgize
-				printf("l%d, d%d\n", state->lizard.length, state->lizard.distance);
-				e = Puff_lz77ify(&state->nostalgicWriter, state->lizard.length, state->lizard.distance);
-				if (e) return Puff_step_ERROR_FIXED_LZ77IFY;
-
-				break;
-			default:
-				return Puff_step_ERROR_FIXED_COLLECTFOR;
-		}
-
-		state->extraBits.bits = 0;
-		return 0;
+		return Puff_stepFixed_collectBits(state, bit);
 	}
 
 
-	// walking the fixed tree
-	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+	int e = 0;
 	uint16_t child = 0;
 
 	e = Puff_Tree_walk(&state->trees.fixed.tree, state->trees.nodeIndex, bit, &child);
@@ -256,38 +224,8 @@ static inline int Puff_step_doFixed(struct Puff_State *state, _Bool bit) {
 			printf("%d", bit);
 			return 0;
 		case Puff_Tree_ISLEAF:
-			state->trees.nodeIndex = 0; //TODO ROOT
 			printf("%d) value: 0x%x\n", bit, child);
-
-			if (child < 256) {
-				e = Puff_iNostalgicWriter_write(&state->nostalgicWriter, child);
-				if (e) return Puff_step_ERROR_FIXED_WRITE;
-				return 0;
-			}
-			if (child == 256) { // end code
-				if (state->isLastBlock) {
-					state->id = STATE_END;
-					return Puff_step_END;
-				}
-				state->id = STATE_BLOCKHEADER;
-				return 0;
-			}
-
-			e = Puff_measureLengthSymbol(child, &state->lizard.length, &state->extraBits.collect);
-			if (e) return Puff_step_ERROR_FIXED_MEASURE_LENGTH;
-
-			state->extraBits.bits = 0;
-
-			if (state->extraBits.collect) {
-				state->extraBits.maxCollect = state->extraBits.collect;
-				state->extraBits.collectFor = Puff_State_COLLECTFOR_LENGTH;
-				return 0;
-			}
-
-			state->extraBits.collect = 5;
-			state->extraBits.maxCollect = state->extraBits.collect;
-			state->extraBits.collectFor = Puff_State_COLLECTFOR_FIXEDDISTANCE;
-			return 0;
+			return Puff_stepFixed_handleLeaf(state, child);
 		case Puff_Tree_OUTOFBOUNDS:
 		case Puff_Tree_HALT:
 		default:
@@ -296,10 +234,115 @@ static inline int Puff_step_doFixed(struct Puff_State *state, _Bool bit) {
 
 	return Puff_step_ERROR_IMPOSSIBLE;
 }
-static inline int Puff_step_doDynamic(struct Puff_State *state, _Bool bit) {
+static inline int Puff_stepFixed_collectBits(struct Puff_State *state, _Bool bit) {
+
+	int e = 0;
+	
+	state->extraBits.bits = (state->extraBits.bits << 1) | bit;
+	state->extraBits.collect--;
+
+	printf("%d", bit);
+
+	if (state->extraBits.collect) {
+		return 0;
+	}
+	printf("]");
+
+	switch (state->extraBits.collectFor) {
+		case Puff_State_COLLECTFOR_LENGTH:
+			printf("l ");
+			state->extraBits.bits = Puff_reverseInt16(state->extraBits.bits, state->extraBits.maxCollect);
+			state->lizard.length += state->extraBits.bits;
+
+			state->extraBits.collect = 5;
+			state->extraBits.maxCollect = state->extraBits.collect;
+			state->extraBits.collectFor = Puff_State_COLLECTFOR_FIXEDDISTANCE;
+
+			break;
+		case Puff_State_COLLECTFOR_DISTANCE:
+			printf("d ");
+			state->extraBits.bits = Puff_reverseInt16(state->extraBits.bits, state->extraBits.maxCollect);
+			state->lizard.distance += state->extraBits.bits;
+
+			// actually nostalgize
+			printf("l%d, d%d\n", state->lizard.length, state->lizard.distance);
+			e = Puff_lz77ify(&state->nostalgicWriter, state->lizard.length, state->lizard.distance);
+			if (e) return Puff_step_ERROR_FIXED_LZ77IFY;
+
+			break;
+		case Puff_State_COLLECTFOR_FIXEDDISTANCE:
+			printf("f ");
+
+			e = Puff_measureDistanceSymbol(state->extraBits.bits, &state->lizard.distance, &state->extraBits.collect);
+			if (e) return Puff_step_ERROR_FIXED_MEASURE_DISTANCE;
+
+			if (state->extraBits.collect) {
+				state->extraBits.maxCollect = state->extraBits.collect;
+				state->extraBits.collectFor = Puff_State_COLLECTFOR_DISTANCE;
+				break;
+			}
+
+			// actually nostalgize
+			printf("l%d, d%d\n", state->lizard.length, state->lizard.distance);
+			e = Puff_lz77ify(&state->nostalgicWriter, state->lizard.length, state->lizard.distance);
+			if (e) return Puff_step_ERROR_FIXED_LZ77IFY;
+
+			break;
+		default:
+			return Puff_step_ERROR_FIXED_COLLECTFOR;
+	}
+
+	state->extraBits.bits = 0;
+	return 0;
+}
+static inline int Puff_stepFixed_handleLeaf(struct Puff_State *state, uint16_t child) {
+
+	int e = 0;
+	
+	state->trees.nodeIndex = 0; //TODO ROOT
+
+	if (child < 256) {
+		e = Puff_iNostalgicWriter_write(&state->nostalgicWriter, child);
+		if (e) return Puff_step_ERROR_FIXED_WRITE;
+		return 0;
+	}
+	if (child == 256) { // end code
+		if (state->isLastBlock) {
+			state->id = STATE_END;
+			return Puff_step_END;
+		}
+		state->id = STATE_BLOCKHEADER;
+		return 0;
+	}
+
+	e = Puff_measureLengthSymbol(child, &state->lizard.length, &state->extraBits.collect);
+	if (e) return Puff_step_ERROR_FIXED_MEASURE_LENGTH;
+
+	state->extraBits.bits = 0;
+
+	if (state->extraBits.collect) {
+		state->extraBits.maxCollect = state->extraBits.collect;
+		state->extraBits.collectFor = Puff_State_COLLECTFOR_LENGTH;
+		return 0;
+	}
+
+	state->extraBits.collect = 5;
+	state->extraBits.maxCollect = state->extraBits.collect;
+	state->extraBits.collectFor = Puff_State_COLLECTFOR_FIXEDDISTANCE;
+	return 0;
+}
+
+
+// Dynamic
+// ==================================================
+
+static inline int Puff_stepDynamic(struct Puff_State *state, _Bool bit) {
 	return Puff_step_ERROR_IMPOSSIBLE;
 }
 
+
+// utilities
+// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 #define MIN 3
 int Puff_measureLengthSymbol(uint16_t length, uint16_t *baseValue, uint8_t *numExtraBits) {
@@ -329,7 +372,6 @@ int Puff_measureLengthSymbol(uint16_t length, uint16_t *baseValue, uint8_t *numE
 
 	return 0;
 }
-
 int Puff_measureDistanceSymbol(uint8_t distance, uint16_t *baseValue, uint8_t *numExtraBits) {
 	if (distance > 29) {
 		return 1;
@@ -349,8 +391,6 @@ int Puff_measureDistanceSymbol(uint8_t distance, uint16_t *baseValue, uint8_t *n
 
 	return 0;
 }
-
-
 int Puff_lz77ify(struct Puff_iNostalgicWriter *nw, uint16_t length, uint16_t distance) {
 
 	if (length < 3 || 258 < length) {
@@ -378,5 +418,13 @@ int Puff_lz77ify(struct Puff_iNostalgicWriter *nw, uint16_t length, uint16_t dis
 	return 0;
 }
 
+static inline uint16_t Puff_reverseInt16(uint16_t n, uint8_t bitLength) {
+	n = (n << 8) | (n >> 8);
+	n = ((n << 4) & 0xf0f0) | ((n >> 4) & 0x0f0f);
+	n = ((n << 2) & 0xcccc) | ((n >> 2) & 0x3333);
+	n = ((n << 1) & 0xaaaa) | ((n >> 1) & 0x5555);
 
+	n >>= 16 - bitLength;
 
+	return n;
+}
