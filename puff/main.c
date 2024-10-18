@@ -19,35 +19,32 @@
 // Headers
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-// States
-// ==================================================
-
 // BlockHeader
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ==================================================
 static inline int Puff_stepBlockHeader(struct Puff_State *state, _Bool bit);
 static inline int Puff_stepBlockHeader_final(struct Puff_State *state, _Bool bit);
 
 // Uncompressed
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ==================================================
 static inline int Puff_stepUncompressed(struct Puff_State *state, uint8_t byte);
 static inline int Puff_stepUncompressed_getLength(struct Puff_State *state, uint8_t byte);
 
 // Fixed
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ==================================================
 static inline int Puff_stepFixed(struct Puff_State *state, _Bool bit);
 static inline int Puff_stepFixed_collectBits(struct Puff_State *state, _Bool bit);
 static inline int Puff_stepFixed_handleLeaf(struct Puff_State *state, uint16_t child);
 
 // Dynamic
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ==================================================
 static inline int Puff_stepDynamic(struct Puff_State *state, _Bool bit);
 
-// utilities
+// shared fixed/dynamic
 // ==================================================
-int Puff_measureLengthSymbol(uint16_t length, uint16_t *baseValue, uint8_t *numExtraBits);
-int Puff_measureDistanceSymbol(uint8_t distance, uint16_t *baseValue, uint8_t *numExtraBits);
-int Puff_lz77ify(struct Puff_iNostalgicWriter *nw, uint16_t length, uint16_t distance);
-static inline uint16_t Puff_reverseInt16(uint16_t n, uint8_t bitLength);
+int Puff_stepTree_lengthSymbol(uint16_t length, uint16_t *baseValue, uint8_t *numExtraBits);
+int Puff_stepTree_distanceSymbol(uint8_t distance, uint16_t *baseValue, uint8_t *numExtraBits);
+int Puff_stepTree_lz77ify(struct Puff_iNostalgicWriter *nw, uint16_t length, uint16_t distance);
+static inline uint16_t Puff_stepTree_reverseInt16(uint16_t n, uint8_t bitLength);
 
 
 // top function
@@ -96,11 +93,8 @@ int Puff_step(struct Puff_State *state, uint8_t byte) {
 	return 0;
 }
 
-// States
-// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 // BlockHeader
-// ==================================================
+// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 static inline int Puff_stepBlockHeader(struct Puff_State *state, _Bool bit) {
 	switch (state->blockHeader.bitsRead) {
@@ -147,7 +141,7 @@ static inline int Puff_stepBlockHeader_final(struct Puff_State *state, _Bool bit
 
 
 // Uncompressed
-// ==================================================
+// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 static inline int Puff_stepUncompressed(struct Puff_State *state, uint8_t byte) {
 	if (!state->uncompressed.lengthObtained) {
@@ -205,7 +199,7 @@ static inline int Puff_stepUncompressed_getLength(struct Puff_State *state, uint
 }
 
 // Fixed
-// ==================================================
+// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 static inline int Puff_stepFixed(struct Puff_State *state, _Bool bit) {
 
@@ -251,7 +245,7 @@ static inline int Puff_stepFixed_collectBits(struct Puff_State *state, _Bool bit
 	switch (state->extraBits.collectFor) {
 		case Puff_State_COLLECTFOR_LENGTH:
 			printf("l ");
-			state->extraBits.bits = Puff_reverseInt16(state->extraBits.bits, state->extraBits.maxCollect);
+			state->extraBits.bits = Puff_stepTree_reverseInt16(state->extraBits.bits, state->extraBits.maxCollect);
 			state->lizard.length += state->extraBits.bits;
 
 			state->extraBits.collect = 5;
@@ -261,19 +255,19 @@ static inline int Puff_stepFixed_collectBits(struct Puff_State *state, _Bool bit
 			break;
 		case Puff_State_COLLECTFOR_DISTANCE:
 			printf("d ");
-			state->extraBits.bits = Puff_reverseInt16(state->extraBits.bits, state->extraBits.maxCollect);
+			state->extraBits.bits = Puff_stepTree_reverseInt16(state->extraBits.bits, state->extraBits.maxCollect);
 			state->lizard.distance += state->extraBits.bits;
 
 			// actually nostalgize
 			printf("l%d, d%d\n", state->lizard.length, state->lizard.distance);
-			e = Puff_lz77ify(&state->nostalgicWriter, state->lizard.length, state->lizard.distance);
+			e = Puff_stepTree_lz77ify(&state->nostalgicWriter, state->lizard.length, state->lizard.distance);
 			if (e) return Puff_step_ERROR_FIXED_LZ77IFY;
 
 			break;
 		case Puff_State_COLLECTFOR_FIXEDDISTANCE:
 			printf("f ");
 
-			e = Puff_measureDistanceSymbol(state->extraBits.bits, &state->lizard.distance, &state->extraBits.collect);
+			e = Puff_stepTree_distanceSymbol(state->extraBits.bits, &state->lizard.distance, &state->extraBits.collect);
 			if (e) return Puff_step_ERROR_FIXED_MEASURE_DISTANCE;
 
 			if (state->extraBits.collect) {
@@ -284,7 +278,7 @@ static inline int Puff_stepFixed_collectBits(struct Puff_State *state, _Bool bit
 
 			// actually nostalgize
 			printf("l%d, d%d\n", state->lizard.length, state->lizard.distance);
-			e = Puff_lz77ify(&state->nostalgicWriter, state->lizard.length, state->lizard.distance);
+			e = Puff_stepTree_lz77ify(&state->nostalgicWriter, state->lizard.length, state->lizard.distance);
 			if (e) return Puff_step_ERROR_FIXED_LZ77IFY;
 
 			break;
@@ -315,7 +309,7 @@ static inline int Puff_stepFixed_handleLeaf(struct Puff_State *state, uint16_t c
 		return 0;
 	}
 
-	e = Puff_measureLengthSymbol(child, &state->lizard.length, &state->extraBits.collect);
+	e = Puff_stepTree_lengthSymbol(child, &state->lizard.length, &state->extraBits.collect);
 	if (e) return Puff_step_ERROR_FIXED_MEASURE_LENGTH;
 
 	state->extraBits.bits = 0;
@@ -334,18 +328,18 @@ static inline int Puff_stepFixed_handleLeaf(struct Puff_State *state, uint16_t c
 
 
 // Dynamic
-// ==================================================
+// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 static inline int Puff_stepDynamic(struct Puff_State *state, _Bool bit) {
 	return Puff_step_ERROR_IMPOSSIBLE;
 }
 
 
-// utilities
+// shared fixed/dynamic trees
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 #define MIN 3
-int Puff_measureLengthSymbol(uint16_t length, uint16_t *baseValue, uint8_t *numExtraBits) {
+int Puff_stepTree_lengthSymbol(uint16_t length, uint16_t *baseValue, uint8_t *numExtraBits) {
 
 	if (length == 285) {
 		*numExtraBits = 0;
@@ -372,7 +366,7 @@ int Puff_measureLengthSymbol(uint16_t length, uint16_t *baseValue, uint8_t *numE
 
 	return 0;
 }
-int Puff_measureDistanceSymbol(uint8_t distance, uint16_t *baseValue, uint8_t *numExtraBits) {
+int Puff_stepTree_distanceSymbol(uint8_t distance, uint16_t *baseValue, uint8_t *numExtraBits) {
 	if (distance > 29) {
 		return 1;
 	}
@@ -391,7 +385,7 @@ int Puff_measureDistanceSymbol(uint8_t distance, uint16_t *baseValue, uint8_t *n
 
 	return 0;
 }
-int Puff_lz77ify(struct Puff_iNostalgicWriter *nw, uint16_t length, uint16_t distance) {
+int Puff_stepTree_lz77ify(struct Puff_iNostalgicWriter *nw, uint16_t length, uint16_t distance) {
 
 	if (length < 3 || 258 < length) {
 		return 1;
@@ -418,7 +412,7 @@ int Puff_lz77ify(struct Puff_iNostalgicWriter *nw, uint16_t length, uint16_t dis
 	return 0;
 }
 
-static inline uint16_t Puff_reverseInt16(uint16_t n, uint8_t bitLength) {
+static inline uint16_t Puff_stepTree_reverseInt16(uint16_t n, uint8_t bitLength) {
 	n = (n << 8) | (n >> 8);
 	n = ((n << 4) & 0xf0f0) | ((n >> 4) & 0x0f0f);
 	n = ((n << 2) & 0xcccc) | ((n >> 2) & 0x3333);
