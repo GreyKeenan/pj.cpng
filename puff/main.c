@@ -1,4 +1,6 @@
+#ifdef DEBUG
 #include <stdio.h>
+#endif
 
 #include "./main.h"
 
@@ -32,7 +34,7 @@ static inline int Puff_stepUncompressed_getLength(struct Puff_State *state, uint
 // Fixed
 // ==================================================
 static inline int Puff_stepFixed(struct Puff_State *state, _Bool bit);
-static inline int Puff_stepFixed_collectBits(struct Puff_State *state, _Bool bit);
+static inline int Puff_stepFixed_handleCollectedBits(struct Puff_State *state);
 static inline int Puff_stepFixed_handleLeaf(struct Puff_State *state, uint16_t child);
 
 // Dynamic
@@ -44,7 +46,7 @@ static inline int Puff_stepDynamic(struct Puff_State *state, _Bool bit);
 int Puff_stepTree_lengthSymbol(uint16_t length, uint16_t *baseValue, uint8_t *numExtraBits);
 int Puff_stepTree_distanceSymbol(uint8_t distance, uint16_t *baseValue, uint8_t *numExtraBits);
 int Puff_stepTree_lz77ify(struct Puff_iNostalgicWriter *nw, uint16_t length, uint16_t distance);
-static inline uint16_t Puff_stepTree_reverseInt16(uint16_t n, uint8_t bitLength);
+static inline _Bool Puff_stepTree_collectBits(struct Puff_State_BitCollector *bc, _Bool bit);
 
 
 // top function
@@ -118,11 +120,15 @@ static inline int Puff_stepBlockHeader_final(struct Puff_State *state, _Bool bit
 	state->blockHeader.bitsRead = 0;
 	switch ((uint8_t)state->blockHeader.compressionTypeBit0 | (bit << 1)) {
 		case 0:
+			#ifdef DEBUG
 			printf("uncompressed!\n");
+			#endif
 			state->id = STATE_UNCOMPRESSED;
 			return Puff_step_DIRECTIVE_FINISHBYTE;
 		case 1:
+			#ifdef DEBUG
 			printf("fixed!\n");
+			#endif
 			if (!state->fixedTreeInitiated) {
 				if (Puff_FixedTree_init(&state->trees.fixed)) {
 					return Puff_step_ERROR_FIXED_INIT;
@@ -133,7 +139,9 @@ static inline int Puff_stepBlockHeader_final(struct Puff_State *state, _Bool bit
 			state->trees.nodeIndex = 0; //TODO ROOT
 			return 0;
 		case 2:
+			#ifdef DEBUG
 			printf("dynamic!\n");
+			#endif
 		default:
 			return Puff_step_ERROR_COMPRESSIONTYPE;
 	}
@@ -203,10 +211,12 @@ static inline int Puff_stepUncompressed_getLength(struct Puff_State *state, uint
 
 static inline int Puff_stepFixed(struct Puff_State *state, _Bool bit) {
 
-	if (state->extraBits.collect) {
-		return Puff_stepFixed_collectBits(state, bit);
+	if (state->collector.collected < state->collector.max) {
+		if (Puff_stepTree_collectBits(&state->collector, bit)) {
+			return 0;
+		}
+		return Puff_stepFixed_handleCollectedBits(state);
 	}
-
 
 	int e = 0;
 	uint16_t child = 0;
@@ -215,10 +225,8 @@ static inline int Puff_stepFixed(struct Puff_State *state, _Bool bit) {
 	switch (e) {
 		case Puff_Tree_ISNODE:
 			state->trees.nodeIndex = child;
-			printf("%d", bit);
 			return 0;
 		case Puff_Tree_ISLEAF:
-			printf("%d) value: 0x%x\n", bit, child);
 			return Puff_stepFixed_handleLeaf(state, child);
 		case Puff_Tree_OUTOFBOUNDS:
 		case Puff_Tree_HALT:
@@ -228,66 +236,48 @@ static inline int Puff_stepFixed(struct Puff_State *state, _Bool bit) {
 
 	return Puff_step_ERROR_IMPOSSIBLE;
 }
-static inline int Puff_stepFixed_collectBits(struct Puff_State *state, _Bool bit) {
+static inline int Puff_stepFixed_handleCollectedBits(struct Puff_State *state) {
 
-	int e = 0;
-	
-	state->extraBits.bits = (state->extraBits.bits << 1) | bit;
-	state->extraBits.collect--;
+	uint8_t numExtraBits = 0;
 
-	printf("%d", bit);
-
-	if (state->extraBits.collect) {
-		return 0;
-	}
-	printf("]");
-
-	switch (state->extraBits.collectFor) {
+	switch (state->collector.collectFor) {
 		case Puff_State_COLLECTFOR_LENGTH:
-			printf("l ");
-			state->extraBits.bits = Puff_stepTree_reverseInt16(state->extraBits.bits, state->extraBits.maxCollect);
-			state->lizard.length += state->extraBits.bits;
+			state->lizard.length += state->collector.bits;
 
-			state->extraBits.collect = 5;
-			state->extraBits.maxCollect = state->extraBits.collect;
-			state->extraBits.collectFor = Puff_State_COLLECTFOR_FIXEDDISTANCE;
+			state->collector = (struct Puff_State_BitCollector) {
+				.max = 5,
+				.collectFor = Puff_State_COLLECTFOR_FIXEDDISTANCE
+			};
+			return 0;
 
-			break;
 		case Puff_State_COLLECTFOR_DISTANCE:
-			printf("d ");
-			state->extraBits.bits = Puff_stepTree_reverseInt16(state->extraBits.bits, state->extraBits.maxCollect);
-			state->lizard.distance += state->extraBits.bits;
+			state->lizard.distance += state->collector.bits;
 
-			// actually nostalgize
-			printf("l%d, d%d\n", state->lizard.length, state->lizard.distance);
-			e = Puff_stepTree_lz77ify(&state->nostalgicWriter, state->lizard.length, state->lizard.distance);
-			if (e) return Puff_step_ERROR_FIXED_LZ77IFY;
+			if (Puff_stepTree_lz77ify(&state->nostalgicWriter, state->lizard.length, state->lizard.distance)) {
+				return Puff_step_ERROR_FIXED_LZ77IFY;
+			}
+			return 0;
 
-			break;
 		case Puff_State_COLLECTFOR_FIXEDDISTANCE:
-			printf("f ");
-
-			e = Puff_stepTree_distanceSymbol(state->extraBits.bits, &state->lizard.distance, &state->extraBits.collect);
-			if (e) return Puff_step_ERROR_FIXED_MEASURE_DISTANCE;
-
-			if (state->extraBits.collect) {
-				state->extraBits.maxCollect = state->extraBits.collect;
-				state->extraBits.collectFor = Puff_State_COLLECTFOR_DISTANCE;
-				break;
+			if (Puff_stepTree_distanceSymbol(state->collector.bits, &state->lizard.distance, &numExtraBits)) {
+				return Puff_step_ERROR_FIXED_MEASURE_DISTANCE;
+			}
+			if (numExtraBits) {
+				state->collector = (struct Puff_State_BitCollector) {
+					.max = numExtraBits,
+					.collectFor = Puff_State_COLLECTFOR_DISTANCE
+				};
+				return 0;
 			}
 
-			// actually nostalgize
-			printf("l%d, d%d\n", state->lizard.length, state->lizard.distance);
-			e = Puff_stepTree_lz77ify(&state->nostalgicWriter, state->lizard.length, state->lizard.distance);
-			if (e) return Puff_step_ERROR_FIXED_LZ77IFY;
+			if (Puff_stepTree_lz77ify(&state->nostalgicWriter, state->lizard.length, state->lizard.distance)) {
+				return Puff_step_ERROR_FIXED_LZ77IFY;
+			}
+			return 0;
 
-			break;
 		default:
 			return Puff_step_ERROR_FIXED_COLLECTFOR;
 	}
-
-	state->extraBits.bits = 0;
-	return 0;
 }
 static inline int Puff_stepFixed_handleLeaf(struct Puff_State *state, uint16_t child) {
 
@@ -309,20 +299,22 @@ static inline int Puff_stepFixed_handleLeaf(struct Puff_State *state, uint16_t c
 		return 0;
 	}
 
-	e = Puff_stepTree_lengthSymbol(child, &state->lizard.length, &state->extraBits.collect);
+	uint8_t numExtraBits = 0;
+	e = Puff_stepTree_lengthSymbol(child, &state->lizard.length, &numExtraBits);
 	if (e) return Puff_step_ERROR_FIXED_MEASURE_LENGTH;
 
-	state->extraBits.bits = 0;
-
-	if (state->extraBits.collect) {
-		state->extraBits.maxCollect = state->extraBits.collect;
-		state->extraBits.collectFor = Puff_State_COLLECTFOR_LENGTH;
+	if (numExtraBits) {
+		state->collector = (struct Puff_State_BitCollector) {
+			.max = numExtraBits,
+			.collectFor = Puff_State_COLLECTFOR_LENGTH
+		};
 		return 0;
 	}
 
-	state->extraBits.collect = 5;
-	state->extraBits.maxCollect = state->extraBits.collect;
-	state->extraBits.collectFor = Puff_State_COLLECTFOR_FIXEDDISTANCE;
+	state->collector = (struct Puff_State_BitCollector) {
+		.max = 5,
+		.collectFor = Puff_State_COLLECTFOR_FIXEDDISTANCE
+	};
 	return 0;
 }
 
@@ -401,24 +393,22 @@ int Puff_stepTree_lz77ify(struct Puff_iNostalgicWriter *nw, uint16_t length, uin
 		e = Puff_iNostalgicWriter_nostalgize(nw, &byte, distance);
 		if (e) return 3;
 
-		printf("rpt:%x ", byte);
-
 		e = Puff_iNostalgicWriter_write(nw, byte);
 		if (e) return 4;
 	}
 
-	printf("\n");
-	
 	return 0;
 }
 
-static inline uint16_t Puff_stepTree_reverseInt16(uint16_t n, uint8_t bitLength) {
-	n = (n << 8) | (n >> 8);
-	n = ((n << 4) & 0xf0f0) | ((n >> 4) & 0x0f0f);
-	n = ((n << 2) & 0xcccc) | ((n >> 2) & 0x3333);
-	n = ((n << 1) & 0xaaaa) | ((n >> 1) & 0x5555);
+static inline _Bool Puff_stepTree_collectBits(struct Puff_State_BitCollector *bc, _Bool bit) {
 
-	n >>= 16 - bitLength;
+	if (bc->collectFor & 0x80) {
+		bc->bits |= bit << (bc->collected);
+		bc->collected++;
+		return bc->collected < bc->max;
+	}
 
-	return n;
+	bc->bits |= bit << (bc->max - 1 - bc->collected);
+	bc->collected++;
+	return bc->collected < bc->max;
 }

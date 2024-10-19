@@ -9,9 +9,9 @@
 
 #include <stdint.h>
 
-#define Puff_State_COLLECTFOR_LENGTH 0
-#define Puff_State_COLLECTFOR_DISTANCE 1
-#define Puff_State_COLLECTFOR_FIXEDDISTANCE 2
+#define Puff_State_COLLECTFOR_LENGTH 0x80
+#define Puff_State_COLLECTFOR_DISTANCE 0x81
+#define Puff_State_COLLECTFOR_FIXEDDISTANCE 0x00
 
 struct Puff_State {
 	uint8_t id : 4;
@@ -34,7 +34,7 @@ struct Puff_State {
 	struct {
 		uint16_t nodeIndex;
 		/*
-			used to store node index for any of the four trees below, depending on the rest of the state:
+			stores node index for any of the four trees below, depending on the rest of the state:
 		*/
 
 		struct Puff_LiteralTree fixed;
@@ -43,29 +43,27 @@ struct Puff_State {
 		struct Puff_DistanceTree distance;
 	} trees;
 
-	struct {
+	struct Puff_State_BitCollector {
 		uint16_t bits;
-		uint8_t collect;
 		/*
-			0 = not currently collecting bits
-			1+ indicates to collect bits, then decrease by 1
-				length extra bits: 1-5
-				fixed-ct distance code bits: 1-5
-				distance extra bits: 1-13
+			stores the actual bits being collected
 		*/
-		uint8_t maxCollect;
+
+		uint8_t collected;
 		/*
-			a count of the num of bits that will be collected
-			(when you set collect, also set totalCollected to the same value)
-			maybe a bit messy but am using it for reversing the bit order
+			number of bits that have been collected so far
 		*/
+		uint8_t max;
+		/*
+			number of bits to collect
+		*/
+
 		uint8_t collectFor;
 		/*
-			0 = length code extra bits
-			1 = distance code extra bits
-			2 = fixed-ct distance code bits (its a 5-bit ~~uint~~ CODE NOT INT)
+			this & 0x80 == isLSBitOrder
 		*/
-	} extraBits; // vars for reading extra bits after length/distance codes & for fixed tree distance codes
+	} collector;
+
 	struct {
 		uint16_t length;
 		uint16_t distance;
