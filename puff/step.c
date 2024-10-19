@@ -105,6 +105,9 @@ static inline int Puff_stepBlockHeader_final(struct Puff_State *state, _Bool bit
 			}
 			state->id = Puff_State_ID_FIXED;
 			state->trees.nodeIndex = 0; //TODO ROOT
+
+			state->collector = (struct Puff_State_BitCollector) {0};
+
 			return 0;
 		case 2:
 			#ifdef DEBUG

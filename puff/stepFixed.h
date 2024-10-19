@@ -14,8 +14,13 @@
 #include <stdint.h>
 
 static inline int Puff_stepFixed(struct Puff_State *state, _Bool bit);
-static inline int Puff_stepFixed_handleCollectedBits(struct Puff_State *state);
+
 static inline int Puff_stepFixed_handleLeaf(struct Puff_State *state, uint16_t child);
+
+static inline int Puff_stepFixed_handleCollectedBits(struct Puff_State *state);
+static inline int Puff_stepFixed_extraLength(struct Puff_State *state);
+static inline int Puff_stepFixed_extraDistance(struct Puff_State *state);
+static inline int Puff_stepFixed_distance(struct Puff_State *state);
 
 static inline int Puff_stepFixed(struct Puff_State *state, _Bool bit) {
 
@@ -44,49 +49,7 @@ static inline int Puff_stepFixed(struct Puff_State *state, _Bool bit) {
 
 	return Puff_step_ERROR_IMPOSSIBLE;
 }
-static inline int Puff_stepFixed_handleCollectedBits(struct Puff_State *state) {
 
-	uint8_t numExtraBits = 0;
-
-	switch (state->collector.collectFor) {
-		case Puff_State_COLLECTFOR_LENGTH:
-			state->lizard.length += state->collector.bits;
-
-			state->collector = (struct Puff_State_BitCollector) {
-				.max = 5,
-				.collectFor = Puff_State_COLLECTFOR_FIXEDDISTANCE
-			};
-			return 0;
-
-		case Puff_State_COLLECTFOR_DISTANCE:
-			state->lizard.distance += state->collector.bits;
-
-			if (Puff_stepTree_lz77ify(&state->nostalgicWriter, state->lizard.length, state->lizard.distance)) {
-				return Puff_step_ERROR_FIXED_LZ77IFY;
-			}
-			return 0;
-
-		case Puff_State_COLLECTFOR_FIXEDDISTANCE:
-			if (Puff_stepTree_distanceSymbol(state->collector.bits, &state->lizard.distance, &numExtraBits)) {
-				return Puff_step_ERROR_FIXED_MEASURE_DISTANCE;
-			}
-			if (numExtraBits) {
-				state->collector = (struct Puff_State_BitCollector) {
-					.max = numExtraBits,
-					.collectFor = Puff_State_COLLECTFOR_DISTANCE
-				};
-				return 0;
-			}
-
-			if (Puff_stepTree_lz77ify(&state->nostalgicWriter, state->lizard.length, state->lizard.distance)) {
-				return Puff_step_ERROR_FIXED_LZ77IFY;
-			}
-			return 0;
-
-		default:
-			return Puff_step_ERROR_FIXED_COLLECTFOR;
-	}
-}
 static inline int Puff_stepFixed_handleLeaf(struct Puff_State *state, uint16_t child) {
 
 	int e = 0;
@@ -123,6 +86,64 @@ static inline int Puff_stepFixed_handleLeaf(struct Puff_State *state, uint16_t c
 		.max = 5,
 		.collectFor = Puff_State_COLLECTFOR_FIXEDDISTANCE
 	};
+	return 0;
+}
+
+static inline int Puff_stepFixed_handleCollectedBits(struct Puff_State *state) {
+
+	switch (state->collector.collectFor) {
+
+		case Puff_State_COLLECTFOR_LENGTH:
+			return Puff_stepFixed_extraLength(state);
+		case Puff_State_COLLECTFOR_DISTANCE:
+			return Puff_stepFixed_extraDistance(state);
+		case Puff_State_COLLECTFOR_FIXEDDISTANCE:
+			return Puff_stepFixed_distance(state);
+
+		default:
+			return Puff_step_ERROR_FIXED_COLLECTFOR;
+	}
+}
+static inline int Puff_stepFixed_extraLength(struct Puff_State *state) {
+	
+	state->lizard.length += state->collector.bits;
+
+	state->collector = (struct Puff_State_BitCollector) {
+		.max = 5,
+		.collectFor = Puff_State_COLLECTFOR_FIXEDDISTANCE
+	};
+
+	return 0;
+}
+static inline int Puff_stepFixed_extraDistance(struct Puff_State *state) {
+	
+	state->lizard.distance += state->collector.bits;
+
+	if (Puff_stepTree_lz77ify(&state->nostalgicWriter, state->lizard.length, state->lizard.distance)) {
+		return Puff_step_ERROR_FIXED_LZ77IFY;
+	}
+
+	return 0;
+}
+static inline int Puff_stepFixed_distance(struct Puff_State *state) {
+	
+	uint8_t numExtraBits = 0;
+
+	if (Puff_stepTree_distanceSymbol(state->collector.bits, &state->lizard.distance, &numExtraBits)) {
+		return Puff_step_ERROR_FIXED_MEASURE_DISTANCE;
+	}
+	if (numExtraBits) {
+		state->collector = (struct Puff_State_BitCollector) {
+			.max = numExtraBits,
+			.collectFor = Puff_State_COLLECTFOR_DISTANCE
+		};
+		return 0;
+	}
+
+	if (Puff_stepTree_lz77ify(&state->nostalgicWriter, state->lizard.length, state->lizard.distance)) {
+		return Puff_step_ERROR_FIXED_LZ77IFY;
+	}
+
 	return 0;
 }
 
