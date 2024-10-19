@@ -9,6 +9,12 @@
 
 #include <stdint.h>
 
+#define Puff_State_ID_BLOCKHEADER 0
+#define Puff_State_ID_UNCOMPRESSED 1
+#define Puff_State_ID_FIXED 2
+#define Puff_State_ID_DYNAMIC 3
+#define Puff_State_ID_END 4
+
 #define Puff_State_COLLECTFOR_LENGTH 0x80
 #define Puff_State_COLLECTFOR_DISTANCE 0x81
 #define Puff_State_COLLECTFOR_FIXEDDISTANCE 0x00

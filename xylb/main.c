@@ -5,7 +5,7 @@
 
 #include "./adleringWriter.h"
 
-#include "puff/main.h"
+#include "puff/step.h"
 #include "puff/error.h"
 #include "puff/iNostalgicWriter.h"
 #include "puff/iNostalgicWriter_impl.h"
