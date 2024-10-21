@@ -9,15 +9,35 @@
 
 #include <stdint.h>
 
-#define Puff_State_ID_BLOCKHEADER 0
-#define Puff_State_ID_UNCOMPRESSED 1
-#define Puff_State_ID_FIXED 2
-#define Puff_State_ID_DYNAMIC 3
-#define Puff_State_ID_END 4
+enum {
+	Puff_State_ID_BLOCKHEADER = 0
+	, Puff_State_ID_UNCOMPRESSED = 1
+	, Puff_State_ID_FIXED = 2
+	, Puff_State_ID_DYNAMIC = 3
+	, Puff_State_ID_END = 4
+};
 
-#define Puff_State_COLLECTFOR_LENGTH 0x80
-#define Puff_State_COLLECTFOR_DISTANCE 0x81
-#define Puff_State_COLLECTFOR_FIXEDDISTANCE 0x00
+enum {
+
+	Puff_State_COLLECTFOR_MSBIT = 0x00
+
+	, Puff_State_COLLECTFOR_FIXEDDISTANCE
+
+
+	, Puff_State_COLLECTFOR_LSBIT = 0x80
+
+	, Puff_State_COLLECTFOR_LENGTH
+	, Puff_State_COLLECTFOR_DISTANCE
+	, Puff_State_COLLECTFOR_DYNAMIC_MEASURING
+	, Puff_State_COLLECTFOR_DYNAMIC_META
+};
+
+enum Puff_State_Dynamic_focus {
+	Puff_State_DYNAMIC_UNINITIALIZED = 0
+	, Puff_State_DYNAMIC_MAIN
+	, Puff_State_DYNAMIC_DIST
+	, Puff_State_DYNAMIC_META
+};
 
 struct Puff_State {
 	uint8_t id : 4;
@@ -48,6 +68,29 @@ struct Puff_State {
 		struct Puff_MetaTree meta;
 		struct Puff_DistanceTree distance;
 	} trees;
+
+	struct Puff_State_Dynamic {
+		uint8_t focus : 2;
+		/*
+			0 = first call, need to initialize
+			1 = mainTree
+			2 = distanceTree
+			3 = metaTree
+		*/
+
+		uint8_t unitsRead;
+
+		uint16_t codeLengthCount_main; //can be uint8 & add 256 every time
+		uint8_t codeLengthCount_meta;
+		uint8_t codeLengthCount_dist;
+
+		union {
+			uint8_t meta[Puff_MetaTree_MAXLEAVES];
+			uint8_t main[Puff_LiteralTree_MAXLEAVES];
+			uint8_t dist[Puff_DistanceTree_MAXLEAVES];
+		} lengths;
+
+	} dynamic;
 
 	struct Puff_State_BitCollector {
 		uint16_t bits;

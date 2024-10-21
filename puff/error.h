@@ -27,6 +27,10 @@ enum Puff_step_Error {
 	, Puff_step_ERROR_FIXED_MEASURE_DISTANCE
 	, Puff_step_ERROR_FIXED_LZ77IFY
 
+	, Puff_step_ERROR_DYNAMIC_COLLECTFOR
+	, Puff_step_ERROR_DYNAMIC_SUBSTATE
+	, Puff_step_ERROR_DYNAMIC_MEASURING_UNITSREAD
+	, Puff_State_ERROR_DYNAMIC_METATREE_INIT
 
 	, Puff_step_DIRECTIVE_FINISHBYTE
 		//should never occur outside the module

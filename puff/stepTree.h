@@ -14,7 +14,7 @@ int Puff_stepTree_lz77ify(struct Puff_iNostalgicWriter *nw, uint16_t length, uin
 
 static inline _Bool Puff_stepTree_collectBits(struct Puff_State_BitCollector *bc, _Bool bit) {
 
-	if (bc->collectFor & 0x80) {
+	if (bc->collectFor & Puff_State_COLLECTFOR_LSBIT) {
 		bc->bits |= bit << (bc->collected);
 		bc->collected++;
 		return bc->collected < bc->max;

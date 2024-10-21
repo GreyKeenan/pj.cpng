@@ -14,6 +14,13 @@
 #include "sdaubler/iImageTrain_impl.h"
 #include "sdaubler/iImageTrain_forw.h"
 
+const char *PATH = "assets/PNG_transparency_demonstration.png";
+/*
+const char *PATH = "assets/uncompressed.png";
+const char *PATH = "assets/my_zlibFixed.png";
+*/
+
+
 // FILE as iByteTrain
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 int FILE_chewchew(void *vself, uint8_t *nDestination) {
@@ -53,10 +60,7 @@ int main(int argc, const char **argv) {
 	// file
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	struct iByteTrain bt = {0};
-	//FILE *f = FILE_as_iByteTrain("assets/PNG_transparency_demonstration.png", &bt);
-	//FILE *f = FILE_as_iByteTrain("assets/uncompressed.png", &bt);
-	//FILE *f = FILE_as_iByteTrain("assets/zlib_cl6.png", &bt);
-	FILE *f = FILE_as_iByteTrain("assets/my_zlibFixed.png", &bt);
+	FILE *f = FILE_as_iByteTrain(PATH, &bt);
 	if (f == NULL) {
 		printf("cant open file\n");
 		return 1;
@@ -68,7 +72,13 @@ int main(int argc, const char **argv) {
 
 	int e = Glass_decode(&bt, &image);
 	printf("\nmike final error status: %d\n\n", e);
-	if (e) return e;
+	/*
+		TODO TEMP
+		positive error means fom glass
+		negative error means from xylb or puff
+			< -100 == from puff
+	*/
+	if (e) return 1;
 
 	fclose(f);
 	bt = (struct iByteTrain){0};
@@ -83,7 +93,7 @@ int main(int argc, const char **argv) {
 
 	e = Sdaubler_display(&imt);
 	printf("\nsdaubler error status: 0x%x\n\n", e);
-	if (e) return e;
+	if (e) return 1;
 
 
 	//end

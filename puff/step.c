@@ -104,8 +104,8 @@ static inline int Puff_stepBlockHeader_final(struct Puff_State *state, _Bool bit
 				state->fixedTreeInitiated = 1;
 			}
 			state->id = Puff_State_ID_FIXED;
-			state->trees.nodeIndex = 0; //TODO ROOT
 
+			state->trees.nodeIndex = 0; //TODO ROOT
 			state->collector = (struct Puff_State_BitCollector) {0};
 
 			return 0;
@@ -113,6 +113,14 @@ static inline int Puff_stepBlockHeader_final(struct Puff_State *state, _Bool bit
 			#ifdef DEBUG
 			printf("dynamic!\n");
 			#endif
+
+			state->id = Puff_State_ID_DYNAMIC;
+			state->dynamic = (struct Puff_State_Dynamic) {0};
+
+			state->trees.nodeIndex = 0;
+			state->collector = (struct Puff_State_BitCollector) {0};
+
+			return 0;
 		default:
 			return Puff_step_ERROR_COMPRESSIONTYPE;
 	}

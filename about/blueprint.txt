@@ -1,4 +1,35 @@
 
+INDEX
+- Overview
+  - Dechunking
+  - Decompressing
+  - Defiltering
+  - de-scanline-ing
+  - sizing notes
+- PNG Anatomy
+  - IDAT
+  - PLTE
+- Zlib
+- DEFLATE
+  - Endianness
+  - uncompressed
+  - fixed
+  - dynamic
+  - Tree Representation Options
+    - defining the trees
+    - tree rules
+      - fixed tree
+      - meta tree
+      - dynamic tree
+      - distance tree
+    - representations
+      - instant
+      - unbalanced binary tree
+      - linear per code
+      - linear per bit
+      - honourable mentions
+
+
 Overview
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -238,6 +269,12 @@ consists of a series of blocks:
 		10 = dynamic
 		11 = reserved, error
 (corresponding data sequence to compressionType)
+
+
+Endianness
+==================================================
+
+see "./DEFLATE_notes.txt"
 
 
 uncompressed
