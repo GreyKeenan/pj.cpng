@@ -1,3 +1,6 @@
+#ifdef DEBUG
+#include <stdio.h>
+#endif
 
 #include "./tree.h"
 #include "./tree_impl.h"
@@ -126,6 +129,41 @@ int Puff_Tree_growLeaf(struct Puff_Tree *self, uint16_t parentIndex, _Bool lr, u
 	mike_decompress_huffmen_tree_Node32_shiftIn(&parent32, lr, value, Puff_Tree_TYPE_LEAF, self->childBitLength);
 	e = mike_decompress_huffmen_tree_setNode32(self, parentIndex, parent32);
 	if (e) return e;
+
+	return 0;
+}
+
+int Puff_Tree_enterCode(struct Puff_Tree *self, uint16_t code, uint16_t codeLength, uint16_t value) {
+
+	#ifdef DEBUG
+	printf("entering code: 0x%x(%d) : %d\n", code, codeLength, value);
+	#endif
+
+	int e = 0;
+
+	uint16_t nodeIndex = Puff_Tree_ROOT;
+	uint16_t child = 0;
+
+	for (int i = 1 << (codeLength - 1); i != 0; i >>= 1) {
+		if (i == 1) {
+			e = Puff_Tree_growLeaf(self, nodeIndex, code & i, value);
+			if (e) return e;
+			continue;
+		}
+		e = Puff_Tree_walk(self, nodeIndex, code & i, &child);
+		switch (e) {
+			case Puff_Tree_ISNODE:
+				nodeIndex = child;
+				break;
+			case Puff_Tree_HALT:
+				e = Puff_Tree_birthNode(self, nodeIndex, code & i, &child);
+				if (e) return e;
+				nodeIndex = child;
+				break;
+			default:
+				return e;
+		}
+	}
 
 	return 0;
 }

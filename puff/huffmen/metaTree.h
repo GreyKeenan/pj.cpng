@@ -1,8 +1,14 @@
 #ifndef PUFF_METATREE_H
 #define PUFF_METATREE_H
 
-struct Puff_MetaTree;
+#include "./metaTree_impl.h"
 
-static inline int Puff_MetaTree_init(struct Puff_MetaTree *self);
+extern const uint8_t Puff_MetaTree_LENGTHSORDER[Puff_MetaTree_MAXLEAVES];
+
+int Puff_MetaTree_init(struct Puff_MetaTree *self, const uint8_t lengths[Puff_MetaTree_MAXLEAVES], uint8_t lengthsLength);
+/*
+	builds the metaTree based on the given list of codeLengthCounts
+	returns 0 on success
+*/
 
 #endif

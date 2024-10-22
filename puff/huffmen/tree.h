@@ -71,4 +71,11 @@ int Puff_Tree_growLeaf(struct Puff_Tree *self, uint16_t parentIndex, _Bool lr, u
 		BADVALUE if value is invalid / too large to fit within childBitLength
 */
 
+int Puff_Tree_enterCode(struct Puff_Tree *self, uint16_t code, uint16_t codeLength, uint16_t value);
+/*
+	uses _walk(), _birthNode(), and _growLeaf() to create necessary nodes/leaves to enter [value] at [code]
+	returns 0 on success
+		passes out error values from subcalls otherwise
+*/
+
 #endif

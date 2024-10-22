@@ -6,7 +6,18 @@ test: ../testing
 		-iquote . \
 		\
 		main.c \
-			../../all.c \
+			../*.c \
+		-lm \
+
+debug: ../testing
+	gcc -std=c99 -Wpedantic \
+		-o a.out \
+		-iquote . \
+		\
+		-DDEBUG \
+		\
+		main.c \
+			../*.c \
 		-lm \
 
 run:

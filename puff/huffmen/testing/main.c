@@ -5,43 +5,23 @@
 #include "../tree_impl.h"
 #include "../tree.h"
 
-#include "../fixedTree.h"
-#include "../literalTree_impl.h"
+//#include "../fixedTree.h"
+//#include "../literalTree_impl.h"
+#include "../metaTree.h"
+#include "../metaTree_impl.h"
 
 void printTree(struct Puff_Tree tree);
 
 int main() {
-	/*
-	int e = 0;
-	uint16_t db = 0;
 
-	struct Puff_Tree tree = {0};
+	struct Puff_MetaTree tree = {0};
 
-	#define CAP 3 * 287
-	uint8_t data[CAP];
+	uint8_t lengths[Puff_MetaTree_MAXLEAVES] = {3, 3, 3, 3, 3, 2, 4, 4};
 
-	e = Puff_Tree_init(&tree, data, CAP, 288);
-	printf("%d\n", e);
-
-	printTree(tree);
-
-	//e = Puff_Tree_walk(&tree, 0, 1, &db);
-	e = Puff_Tree_growLeaf(&tree, 0, true, 1);
-	printf("%d\n", e);
-
-	printTree(tree);
-
-	e = Puff_Tree_birthNode(&tree, 0, false, NULL);
-	printf("%d\n", e);
-
-	printTree(tree);
-	*/
-
-	struct Puff_LiteralTree fixedTree = {0};
-
-	int e = Puff_FixedTree_init(&fixedTree);
+	int e = Puff_MetaTree_init(&tree, lengths, 8);
 	printf("e%d\n", e);
 
+	printTree(tree.tree);
 
 	return 0;
 }
