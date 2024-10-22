@@ -36,6 +36,7 @@ int Puff_Tree_init(struct Puff_Tree *self, uint8_t *data, uint16_t cap, uint16_t
 #define Puff_Tree_COLLISION -2
 #define Puff_Tree_TOOMANYKIDS -3
 #define Puff_Tree_BADVALUE -3
+#define Puff_Tree_ZEROLENGTH -4
 
 #define Puff_Tree_IMPOSSIBLE -100
 	//returned when an error occurs where it shouldnt be possible
@@ -75,6 +76,7 @@ int Puff_Tree_enterCode(struct Puff_Tree *self, uint16_t code, uint16_t codeLeng
 /*
 	uses _walk(), _birthNode(), and _growLeaf() to create necessary nodes/leaves to enter [value] at [code]
 	returns 0 on success
+		returns Puff_Tree_ZEROLENGTH if codeLength == 0 || > 15
 		passes out error values from subcalls otherwise
 */
 

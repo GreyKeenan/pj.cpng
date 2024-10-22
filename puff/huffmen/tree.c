@@ -139,6 +139,10 @@ int Puff_Tree_enterCode(struct Puff_Tree *self, uint16_t code, uint16_t codeLeng
 	printf("entering code: 0x%x(%d) : %d\n", code, codeLength, value);
 	#endif
 
+	if (codeLength < 1 || 16 < codeLength) {
+		return Puff_Tree_ZEROLENGTH;
+	}
+
 	int e = 0;
 
 	uint16_t nodeIndex = Puff_Tree_ROOT;

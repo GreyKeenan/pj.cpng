@@ -16,9 +16,10 @@ int main() {
 
 	struct Puff_MetaTree tree = {0};
 
-	uint8_t lengths[Puff_MetaTree_MAXLEAVES] = {3, 3, 3, 3, 3, 2, 4, 4};
+	//uint8_t lengths[Puff_MetaTree_MAXLEAVES] = {3, 3, 3, 3, 3, 2, 4, 4};
+	uint8_t lengths[Puff_MetaTree_MAXLEAVES] = { 4, 6, 0, 3, 5, 5, 6, 5, 6, 6, 5, 5, 3, 5, 2, 0, 3, 0, 0 };
 
-	int e = Puff_MetaTree_init(&tree, lengths, 8);
+	int e = Puff_MetaTree_init(&tree, lengths, 19);
 	printf("e%d\n", e);
 
 	printTree(tree.tree);

@@ -27,6 +27,9 @@ int Puff_MetaTree_init(struct Puff_MetaTree *self, const uint8_t lengths[Puff_Me
 	if (e) return e;
 
 	for (int i = 0; i < lengthsLength; ++i) {
+		if (lengths[i] == 0) {
+			continue;
+		}
 		e = Puff_Tree_enterCode(&self->tree, codes[i], lengths[i], Puff_MetaTree_LENGTHSORDER[i]);
 		if (e) return -2;
 	}
@@ -79,10 +82,12 @@ static inline int Puff_MetaTree_getCodes(uint8_t *codesDestination, const uint8_
 	uint8_t l = 0;
 	for (int i = 0; i < lengthsLength; ++i) {
 		l = lengths[i];
-		if (l != 0) {
-			codesDestination[i] = mincodes[l];
-			mincodes[l]++;
+		if (l == 0) {
+			codesDestination[i] = 0;
+			continue;
 		}
+		codesDestination[i] = mincodes[l];
+		mincodes[l]++;
 	}
 
 	#ifdef DEBUG
