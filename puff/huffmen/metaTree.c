@@ -6,11 +6,9 @@
 
 #include "./tree.h"
 
-#define MAXLENGTH 15
-#define MAXLENGTHS MAXLENGTH - 1
-	// useful because length of '0' can be ignored in many cases
+#define MAXLENGTH 7
 
-const uint8_t Puff_MetaTree_LENGTHSORDER[Puff_MetaTree_MAXLEAVES] = {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
+const uint8_t Puff_MetaTree_LENGTHORDER[Puff_MetaTree_MAXLEAVES] = {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
 
 
 static inline int Puff_MetaTree_init_validate(const uint8_t lengths[Puff_MetaTree_MAXLEAVES], uint8_t lengthsLength);
@@ -33,7 +31,7 @@ static inline int Puff_MetaTree_getCodes(uint8_t codesDestination[Puff_MetaTree_
 	
 	returns 0 on success
 */
-static inline int Puff_MetaTree_getCodes_codestarters(uint8_t destination[MAXLENGTHS], const uint8_t lengths[Puff_MetaTree_MAXLEAVES], uint8_t lengthsLength);
+static inline int Puff_MetaTree_getCodes_codestarters(uint8_t destination[MAXLENGTH], const uint8_t lengths[Puff_MetaTree_MAXLEAVES], uint8_t lengthsLength);
 /*
 	generates the codestarters from the given codelengths
 
@@ -69,7 +67,7 @@ int Puff_MetaTree_init(struct Puff_MetaTree *self, const uint8_t lengths[Puff_Me
 		if (lengths[i] == 0) {
 			continue;
 		}
-		e = Puff_Tree_enterCode(&self->tree, codes[i], lengths[i], Puff_MetaTree_LENGTHSORDER[i]);
+		e = Puff_Tree_enterCode(&self->tree, codes[i], lengths[i], Puff_MetaTree_LENGTHORDER[i]);
 		if (e) return -2;
 	}
 
@@ -102,7 +100,7 @@ static inline int Puff_MetaTree_getCodes(uint8_t codesDestination[Puff_MetaTree_
 	printf("\n");
 	#endif
 
-	uint8_t codestarters[MAXLENGTHS] = {0};
+	uint8_t codestarters[MAXLENGTH] = {0};
 	if (Puff_MetaTree_getCodes_codestarters(codestarters, lengths, lengthsLength)) {
 		return 1;
 	}
@@ -129,7 +127,7 @@ static inline int Puff_MetaTree_getCodes(uint8_t codesDestination[Puff_MetaTree_
 	return 0;
 }
 
-static inline int Puff_MetaTree_getCodes_codestarters(uint8_t destination[MAXLENGTHS], const uint8_t lengths[Puff_MetaTree_MAXLEAVES], uint8_t lengthsLength) {
+static inline int Puff_MetaTree_getCodes_codestarters(uint8_t destination[MAXLENGTH], const uint8_t lengths[Puff_MetaTree_MAXLEAVES], uint8_t lengthsLength) {
 
 	//count lengths
 	for (int i = 0; i < lengthsLength; ++i) {
@@ -141,7 +139,7 @@ static inline int Puff_MetaTree_getCodes_codestarters(uint8_t destination[MAXLEN
 	}
 	#ifdef DEBUG
 	printf("lengthCounts: ");
-	for (int i = 0; i < MAXLENGTHS; ++i) {
+	for (int i = 0; i < MAXLENGTH; ++i) {
 		printf("%d ", destination[i]);
 	}
 	printf("\n");
@@ -150,7 +148,7 @@ static inline int Puff_MetaTree_getCodes_codestarters(uint8_t destination[MAXLEN
 	//create code starters per length
 	uint8_t code = 0;
 	uint8_t lCount = 0;
-	for (int i = 0; i < MAXLENGTHS; ++i) {
+	for (int i = 0; i < MAXLENGTH; ++i) {
 		code = (code + lCount) << 1;
 		lCount = destination[i];
 		destination[i] = code;
@@ -158,7 +156,7 @@ static inline int Puff_MetaTree_getCodes_codestarters(uint8_t destination[MAXLEN
 
 	#ifdef DEBUG
 	printf("codestarters: ");
-	for (int i = 0; i < MAXLENGTHS; ++i) {
+	for (int i = 0; i < MAXLENGTH; ++i) {
 		printf("%d ", destination[i]);
 	}
 	printf("\n");
