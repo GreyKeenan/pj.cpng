@@ -37,9 +37,15 @@ static inline int Puff_stepDynamic(struct Puff_State *state, _Bool bit) {
 	}
 
 	if (state->collector.collected < state->collector.max) {
+		#ifdef TEMP
+		printf("%d", bit);
+		#endif
 		if (Puff_stepTree_collectBits(&state->collector, bit)) {
 			return 0;
 		}
+		#ifdef TEMP
+		printf("\n");
+		#endif
 		return Puff_stepDynamic_handleCollectedBits(state);
 	}
 
@@ -125,7 +131,9 @@ static inline int Puff_stepDynamic_bitsMeasuring(struct Puff_State *state) {
 }
 static inline int Puff_stepDynamic_bitsMeta(struct Puff_State *state) {
 
+	state->dynamic.lengths.meta[state->dynamic.unitsRead] = state->collector.bits;
 	state->dynamic.unitsRead++;
+
 	if (state->dynamic.unitsRead >= state->dynamic.codeLengthCount_meta) {
 
 		state->dynamic.unitsRead = 0;
@@ -147,8 +155,6 @@ static inline int Puff_stepDynamic_bitsMeta(struct Puff_State *state) {
 		return 0;
 
 	}
-	
-	state->dynamic.lengths.meta[state->dynamic.unitsRead - 1] = state->collector.bits;
 
 	state->collector = (struct Puff_State_BitCollector) {
 		.max = 3,
