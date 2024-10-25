@@ -8,7 +8,8 @@
 
 #define MAXLENGTH 7
 
-const uint8_t Puff_MetaTree_LENGTHORDER[Puff_MetaTree_MAXLEAVES] = {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
+//const uint8_t Puff_MetaTree_LENGTHORDER[Puff_MetaTree_MAXLEAVES] = {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
+const uint8_t Puff_MetaTree_ORDER[Puff_MetaTree_MAXLEAVES] = {3, 17, 15, 13, 11, 9, 7, 5, 4, 6, 8, 10, 12, 14, 16, 18, 0, 1, 2};
 
 
 static inline int Puff_MetaTree_init_validate(const uint8_t lengths[Puff_MetaTree_MAXLEAVES], uint8_t lengthsLength);
@@ -67,33 +68,24 @@ int Puff_MetaTree_init(struct Puff_MetaTree *self, const uint8_t lengths[Puff_Me
 
 
 	#ifdef DEBUG
-	printf("unordered lengths: ");
+	printf("lengths: ");
 	for (int i = 0; i < lengthsLength; ++i) {
 		printf("%d ", lengths[i]);
 	}
 	printf("\n");
 	#endif
-	uint8_t orderedLengths[Puff_MetaTree_MAXLEAVES] = {0};
-	for (int i = 0; i < lengthsLength; ++i) {
-		orderedLengths[Puff_MetaTree_LENGTHORDER[i]] = lengths[i];
-	}
-	#ifdef DEBUG
-	printf("ordered lengths: ");
-	for (int i = 0; i < Puff_MetaTree_MAXLEAVES; ++i) {
-		printf("%d ", orderedLengths[i]);
-	}
-	printf("\n");
-	#endif
 
 	uint8_t codes[Puff_MetaTree_MAXLEAVES] = {0};
-	e = Puff_MetaTree_getCodes(codes, orderedLengths);
+	e = Puff_MetaTree_getCodes(codes, lengths);
 	if (e) return e;
 
+	uint8_t n = 0;
 	for (int i = 0; i < lengthsLength; ++i) {
-		if (orderedLengths[i] == 0) {
+		n = Puff_MetaTree_ORDER[i];
+		if (lengths[n] == 0) {
 			continue;
 		}
-		e = Puff_Tree_enterCode(&self->tree, codes[i], orderedLengths[i], i);
+		e = Puff_Tree_enterCode(&self->tree, codes[i], lengths[n], i);
 		if (e) return -2;
 	}
 
@@ -125,7 +117,7 @@ static inline int Puff_MetaTree_getCodes(uint8_t codesDestination[Puff_MetaTree_
 
 	uint8_t l = 0;
 	for (int i = 0; i < Puff_MetaTree_MAXLEAVES; ++i) {
-		l = lengths[i];
+		l = lengths[Puff_MetaTree_ORDER[i]];
 			
 		if (l == 0) {
 			//codesDestination[i] = 0;
