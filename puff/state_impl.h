@@ -78,7 +78,13 @@ struct Puff_State {
 			3 = metaTree
 		*/
 
-		uint8_t unitsRead;
+		uint16_t unitsRead;
+
+		uint8_t repeat;
+		/*
+			for meta tree repeat codes
+			stores the codeLength value to be repeated once bits are collected
+		*/
 
 		uint16_t codeLengthCount_main; //can be uint8 & add 256 every time
 		uint8_t codeLengthCount_meta;
@@ -86,8 +92,10 @@ struct Puff_State {
 
 		union {
 			uint8_t meta[Puff_MetaTree_MAXLEAVES];
-			uint8_t main[Puff_LiteralTree_MAXLEAVES];
-			uint8_t dist[Puff_DistanceTree_MAXLEAVES];
+			uint8_t maindist[Puff_LiteralTree_MAXLEAVES + Puff_DistanceTree_MAXLEAVES];
+			/*
+			stores the codelengths for the trees
+			*/
 		} lengths;
 
 	} dynamic;

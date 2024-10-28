@@ -31,7 +31,14 @@ static inline int Puff_stepDynamic_bitsMeta(struct Puff_State *state);
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 static inline int Puff_stepDynamic_meta(struct Puff_State *state, _Bool bit);
 static inline int Puff_stepDynamic_meta_leaf(struct Puff_State *state, uint8_t leaf);
-//static inline _Bool Puff_stepDynamic_meta_addLength(struct Puff_State *state, uint8_t length);
+static inline int Puff_stepDynamic_meta_addLength(struct Puff_State_Dynamic *dynamic, uint8_t length);
+/*
+	when walking meta tree, writes resulting codelength values
+	returns
+		0 if there are more values to be written
+		1 at the last value to write
+		negative value on error
+*/
 
 
 static inline int Puff_stepDynamic(struct Puff_State *state, _Bool bit) {
@@ -217,18 +224,63 @@ static inline int Puff_stepDynamic_meta(struct Puff_State *state, _Bool bit) {
 			#ifdef DEBUG
 			printf(" -> error: %d\n", e);
 			#endif
-			return Puff_step_ERROR_DYNAMIC_WALK;
+			return Puff_step_ERROR_DYNAMIC_META_WALK;
 	}
 
 	return Puff_step_ERROR_IMPOSSIBLE;
 }
 
 static inline int Puff_stepDynamic_meta_leaf(struct Puff_State *state, uint8_t leaf) {
+
+	int e = 0;
+
 	#ifdef DEBUG
 	printf(" -> leaf: %d\n", leaf);
 	#endif
 
+	if (leaf < 16) {
+		e = Puff_stepDynamic_meta_addLength(&state->dynamic, leaf);
+		#ifdef DEBUG
+		printf("addLength status: %d\n", e);
+		#endif
+		switch (e) {
+			case 0:
+				return 0;
+			case 1:
+				// TODO ...
+			default:
+				return Puff_step_ERROR_DYNAMIC_META_ADDLENGTH;
+		}
+	}
+	switch (leaf) {
+		case 16:
+		case 17:
+		case 18:
+		default:
+			return Puff_step_ERROR_DYNAMIC_META_LEAF;
+	}
+
 	return Puff_step_ERROR_IMPOSSIBLE;
+}
+
+static inline int Puff_stepDynamic_meta_addLength(struct Puff_State_Dynamic *dynamic, uint8_t length) {
+	
+	if (dynamic->unitsRead >= Puff_LiteralTree_MAXLEAVES + Puff_DistanceTree_MAXLEAVES) {
+		return -1;
+	}
+	if (dynamic->unitsRead >= dynamic->codeLengthCount_main + dynamic->codeLengthCount_dist) {
+		return -2;
+	}
+
+	dynamic->lengths.maindist[dynamic->unitsRead] = length;
+	dynamic->unitsRead++;
+
+	if (dynamic->unitsRead >= dynamic->codeLengthCount_main + dynamic->codeLengthCount_dist) {
+		dynamic->unitsRead = 0;
+		return 1;
+	}
+
+	return 0;
 }
 
 
