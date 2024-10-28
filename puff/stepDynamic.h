@@ -19,12 +19,20 @@
 
 static inline int Puff_stepDynamic(struct Puff_State *state, _Bool bit);
 
+// collecting bits
+// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 static inline int Puff_stepDynamic_handleCollectedBits(struct Puff_State *state);
-
 static inline int Puff_stepDynamic_extraLength(struct Puff_State *state);
 static inline int Puff_stepDynamic_extraDistance(struct Puff_State *state);
 static inline int Puff_stepDynamic_bitsMeasuring(struct Puff_State *state);
 static inline int Puff_stepDynamic_bitsMeta(struct Puff_State *state);
+
+// walking trees
+// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+static inline int Puff_stepDynamic_meta(struct Puff_State *state, _Bool bit);
+static inline int Puff_stepDynamic_meta_leaf(struct Puff_State *state, uint8_t leaf);
+//static inline _Bool Puff_stepDynamic_meta_addLength(struct Puff_State *state, uint8_t length);
+
 
 static inline int Puff_stepDynamic(struct Puff_State *state, _Bool bit) {
 
@@ -34,6 +42,7 @@ static inline int Puff_stepDynamic(struct Puff_State *state, _Bool bit) {
 			.collectFor = Puff_State_COLLECTFOR_DYNAMIC_MEASURING
 		};
 		state->dynamic.focus = Puff_State_DYNAMIC_META;
+			//TODO dont need to set this if place this check after check for collecting
 	}
 
 	if (state->collector.collected < state->collector.max) {
@@ -49,8 +58,24 @@ static inline int Puff_stepDynamic(struct Puff_State *state, _Bool bit) {
 		return Puff_stepDynamic_handleCollectedBits(state);
 	}
 
+	switch (state->dynamic.focus) {
+		case Puff_State_DYNAMIC_META:
+			return Puff_stepDynamic_meta(state, bit);
+		case Puff_State_DYNAMIC_MAIN:
+			// ...
+		case Puff_State_DYNAMIC_DIST:
+			// ...
+		default:
+			return Puff_step_ERROR_DYNAMIC_FOCUS;
+	}
+
 	return Puff_step_ERROR_IMPOSSIBLE;
 }
+
+
+
+// collecting bits
+// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 static inline int Puff_stepDynamic_handleCollectedBits(struct Puff_State *state) {
 
@@ -143,13 +168,16 @@ static inline int Puff_stepDynamic_bitsMeta(struct Puff_State *state) {
 		#endif
 
 		int e = Puff_MetaTree_init(&state->trees.meta, state->dynamic.lengths.meta, state->dynamic.codeLengthCount_meta);
+		#ifdef DEBUG
+		printf("metaTree init status: %d\n", e);
+		#endif
 		if (e) {
-			#ifdef DEBUG
-			printf("metaTree init error: %d\n", e);
-			#endif
-			return Puff_State_ERROR_DYNAMIC_METATREE_INIT;
+			return Puff_step_ERROR_DYNAMIC_METATREE_INIT;
 		}
 
+		#ifdef DEBUG
+		printf("walking:\n");
+		#endif
 		state->dynamic.focus = Puff_State_DYNAMIC_META;
 
 		return 0;
@@ -164,45 +192,44 @@ static inline int Puff_stepDynamic_bitsMeta(struct Puff_State *state) {
 }
 
 
+// walking trees
+// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-/*
+static inline int Puff_stepDynamic_meta(struct Puff_State *state, _Bool bit) {
 
-planning out the sequence of events for stepDynamic
+	#ifdef DEBUG
+	printf("%c", bit? 'r':'l');
+	#endif
 
-\/\/\/ (tree)
+	uint16_t child = 0;
+	int e = Puff_Tree_walk(&state->trees.meta.tree, state->trees.nodeIndex, bit, &child);
+	
+	switch (e) {
+		case Puff_Tree_ISNODE:
+			state->trees.nodeIndex = child;
+			return 0;
+		case Puff_Tree_ISLEAF:
+			state->trees.nodeIndex = 0;
+			return Puff_stepDynamic_meta_leaf(state, child);
+		case Puff_Tree_OUTOFBOUNDS:
+		case Puff_Tree_HALT:
+		default:
+			#ifdef DEBUG
+			printf(" -> error: %d\n", e);
+			#endif
+			return Puff_step_ERROR_DYNAMIC_WALK;
+	}
 
-stepDynamic:
-buildingTrees .collectingBits .walkingDistance .walkingMain
-.measuring .metaTree .mainTree .distTree
+	return Puff_step_ERROR_IMPOSSIBLE;
+}
 
-measuring:
-(metaTree length) (mainTree length) (distanceTree length)
+static inline int Puff_stepDynamic_meta_leaf(struct Puff_State *state, uint8_t leaf) {
+	#ifdef DEBUG
+	printf(" -> leaf: %d\n", leaf);
+	#endif
 
-metaTree:
-
-mainTree:
-
-distTree: distanceTree
-
-
-collectingBits:
-doneCollecting notDone
-forExtraLength forExtraDistance | (continue collecting)
-(write via lz77 thing) | (set collectingBits for extraLength)
-
-walkingMain:
-leaf node
-length literal | (continue from node)
-needsExtraBits doesnt | (write literal)
-(set collectingBits for extraLength) | (set to walk distance)
-
-walkingDistance:
-leaf node
-needsExtraBits doesnt | (continue from node)
-(set collectingBits for extraDistance) | (write via lz77 thing)
+	return Puff_step_ERROR_IMPOSSIBLE;
+}
 
 
-/\/\/\
-
-*/
 #endif
