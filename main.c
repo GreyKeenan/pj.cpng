@@ -55,6 +55,7 @@ int main(int argc, char **argv) {
 	}
 
 
+
 	fin:
 
 	if (f != NULL) {
@@ -69,4 +70,4 @@ int main(int argc, char **argv) {
 #include "gunc/files.c"
 #include "gunc/byteBalloon.c"
 
-#include "whine/stripng.c"
+#include "whine/all.c"
