@@ -5,14 +5,18 @@
 
 #include "gunc/log.h"
 #include "gunc/iByteStream.h"
+#include "gunc/iByteWriter.h"
 #include "gunc/files.h"
+#include "gunc/byteBalloon.h"
 
 int main(int argc, char **argv) {
 	Gunc_say("Starting Program: %s", argv[0]);
 
-	struct Gunc_iByteStream bs = {0};
-	FILE *f = NULL;
 	int e = 0;
+	struct Gunc_iByteStream bs = {0};
+	struct Gunc_iByteWriter bw = {0};
+	FILE *f = NULL;
+	struct Gunc_ByteBalloon bb = {0};
 
 	if (argc < 2) {
 		Gunc_err("missing png file path");
@@ -22,6 +26,18 @@ int main(int argc, char **argv) {
 	e = Gunc_file_as_iByteStream(&f, &bs, argv[1]);
 	if (e) {
 		Gunc_nerr(e, "Failed to open file: %s", argv[1]);
+		goto fin;
+	}
+
+	e = Gunc_ByteBalloon_init(&bb, 1024);
+	if (e) {
+		Gunc_nerr(e, "failed to init byteBalloon %p", &bb);
+		goto fin;
+	}
+
+	e = Gunc_ByteBalloon_as_iByteWriter(&bb, &bw);
+	if (e) {
+		Gunc_nerr(e, "failed to create iByteWriter from byteBalloon");
 		goto fin;
 	}
 
@@ -39,3 +55,4 @@ int main(int argc, char **argv) {
 
 #include "gunc/log.c"
 #include "gunc/files.c"
+#include "gunc/byteBalloon.c"
