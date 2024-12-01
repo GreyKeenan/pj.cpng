@@ -1,3 +1,7 @@
+
+assetpath = assets/
+png = PNG_transparency_demonstration.png
+
 d:
 	gcc -std=c99 -Wpedantic \
 		-iquote . \
@@ -14,9 +18,6 @@ debug:
 		-lSDL2 \
 
 run: a.out
-	./a.out
+	./a.out $(assetpath)$(png)
 clean:
 	rm a.out
-
-
-
