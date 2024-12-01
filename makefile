@@ -19,5 +19,8 @@ debug:
 
 run: a.out
 	./a.out $(assetpath)$(png)
+runlog: a.out
+	./a.out $(assetpath)$(png) 2> proglog.txt
+	cat proglog.txt
 clean:
 	rm a.out
