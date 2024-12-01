@@ -9,14 +9,21 @@
 #include "gunc/files.h"
 #include "gunc/byteBalloon.h"
 
+#include "whine/stripng.h"
+#include "whine/image.h"
+
 int main(int argc, char **argv) {
 	Gunc_say("Starting Program: %s", argv[0]);
 
 	int e = 0;
+
 	struct Gunc_iByteStream bs = {0};
 	struct Gunc_iByteWriter bw = {0};
+
 	FILE *f = NULL;
 	struct Gunc_ByteBalloon bb = {0};
+
+	struct Whine_Image image = {0};
 
 	if (argc < 2) {
 		Gunc_err("missing png file path");
@@ -41,6 +48,11 @@ int main(int argc, char **argv) {
 		goto fin;
 	}
 
+	e = Whine_stripng(&image, &bs, &bw);
+	if (e) {
+		Gunc_nerr(e, "failed to extract zlib data from png");
+		goto fin;
+	}
 
 
 	fin:
@@ -56,3 +68,5 @@ int main(int argc, char **argv) {
 #include "gunc/log.c"
 #include "gunc/files.c"
 #include "gunc/byteBalloon.c"
+
+#include "whine/stripng.c"
