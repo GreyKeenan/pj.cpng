@@ -3,8 +3,9 @@
 
 struct Gunc_iByteStream;
 struct Gunc_iByteWriter;
+struct Gunc_iByteLooker;
 
-int Zoop_decompress(struct Gunc_iByteStream *bs, struct Gunc_iByteWriter *bw);
+int Zoop_decompress(struct Gunc_iByteStream *bs, struct Gunc_iByteWriter *bw, struct Gunc_iByteLooker *bl);
 /*
 decompresses a stream of zlib-formatted data from $bs
 specifically, expects CM8, or the PNG zlib type

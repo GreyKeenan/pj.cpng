@@ -9,6 +9,7 @@
 #include "gunc/files.h"
 #include "gunc/byteBalloon.h"
 #include "gunc/sequence.h"
+#include "gunc/iByteLooker.h"
 
 #include "whine/stripng.h"
 #include "whine/image.h"
@@ -28,8 +29,9 @@ int main(int argc, char **argv) {
 
 	struct Whine_Image image = {0};
 
-	struct Gunc_ByteBalloon bb_zoop = {0};
 	struct Gunc_Sequence seq = {0};
+	struct Gunc_ByteBalloon bb_zoop = {0};
+	struct Gunc_iByteLooker bl = {0};
 
 	if (argc < 2) {
 		Gunc_err("missing png file path");
@@ -95,6 +97,11 @@ int main(int argc, char **argv) {
 		Gunc_nerr(e, "failed to create iByteWriter from byteBalloon for zoop.");
 		goto fin;
 	}
+	e = Gunc_ByteBalloon_as_iByteLooker(&bb_zoop, &bl);
+	if (e) {
+		Gunc_nerr(e, "failed to create iByteLooker from byteBalloon");
+		goto fin;
+	}
 
 	e = Gunc_Sequence_init(&seq, bb_whine.hData, bb_whine.length, sizeof(*bb_whine.hData));
 	if (e) {
@@ -110,7 +117,7 @@ int main(int argc, char **argv) {
 	
 	Gunc_title("Decompressing Zlib Bytes");
 
-	e = Zoop_decompress(&bs, &bw);
+	e = Zoop_decompress(&bs, &bw, &bl);
 	if (e) {
 		Gunc_nerr(e, "failed to zoop the zoopidee zoop");
 		goto fin;
