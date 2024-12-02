@@ -199,6 +199,7 @@ static inline int decompress(uint8_t *zlibData, uint32_t zlibDataLength, uint8_t
 #include "gunc/files.c"
 #include "gunc/byteBalloon.c"
 #include "gunc/sequence.c"
+#include "gunc/bitStream.c"
 
 #include "whine/all.c"
 #include "zoop/all.c"
