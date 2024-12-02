@@ -1,6 +1,7 @@
 #include "./decompress.h"
 
 #include "./alderman.h"
+#include "./deflate.h"
 
 #include "gunc/log.h"
 #include "gunc/iByteStream.h"
@@ -41,8 +42,16 @@ int Zoop_decompress(struct Gunc_iByteStream *bs, struct Gunc_iByteWriter *bw, st
 		return __LINE__;
 	}
 
-	Gunc_TODO("this function");
-	return -999;
+	struct Gunc_BitStream bis = { .bys = *bs };
+	e = Zoop_deflate(&bis, &aldermanBw, bl);
+	if (e) {
+		Gunc_nerr(e, "failed to deflate data");
+		return __LINE__;
+	}
+
+	Gunc_TODO("check adler32");
+
+	return 0;
 }
 
 static inline int Zoop_header(struct Gunc_iByteStream *bs) {
