@@ -43,7 +43,7 @@ static inline int Gunc_iByteWriter_init(struct Gunc_iByteWriter *self, void *vse
 
 	return 0;
 }
-static inline struct Gunc_iByteWriter Gunc_iByteWriter_init_unnull(void *vself, int (*give)(void*, uint8_t)) {
+static inline struct Gunc_iByteWriter Gunc_iByteWriter_new_unnull(void *vself, int (*give)(void*, uint8_t)) {
 	return (struct Gunc_iByteWriter) {
 		.vself = vself,
 		.give = give
