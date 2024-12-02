@@ -13,6 +13,8 @@
 #include "whine/stripng.h"
 #include "whine/image.h"
 
+#include "zoop/decompress.h"
+
 int main(int argc, char **argv) {
 	Gunc_title("Starting Program: %s", argv[0]);
 
@@ -108,7 +110,11 @@ int main(int argc, char **argv) {
 	
 	Gunc_title("Decompressing Zlib Bytes");
 
-	Gunc_TODO("the entire decompressing stuff and everything after");
+	e = Zoop_decompress(&bs, &bw);
+	if (e) {
+		Gunc_nerr(e, "failed to zoop the zoopidee zoop");
+		goto fin;
+	}
 
 
 	fin:
@@ -138,3 +144,4 @@ int main(int argc, char **argv) {
 #include "gunc/sequence.c"
 
 #include "whine/all.c"
+#include "zoop/all.c"
