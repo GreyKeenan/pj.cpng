@@ -108,6 +108,12 @@ static inline int Whine_ihdr(struct Whine_Image *destination, struct Gunc_iByteS
 		return __LINE__;
 	}
 
+	e = Whine_chunk_eatCRC(bs);
+	if (e) {
+		Gunc_nerr(e, "eatCRC failed");
+		return __LINE__;
+	}
+
 	return 0;
 }
 
