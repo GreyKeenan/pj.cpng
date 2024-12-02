@@ -13,7 +13,7 @@
 #include "whine/image.h"
 
 int main(int argc, char **argv) {
-	Gunc_say("Starting Program: %s", argv[0]);
+	Gunc_title("Starting Program: %s", argv[0]);
 
 	int e = 0;
 
@@ -48,13 +48,16 @@ int main(int argc, char **argv) {
 		goto fin;
 	}
 
+	Gunc_title("Stripping PNG");
+
 	e = Whine_stripng(&image, &bs, &bw);
 	if (e) {
 		Gunc_nerr(e, "failed to extract zlib data from png");
 		goto fin;
 	}
+	Gunc_say("zlib data gathered!");
 
-
+	Gunc_title("Decompressing Zlib Bytes");
 
 	fin:
 
@@ -62,7 +65,7 @@ int main(int argc, char **argv) {
 		fclose(f);
 	}
 
-	Gunc_say("Program endpoint reached.");
+	Gunc_title("Program endpoint reached.");
 	return 0;
 }
 

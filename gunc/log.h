@@ -15,18 +15,31 @@
 #define Gunc_nwarn(e, ...) Gunc_log_f(e, "WARNING", __func__, __LINE__, Gunc_PP_JOIN_EXEC(Gunc_LOG_, Gunc_PP_ONEMANY_32(__VA_ARGS__))(__VA_ARGS__))
 #define Gunc_nerr(e, ...) Gunc_log_f(e, "ERROR", __func__, __LINE__, Gunc_PP_JOIN_EXEC(Gunc_LOG_, Gunc_PP_ONEMANY_32(__VA_ARGS__))(__VA_ARGS__))
 
+#define Gunc_TODO(...) Gunc_log_f(0, "TODO", __func__, __LINE__, Gunc_PP_JOIN_EXEC(Gunc_LOG_, Gunc_PP_ONEMANY_32(__VA_ARGS__))(__VA_ARGS__))
+
+
 #ifdef DEBUG
 #define Gunc_say(...) Gunc_log_f(0, "INFO", __func__, __LINE__, Gunc_PP_JOIN_EXEC(Gunc_LOG_, Gunc_PP_ONEMANY_32(__VA_ARGS__))(__VA_ARGS__))
+#define Gunc_title(...) Gunc_title_f('%', __func__, __LINE__, Gunc_PP_JOIN_EXEC(Gunc_LOG_, Gunc_PP_ONEMANY_32(__VA_ARGS__))(__VA_ARGS__))
 #else
 #define Gunc_say(...)
+#define Gunc_title(...)
 #endif
 
-#define Gunc_TODO(...) Gunc_log_f(0, "TODO", __func__, __LINE__, Gunc_PP_JOIN_EXEC(Gunc_LOG_, Gunc_PP_ONEMANY_32(__VA_ARGS__))(__VA_ARGS__))
+
 
 
 void Gunc_log_f(
 	int e,
 	const char *type,
+	const char *functionname,
+	const int linenumber,
+	const char *message,
+	int va_count,
+	...
+);
+void Gunc_title_f(
+	char h,
 	const char *functionname,
 	const int linenumber,
 	const char *message,
