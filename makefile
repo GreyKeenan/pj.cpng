@@ -1,5 +1,5 @@
 
-png = assets/PNG_transparency_demonstration.png
+png = assets/uncompressed.png
 
 d:
 	gcc -std=c99 -Wpedantic \
