@@ -13,10 +13,10 @@ struct Gunc_iByteStream;
 
 int Whine_chunk_readName(struct Gunc_iByteStream *bs, char destination[Whine_chunk_NAMELENGTH]);
 
-static inline bool Whine_chunk_isPrivate(char name[Whine_chunk_NAMELENGTH]) {
+static inline bool Whine_chunk_isAncillary(char name[Whine_chunk_NAMELENGTH]) {
 	return name[0] & Gunc_Ascii_ISCAPITAL;
 }
-static inline bool Whine_chunk_isAncillary(char name[Whine_chunk_NAMELENGTH]) {
+static inline bool Whine_chunk_isPrivate(char name[Whine_chunk_NAMELENGTH]) {
 	return name[1] & Gunc_Ascii_ISCAPITAL;
 }
 static inline bool Whine_chunk_isReserved(char name[Whine_chunk_NAMELENGTH]) {

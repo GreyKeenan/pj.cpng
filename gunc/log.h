@@ -21,6 +21,8 @@
 #define Gunc_say(...)
 #endif
 
+#define Gunc_TODO(...) Gunc_log_f(0, "TODO", __func__, __LINE__, Gunc_PP_JOIN_EXEC(Gunc_LOG_, Gunc_PP_ONEMANY_32(__VA_ARGS__))(__VA_ARGS__))
+
 
 void Gunc_log_f(
 	int e,
