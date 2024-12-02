@@ -94,20 +94,40 @@ static inline int Whine_chunkstream(struct Gunc_iByteStream *bs, struct Gunc_iBy
 		}
 
 		if (!strcmp(name, "IEND")) {
+
+			if (length != 0) {
+				Gunc_err("IEND chunk length > 0");
+				return __LINE__;
+			}
+
 			break;
 		}
 
-		/* TODO
 		if (!strcmp(name, "PLTE")) {
-			// ...
+			Gunc_TODO("handle PLTE data");
+				//check before IDAT
+			Whine_waste(bs, length);
 			goto finishChunk;
 		}
 
 		if (!strcmp(name, "IDAT")) {
-			// ...
+			Gunc_TODO("verify IDATs");
+				//check sequential IDATs
+			for (uint32_t i = 0; i < length; ++i) {
+				e = Gunc_iByteStream_next(bs, &b);
+				if (e) {
+					Gunc_nerr(e, "failed to read IDAT data");
+					return __LINE__;
+				}
+
+				e = Gunc_iByteWriter_give(bw, b);
+				if (e) {
+					Gunc_nerr(e, "failed to write IDAT data");
+					return __LINE__;
+				}
+			}
 			goto finishChunk;
 		}
-		*/
 
 		Gunc_err("Unrecognized critical chunk: %s", name);
 		return __LINE__;
@@ -127,7 +147,7 @@ static inline int Whine_chunkstream(struct Gunc_iByteStream *bs, struct Gunc_iBy
 	}
 
 	Gunc_TODO("validate idat/plte exist");
-	return __LINE__;
+	return 0;
 }
 
 static inline int Whine_waste(struct Gunc_iByteStream *bs, uint32_t count) {

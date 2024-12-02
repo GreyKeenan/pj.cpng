@@ -28,8 +28,19 @@ static inline bool Whine_chunk_isCopyable(char name[Whine_chunk_NAMELENGTH]) {
 }
 
 static inline int Whine_chunk_eatCRC(struct Gunc_iByteStream *bs) {
-	Gunc_warn("TODO trashing CRC instead of reading it!");
-	return Whine_read_int32(bs, NULL);
+	Gunc_TODO("trashing CRC instead of reading it");
+
+	int e = 0;
+
+	for (int i = 0; i < Whine_chunk_CRCLENGTH; ++i) {
+		e = Gunc_iByteStream_next(bs, NULL);
+		if (e) {
+			Gunc_nerr(e, "failed to read");
+			return 1;
+		}
+	}
+
+	return 0;
 }
 
 #endif
