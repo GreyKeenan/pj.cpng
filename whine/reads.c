@@ -20,6 +20,11 @@ int Whine_read_int32(struct Gunc_iByteStream *bs, uint32_t *nDestination) {
 		n = (n << 8) | b;
 	}
 
+	if (n & 0x80000000) {
+		Gunc_err("int32 exceeds PNG cap with: 0x%x", n);
+		return 2;
+	}
+
 	if (nDestination != NULL) {
 		*nDestination = n;
 	}

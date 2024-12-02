@@ -12,7 +12,7 @@ struct Whine_Image {
 	uint8_t filterMethod;
 	uint8_t interlaceMethod;
 
-	uint8_t *hData;
+	uint8_t *hnData;
 	uint32_t length;
 };
 

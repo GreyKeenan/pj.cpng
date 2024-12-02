@@ -1,7 +1,8 @@
 #include "./stripng.h"
 
 #include "./image.h"
-#include "./reads.h"
+#include "./chunk.h"
+#include "./ihdr.h"
 
 #include "gunc/log.h"
 #include "gunc/iByteStream.h"
@@ -10,7 +11,6 @@
 #include <stdint.h>
 
 static inline int Whine_header(struct Gunc_iByteStream *bs);
-static inline int Whine_ihdr(struct Whine_Image *destination, struct Gunc_iByteStream *bs);
 
 #define HEADER_LENGTH 8
 const uint8_t Whine_HEADER[HEADER_LENGTH] = {0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A};
@@ -33,8 +33,6 @@ int Whine_stripng(struct Whine_Image *destination, struct Gunc_iByteStream *bs, 
 	}
 	Gunc_say("ihdr read.");
 
-	//TODO: CHECK HIGHEST BIT
-
 	return __LINE__;
 }
 
@@ -56,8 +54,4 @@ static inline int Whine_header(struct Gunc_iByteStream *bs) {
 	}
 
 	return 0;
-}
-
-static inline int Whine_ihdr(struct Whine_Image *destination, struct Gunc_iByteStream *bs) {
-	return __LINE__;
 }
