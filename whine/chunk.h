@@ -10,6 +10,7 @@
 struct Gunc_iByteStream;
 
 #define Whine_chunk_NAMELENGTH 4
+#define Whine_chunk_CRCLENGTH 4
 
 int Whine_chunk_readName(struct Gunc_iByteStream *bs, char destination[Whine_chunk_NAMELENGTH]);
 
