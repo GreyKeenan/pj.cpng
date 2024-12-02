@@ -1,6 +1,5 @@
 
-assetpath = assets/
-png = PNG_transparency_demonstration.png
+png = assets/PNG_transparency_demonstration.png
 
 d:
 	gcc -std=c99 -Wpedantic \
@@ -18,9 +17,9 @@ debug:
 		-lSDL2 \
 
 run: a.out
-	./a.out $(assetpath)$(png)
+	./a.out $(png)
 runlog: a.out
-	./a.out $(assetpath)$(png) 2> proglog.txt
+	./a.out $(png) 2> proglog.txt
 	cat proglog.txt
 clean:
 	rm a.out
