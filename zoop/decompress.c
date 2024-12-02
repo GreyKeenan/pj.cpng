@@ -1,5 +1,7 @@
 #include "./decompress.h"
 
+#include "./alderman.h"
+
 #include "gunc/log.h"
 #include "gunc/iByteStream.h"
 #include "gunc/iByteWriter.h"
@@ -7,7 +9,7 @@
 
 #include <stdint.h>
 
-int Zoop_header(struct Gunc_iByteStream *bs);
+static inline int Zoop_header(struct Gunc_iByteStream *bs);
 
 #define CM_PNG 8
 #define ZLIB_MODCHECK 31
@@ -25,12 +27,25 @@ int Zoop_decompress(struct Gunc_iByteStream *bs, struct Gunc_iByteWriter *bw, st
 	}
 	Gunc_say("ZLIB header confirmed");
 
+	
+	struct Zoop_Alderman john = {0};
+	e = Zoop_Alderman_init(&john, bw);
+	if (e) {
+		Gunc_nerr(e, "failed to elect alderman.");
+		return __LINE__;
+	}
+	struct Gunc_iByteWriter aldermanBw = {0};
+	e = Zoop_Alderman_as_iByteWriter(&john, &aldermanBw);
+	if (e) {
+		Gunc_nerr(e, "failed to init iByteWriter");
+		return __LINE__;
+	}
 
 	Gunc_TODO("this function");
 	return -999;
 }
 
-int Zoop_header(struct Gunc_iByteStream *bs) {
+static inline int Zoop_header(struct Gunc_iByteStream *bs) {
 
 	int e = 0;
 	uint8_t b = 0;
