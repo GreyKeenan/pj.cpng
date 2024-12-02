@@ -25,7 +25,7 @@ int Gunc_ByteBalloon_give(void *vself, uint8_t byte) {
 
 	if (self->length >= self->currentAllocatedMax) {
 		Gunc_say("attempting to extend length of balloon (%p) from %d past %d.", self, self->length, self->currentAllocatedMax);
-		if (0x8000 & self->currentAllocatedMax) {
+		if (0x80000000 & self->currentAllocatedMax) {
 			Gunc_err("maxlength cannot be increased: %d", self->currentAllocatedMax);
 			return Gunc_iByteWriter_CAP;
 		}
