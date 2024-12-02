@@ -10,9 +10,10 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <stdbool.h>
 
 static inline int Whine_header(struct Gunc_iByteStream *bs);
-static inline int Whine_chunkstream(struct Gunc_iByteStream *bs, struct Gunc_iByteWriter *bw);
+static inline int Whine_chunkstream(struct Gunc_iByteStream *bs, struct Gunc_iByteWriter *bw, bool isIndexed);
 static inline int Whine_waste(struct Gunc_iByteStream *bs, uint32_t count);
 
 #define HEADER_LENGTH 8
@@ -36,7 +37,7 @@ int Whine_stripng(struct Whine_Image *destination, struct Gunc_iByteStream *bs, 
 	}
 	Gunc_say("ihdr confirmed.");
 
-	e = Whine_chunkstream(bs, bw);
+	e = Whine_chunkstream(bs, bw, (destination->colorType == 3));
 	if (e) {
 		Gunc_nerr(e, "failed to process chunk sequence.");
 		return 3;
@@ -65,12 +66,15 @@ static inline int Whine_header(struct Gunc_iByteStream *bs) {
 	return 0;
 }
 
-static inline int Whine_chunkstream(struct Gunc_iByteStream *bs, struct Gunc_iByteWriter *bw) {
+static inline int Whine_chunkstream(struct Gunc_iByteStream *bs, struct Gunc_iByteWriter *bw, bool isIndexed) {
 
 	int e = 0;
 	uint32_t length = 0;
 	char name[Whine_chunk_NAMELENGTH + 1] = {0};
 	uint8_t b = 0;
+
+	bool haveIDAT = false;
+	bool havePLTE = false;
 
 	while (1) {
 
@@ -104,8 +108,19 @@ static inline int Whine_chunkstream(struct Gunc_iByteStream *bs, struct Gunc_iBy
 		}
 
 		if (!strcmp(name, "PLTE")) {
+			if (havePLTE == true) {
+				Gunc_err("multiple PLTEs");
+				return __LINE__;
+			}
+
 			Gunc_TODO("handle PLTE data");
-				//check before IDAT
+			havePLTE = true;
+
+			if (haveIDAT) {
+				Gunc_err("PLTE given after IDAT");
+				return __LINE__;
+			}
+
 			Whine_waste(bs, length);
 			goto finishChunk;
 		}
@@ -113,6 +128,9 @@ static inline int Whine_chunkstream(struct Gunc_iByteStream *bs, struct Gunc_iBy
 		if (!strcmp(name, "IDAT")) {
 			Gunc_TODO("verify IDATs");
 				//check sequential IDATs
+
+			haveIDAT = true;
+
 			for (uint32_t i = 0; i < length; ++i) {
 				e = Gunc_iByteStream_next(bs, &b);
 				if (e) {
@@ -146,7 +164,15 @@ static inline int Whine_chunkstream(struct Gunc_iByteStream *bs, struct Gunc_iBy
 		return __LINE__;
 	}
 
-	Gunc_TODO("validate idat/plte exist");
+	if (!haveIDAT) {
+		Gunc_err("missing IDAT");
+		return __LINE__;
+	}
+	if (isIndexed && !havePLTE) {
+		Gunc_err("missing PLTE");
+		return __LINE__;
+	}
+
 	return 0;
 }
 
