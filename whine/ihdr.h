@@ -11,9 +11,6 @@
 #include <stdint.h>
 #include <string.h>
 
-static inline int Whine_ihdr(struct Whine_Image *destination, struct Gunc_iByteStream *bs);
-static inline int Whine_validateBDCT(struct Whine_Image *ihdr);
-
 #define Whine_ihdr_LENGTH 13
 
 static inline int Whine_ihdr(struct Whine_Image *destination, struct Gunc_iByteStream *bs) {
@@ -49,23 +46,13 @@ static inline int Whine_ihdr(struct Whine_Image *destination, struct Gunc_iByteS
 		Gunc_nerr(e, "failed to read width");
 		return __LINE__;
 	}
-	if (n == 0) {
-		Gunc_err("invalid width (%d)", n);
-		return __LINE__;
-	}
 	destination->w = n;
-
 	e = Whine_read_int32(bs, &n);
 	if (e) {
 		Gunc_nerr(e, "failed to read height");
 		return __LINE__;
 	}
-	if (destination->h == 0) {
-		Gunc_err("invalid height (%d)", n);
-		return __LINE__;
-	}
 	destination->h = n;
-
 	e = Gunc_iByteStream_next(bs, &destination->bitDepth);
 	if (e) {
 		Gunc_nerr(e, "failed to read bitDepth");
@@ -76,39 +63,25 @@ static inline int Whine_ihdr(struct Whine_Image *destination, struct Gunc_iByteS
 		Gunc_nerr(e, "failed to read colorType");
 		return __LINE__;
 	}
-	e = Whine_validateBDCT(destination);
-	if (e) {
-		Gunc_nerr(e, "invalid bitDepth (%d) or colorType (%d)", destination->bitDepth, destination->colorType);
-		return __LINE__;
-	}
-
 	e = Gunc_iByteStream_next(bs, &destination->compressionMethod);
 	if (e) {
 		Gunc_nerr(e, "failed to read compressionMethod");
 		return __LINE__;
 	}
-	if (destination->compressionMethod != 0) {
-		Gunc_err("invalid compressionMethod: %d", destination->compressionMethod);
-		return __LINE__;
-	}
-
 	e = Gunc_iByteStream_next(bs, &destination->filterMethod);
 	if (e) {
 		Gunc_nerr(e, "failed to read filterMethod");
 		return __LINE__;
 	}
-	if (destination->filterMethod != 0) {
-		Gunc_err("invalid filterMethod: %d", destination->filterMethod);
-		return __LINE__;
-	}
-
 	e = Gunc_iByteStream_next(bs, &destination->interlaceMethod);
 	if (e) {
 		Gunc_nerr(e, "failed to read interlaceMethod");
 		return __LINE__;
 	}
-	if (destination->interlaceMethod > 1) {
-		Gunc_err("invalid interlaceMethod: %d", destination->interlaceMethod);
+
+	e = Whine_Image_validateIhdr(destination);
+	if (e) {
+		Gunc_nerr(e, "invalid IHDR data");
 		return __LINE__;
 	}
 
@@ -119,50 +92,6 @@ static inline int Whine_ihdr(struct Whine_Image *destination, struct Gunc_iByteS
 	}
 
 	return 0;
-}
-
-static inline int Whine_validateBDCT(struct Whine_Image *ihdr) {
-
-	#define Whine_BDLENGTH 5
-	uint8_t validBitDepths[Whine_BDLENGTH] = {1, 2, 4, 8, 16};
-
-	switch (ihdr->bitDepth) {
-		case 1:
-		case 2:
-		case 4:
-		case 8:
-		case 16:
-			break;
-		default:
-			Gunc_err("invalid bitDepth: %d", ihdr->bitDepth);
-			return 1;
-	}
-	switch (ihdr->colorType) {
-		case 0:
-			break;
-		case 3:
-			validBitDepths[4] = 0;
-			break;
-		case 2:
-		case 4:
-		case 6:
-			validBitDepths[0] = 0;
-			validBitDepths[1] = 0;
-			validBitDepths[2] = 0;
-			break;
-		default:
-			Gunc_err("invalid colorType: %d", ihdr->colorType);
-			return 2;
-	}
-
-	for (int i = 0; i < Whine_BDLENGTH; ++i) {
-		if (ihdr->bitDepth == validBitDepths[i]) {
-			return 0;
-		}
-	}
-
-	Gunc_err("invalid bitDepth colorType combo: (%d)/(%d)", ihdr->bitDepth, ihdr->colorType);
-	return 3;
 }
 
 #endif

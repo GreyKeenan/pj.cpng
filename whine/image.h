@@ -12,7 +12,7 @@ struct Whine_Image {
 	uint8_t filterMethod;
 	uint8_t interlaceMethod;
 
-	uint8_t *hnScanlineData;
+	uint8_t *nScanlineData;
 };
 
 #define Whine_samplesMapLength 7
@@ -36,5 +36,7 @@ uint8_t Whine_Image_bytesPerPixel(const struct Whine_Image *image);
 uint64_t Whine_Image_bytesPerScanline(const struct Whine_Image *image);
 	// returns 0 on error
 	// max is 8 * (2^31 - 1)
+
+int Whine_Image_validateIhdr(const struct Whine_Image *image);
 
 #endif
