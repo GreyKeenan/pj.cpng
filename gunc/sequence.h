@@ -49,7 +49,7 @@ static inline int Gunc_Sequence_get(struct Gunc_Sequence *self, void **nDestinat
 }
 
 static inline int Gunc_Sequence_as_iByteStream(struct Gunc_Sequence *self, struct Gunc_iByteStream *bs) {
-	if (self == NULL || bs == NULL) {
+	if (self == NULL || bs == NULL) { //TODO checking bs is unnecessary since iByteStream_init checks it / checking self is necessary though for warning
 		Gunc_err("null parameter");
 		return 1;
 	}
