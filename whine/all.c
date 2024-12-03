@@ -4,3 +4,4 @@
 #include "./chunk.c"
 
 #include "./nofilter.c"
+#include "./image.c"

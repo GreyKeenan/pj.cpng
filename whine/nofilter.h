@@ -8,6 +8,7 @@ struct Gunc_iByteWriter;
 int Whine_nofilter(struct Whine_Image image, struct Gunc_iByteStream *bs, struct Gunc_iByteWriter *bw);
 /*
 undoes PNG filetering post-zlib-decompression
+mostly assumes a valid Image/ihdr data
 */
 
 #endif
