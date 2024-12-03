@@ -30,4 +30,11 @@ returns 0 if unrecognized colorType
 	return Whine_samplesMap[colorType];
 }
 
+uint8_t Whine_Image_bytesPerPixel(const struct Whine_Image *image);
+	// returns 0 on error
+	// always < 9
+uint64_t Whine_Image_bytesPerScanline(const struct Whine_Image *image);
+	// returns 0 on error
+	// max is 8 * (2^31 - 1)
+
 #endif

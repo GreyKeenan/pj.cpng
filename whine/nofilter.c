@@ -32,30 +32,18 @@ int Whine_nofilter(struct Whine_Image image, struct Gunc_iByteStream *bs, struct
 		goto fin;
 	}
 
-
-	int8_t samplesPerPixel = Whine_Image_samplesPerPixel(image.colorType);
-	if (samplesPerPixel == 0) {
-		Gunc_err("invalid color type: %d", image.colorType);
+	uint8_t bytesPerPixel = Whine_Image_bytesPerPixel(&image);
+	if (bytesPerPixel == 0) {
+		Gunc_nerr(bytesPerPixel, "invalid bytesPerPixel");
 		r = __LINE__;
 		goto fin;
 	}
-
-	//ensure bytesPer___ arent 0, so can be used in calloc
-	if (image.bitDepth == 0) {
-		Gunc_err("zero bitDepth");
+	uint64_t bytesPerScanline = Whine_Image_bytesPerScanline(&image);
+	if (bytesPerScanline == 0) {
+		Gunc_nerr(bytesPerScanline, "invalid bytesPerScanline");
 		r = __LINE__;
 		goto fin;
 	}
-	if (image.w == 0) {
-		Gunc_err("zero width");
-		r = __LINE__;
-		goto fin;
-	}
-	uint8_t bitsPerPixel = samplesPerPixel * image.bitDepth;
-	uint64_t bitsPerScanline = (uint64_t)bitsPerPixel * image.w;
-	uint8_t bytesPerPixel = (bitsPerPixel / 8) + (bool)(bitsPerPixel % 8);
-		//assumes bytesPerPixel <= 8, which is the case for valid bitDepths
-	uint64_t bytesPerScanline = (bitsPerScanline / 8) + (bool)(bitsPerScanline % 8);
 
 	if (bytesPerScanline > SIZE_MAX) {
 		Gunc_err("scanline length too long for malloc");
