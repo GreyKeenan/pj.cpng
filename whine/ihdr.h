@@ -42,25 +42,29 @@ static inline int Whine_ihdr(struct Whine_Image *destination, struct Gunc_iByteS
 		return __LINE__;
 	}
 
-	e = Whine_read_int32(bs, &destination->w);
+	uint32_t n = 0;
+
+	e = Whine_read_int32(bs, &n);
 	if (e) {
 		Gunc_nerr(e, "failed to read width");
 		return __LINE__;
 	}
-	if (destination->w == 0) {
-		Gunc_err("invalid width (%d)", destination->w);
+	if (n == 0) {
+		Gunc_err("invalid width (%d)", n);
 		return __LINE__;
 	}
+	destination->w = n;
 
-	e = Whine_read_int32(bs, &destination->h);
+	e = Whine_read_int32(bs, &n);
 	if (e) {
 		Gunc_nerr(e, "failed to read height");
 		return __LINE__;
 	}
 	if (destination->h == 0) {
-		Gunc_err("invalid height (%d)", destination->h);
+		Gunc_err("invalid height (%d)", n);
 		return __LINE__;
 	}
+	destination->h = n;
 
 	e = Gunc_iByteStream_next(bs, &destination->bitDepth);
 	if (e) {

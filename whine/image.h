@@ -4,13 +4,15 @@
 #include <stdint.h>
 
 struct Whine_Image {
-	uint32_t w;
-	uint32_t h;
+	int32_t w;
+	int32_t h;
 	uint8_t bitDepth;
 	uint8_t colorType;
 	uint8_t compressionMethod;
 	uint8_t filterMethod;
 	uint8_t interlaceMethod;
+
+	uint8_t *hnScanlineData;
 };
 
 #define Whine_samplesMapLength 7
