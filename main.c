@@ -285,6 +285,7 @@ static inline int remove_filters(struct Whine_Image image, uint8_t *decompressed
 #include "gunc/byteBalloon.c"
 #include "gunc/sequence.c"
 #include "gunc/bitStream.c"
+#include "gunc/byteSeq64.c"
 
 #include "whine/all.c"
 #include "zoop/all.c"
