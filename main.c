@@ -19,7 +19,6 @@
 
 static inline int unwrap_png(const char *path, uint8_t **dataDest, uint32_t *lengthDest, struct Whine_Image *image);
 static inline int decompress(uint8_t *zlibData, uint32_t zlibDataLength, uint8_t **dataDest, uint32_t *lengthDest);
-static inline int defilter(uint8_t *zlibData, uint32_t zlibDataLength, uint8_t **dataDest, uint32_t *lengthDest);
 static inline int remove_filters(struct Whine_Image image, uint8_t *decompressedData, uint32_t length, uint8_t **dataDest, uint32_t *lengthDest);
 
 
