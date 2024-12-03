@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdint.h>
 
+#include "./pix_as_imt.h"
+
 #include "gunc/log.h"
 #include "gunc/iByteStream.h"
 #include "gunc/iByteWriter.h"
@@ -17,6 +19,9 @@
 #include "whine/pixie.h"
 
 #include "zoop/decompress.h"
+
+#include "sdaubler/display.h"
+#include "sdaubler/iImageTrain_impl.h"
 
 static inline int unwrap_png(const char *path, uint8_t **dataDest, uint32_t *lengthDest, struct Whine_Image *image);
 static inline int decompress(uint8_t *zlibData, uint32_t zlibDataLength, uint8_t **dataDest, uint32_t *lengthDest);
@@ -285,9 +290,29 @@ static inline int show(struct Whine_Image image) {
 	}
 	Gunc_say("pixel 0: 0x%x", n);
 
+
+	Gunc_title("showing");
+
+	struct Sdaubler_iImageTrain imt = {0};
+
+	e = _Pixie_as_iImageTrain(&pix, &imt);
+	if (e) {
+		Gunc_nerr(e, "failed to init imt");
+		return __LINE__;
+	}
+
+	e = Sdaubler_display(&imt);
+	if (e) {
+		Gunc_nerr(e, "Sdaubler_display failed");
+		return __LINE__;
+	}
+
 	return 0;
 }
 
+
+
+#include "./pix_as_imt.c"
 
 #include "gunc/log.c"
 #include "gunc/files.c"
@@ -298,3 +323,6 @@ static inline int show(struct Whine_Image image) {
 
 #include "whine/all.c"
 #include "zoop/all.c"
+
+#include "sdaubler/convert.c"
+#include "sdaubler/display.c"
