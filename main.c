@@ -19,7 +19,7 @@
 
 static inline int unwrap_png(const char *path, uint8_t **dataDest, uint32_t *lengthDest, struct Whine_Image *image);
 static inline int decompress(uint8_t *zlibData, uint32_t zlibDataLength, uint8_t **dataDest, uint32_t *lengthDest);
-static inline int remove_filters(struct Whine_Image image, uint8_t *decompressedData, uint32_t length, uint8_t **dataDest, uint32_t *lengthDest);
+static inline int remove_filters(struct Whine_Image *image, uint8_t *decompressedData, uint32_t length, uint8_t **dataDest, uint32_t *lengthDest);
 
 
 int main(int argc, char **argv) {
@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
 
 	int e = 0;
 
-	struct Whine_Image image;
+	struct Whine_Image image = {0};
 
 	uint8_t *hnZlibData = NULL;
 	uint32_t zlibDataLength = 0;
@@ -64,14 +64,15 @@ int main(int argc, char **argv) {
 	zlibDataLength = 0;
 
 
-	e = remove_filters(image, hnDecompressedData, decompressedDataLength, &hnUnfilteredData, &unfilteredDataLength);
+	e = remove_filters(&image, hnDecompressedData, decompressedDataLength, &hnUnfilteredData, &unfilteredDataLength);
 	if (e) {
 		Gunc_nerr(e, "failed to remove scanline filters");
 		goto fin;
 	}
 
-	// free decompressed data
-	// set null
+	free(hnDecompressedData);
+	hnDecompressedData = NULL;
+	decompressedDataLength = 0;
 
 
 	fin:
@@ -229,25 +230,11 @@ static inline int decompress(uint8_t *zlibData, uint32_t zlibDataLength, uint8_t
 	return 0;
 }
 
-static inline int remove_filters(struct Whine_Image image, uint8_t *decompressedData, uint32_t length, uint8_t **dataDest, uint32_t *lengthDest) {
+static inline int remove_filters(struct Whine_Image *image, uint8_t *decompressedData, uint32_t length, uint8_t **dataDest, uint32_t *lengthDest) {
 
 	int e = 0;
 
 	Gunc_title("Defiltering setup");
-
-	struct Gunc_ByteBalloon bb = {0};
-	struct Gunc_iByteWriter bw = {0};
-
-	e = Gunc_ByteBalloon_init(&bb, 1024);
-	if (e) {
-		Gunc_nerr(e, "failed to init bb");
-		return __LINE__;
-	}
-	e = Gunc_ByteBalloon_as_iByteWriter(&bb, &bw);
-	if (e) {
-		Gunc_nerr(e, "failed to init iByteWriter from bb");
-		return __LINE__;
-	}
 
 	struct Gunc_Sequence seq = {0};
 	struct Gunc_iByteStream bs = {0};
@@ -266,15 +253,13 @@ static inline int remove_filters(struct Whine_Image image, uint8_t *decompressed
 
 	Gunc_title("nofiltering");
 	
-	e = Whine_nofilter(image, &bs, &bw);
+	e = Whine_nofilter(image, &bs);
 	if (e) {
 		Gunc_nerr(e, "nofiltering failed");
 		return __LINE__;
 	}
 
-	// TODO passing data back to main ?
-		// format prolly subject to change
-	Gunc_TODO("passing the data out now, dum dum");
+	Gunc_say("scanline image data obtained & defiltered: %p", image->nScanlineData);
 
 	return 0;
 }
