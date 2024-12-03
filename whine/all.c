@@ -5,3 +5,5 @@
 
 #include "./nofilter.c"
 #include "./image.c"
+
+#include "./pixie.c"

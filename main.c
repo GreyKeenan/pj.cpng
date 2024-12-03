@@ -14,13 +14,14 @@
 #include "whine/stripng.h"
 #include "whine/image.h"
 #include "whine/nofilter.h"
+#include "whine/pixie.h"
 
 #include "zoop/decompress.h"
 
 static inline int unwrap_png(const char *path, uint8_t **dataDest, uint32_t *lengthDest, struct Whine_Image *image);
 static inline int decompress(uint8_t *zlibData, uint32_t zlibDataLength, uint8_t **dataDest, uint32_t *lengthDest);
-static inline int remove_filters(struct Whine_Image *image, uint8_t *decompressedData, uint32_t length, uint8_t **dataDest, uint32_t *lengthDest);
-
+static inline int remove_filters(struct Whine_Image *image, uint8_t *decompressedData, uint32_t length);
+static inline int show(struct Whine_Image image);
 
 int main(int argc, char **argv) {
 	Gunc_title("Starting Program: %s", argv[0]);
@@ -34,9 +35,6 @@ int main(int argc, char **argv) {
 
 	uint8_t *hnDecompressedData = NULL;
 	uint32_t decompressedDataLength = 0;
-
-	uint8_t *hnUnfilteredData = NULL;
-	uint32_t unfilteredDataLength = 0;
 
 	if (argc < 2) {
 		Gunc_err("missing png file path");
@@ -64,7 +62,7 @@ int main(int argc, char **argv) {
 	zlibDataLength = 0;
 
 
-	e = remove_filters(&image, hnDecompressedData, decompressedDataLength, &hnUnfilteredData, &unfilteredDataLength);
+	e = remove_filters(&image, hnDecompressedData, decompressedDataLength);
 	if (e) {
 		Gunc_nerr(e, "failed to remove scanline filters");
 		goto fin;
@@ -74,6 +72,7 @@ int main(int argc, char **argv) {
 	hnDecompressedData = NULL;
 	decompressedDataLength = 0;
 
+	e = show(image);
 
 	fin:
 	if (hnZlibData != NULL) {
@@ -82,8 +81,8 @@ int main(int argc, char **argv) {
 	if (hnDecompressedData != NULL) {
 		free(hnDecompressedData);
 	}
-	if (hnUnfilteredData != NULL) {
-		free(hnUnfilteredData);
+	if (image.nScanlineData != NULL) {
+		free(image.nScanlineData);
 	}
 
 	Gunc_title("Program endpoint reached.");
@@ -230,7 +229,7 @@ static inline int decompress(uint8_t *zlibData, uint32_t zlibDataLength, uint8_t
 	return 0;
 }
 
-static inline int remove_filters(struct Whine_Image *image, uint8_t *decompressedData, uint32_t length, uint8_t **dataDest, uint32_t *lengthDest) {
+static inline int remove_filters(struct Whine_Image *image, uint8_t *decompressedData, uint32_t length) {
 
 	int e = 0;
 
@@ -262,6 +261,21 @@ static inline int remove_filters(struct Whine_Image *image, uint8_t *decompresse
 	Gunc_say("scanline image data obtained & defiltered: %p", image->nScanlineData);
 
 	return 0;
+}
+
+static inline int show(struct Whine_Image image) {
+	
+	int e = 0;
+
+	struct Whine_Pixie pix = {0};
+
+	Gunc_title("Creating Pixie");
+
+	e = Whine_Pixie_init(&pix, image);
+	if (e) {
+		Gunc_nerr(e, "failed to init pixie");
+		return __LINE__;
+	}
 }
 
 
