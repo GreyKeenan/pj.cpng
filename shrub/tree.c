@@ -42,3 +42,55 @@ int Shrub_Tree_init(struct Shrub_Tree *self, uint8_t *data, uint16_t length, uin
 	Shrub_Tree_set(self, Shrub_Tree_ROOT, 0);
 	return 0;
 }
+
+int Shrub_Tree_walk(const struct Shrub_Tree *self, bool isRight, uint16_t fromIndex, uint16_t *destination) {
+
+	int e = 0;
+	uint32_t from32 = 0;
+
+	e = Shrub_Tree_get(self, fromIndex, &from32);
+	if (e) {
+		Gunc_nerr(e, "out of bounds");
+		return Shrub_Tree_OUTOFBOUNDS;
+	}
+
+	uint16_t child = Shrub_Tree_shiftOut(from32, self->bitsPerChild, isRight);
+
+	if (!child) {
+		Gunc_err("child (%d) of (0x%x, index %d) is null", isRight, from32, fromIndex);
+		return Shrub_Tree_HALT;
+	}
+
+	*destination = child;
+	return 0;
+}
+int Shrub_Tree_birthNode(struct Shrub_Tree *self, bool isRight, uint16_t parent, uint16_t *nNewborn) {
+
+	if (self->currentNodes >= self->maxNodes) {
+		Gunc_err("too many nodes: %d / %d", self->currentNodes, self->maxNodes);
+		return Shrub_Tree_TOOMUCH;
+	}
+
+	//get parent32
+	//confirm null
+	//increment currentNodes
+	//set highest index as null
+	//set parent32 value as newborn index
+	//update parentIndex
+	//update nNewborn
+
+	Gunc_TODO("this");
+	return 1;
+}
+int Shrub_Tree_growLeaf(struct Shrub_Tree *self, bool isRight, uint16_t parent, uint16_t value) {
+
+	//validate value
+
+	//get parent32
+	//confirm null
+	//set parent32 value
+	//update parentIndex
+
+	Gunc_TODO("this");
+	return 1;
+}

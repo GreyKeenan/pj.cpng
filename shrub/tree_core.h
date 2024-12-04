@@ -1,6 +1,8 @@
 #ifndef SHRUB_Tree_CORE_H
 #define SHRUB_Tree_CORE_H
 
+#include "./tree.h"
+
 #include <stdint.h>
 #include <stdbool.h>
 
