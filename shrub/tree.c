@@ -138,7 +138,7 @@ int Shrub_Tree_birthNode(struct Shrub_Tree *self, bool isRight, uint16_t parent,
 
 	return 0;
 }
-int Shrub_Tree_growLeaf(struct Shrub_Tree *self, bool isRight, uint16_t parent, uint16_t value) {
+int Shrub_Tree_growLeaf(const struct Shrub_Tree *self, bool isRight, uint16_t parent, uint16_t value) {
 
 	if (value >> (self->bitsPerChild - 1)) {
 		Gunc_err("bad value: %d", value);

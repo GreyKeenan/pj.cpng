@@ -7,7 +7,7 @@
 #include <stdbool.h>
 
 static inline int Shrub_Tree_get(const struct Shrub_Tree *self, uint16_t index, uint32_t *destination);
-static inline int Shrub_Tree_set(struct Shrub_Tree *self, uint16_t index, uint32_t node);
+static inline int Shrub_Tree_set(const struct Shrub_Tree *self, uint16_t index, uint32_t node);
 
 static inline uint16_t Shrub_Tree_shiftOut(uint32_t node, uint8_t bitsPerChild, bool isRight);
 static inline void Shrub_Tree_shiftIn(uint32_t *node, uint8_t bitsPerChild, bool isRight, uint16_t child, bool type);
@@ -24,7 +24,7 @@ static inline int Shrub_Tree_get(const struct Shrub_Tree *self, uint16_t index, 
 
 	return 0;
 }
-static inline int Shrub_Tree_set(struct Shrub_Tree *self, uint16_t index, uint32_t node) {
+static inline int Shrub_Tree_set(const struct Shrub_Tree *self, uint16_t index, uint32_t node) {
 	if (index >= self->currentNodes) { return 1; }
 
 	uint8_t *at = self->data + (self->bytesPerNode * (uint32_t)index);
