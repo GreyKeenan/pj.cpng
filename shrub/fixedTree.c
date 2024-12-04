@@ -54,6 +54,8 @@ int Shrub_FixedTree_init() {
 		return 0;
 	}
 	Shrub_FixedTree_self = worktree;
+	Shrub_FixedTree_self.tree.data = Shrub_FixedTree_self.data;
+
 	Shrub_nFIXEDTREE = &Shrub_FixedTree_self;
 
 	return 0;
