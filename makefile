@@ -26,6 +26,7 @@ cfiles = \
 	zoop/deflate.c \
 	\
 	shrub/tree.c \
+	shrub/fixedTree.c \
 	\
 	sdaubler/convert.c \
 	sdaubler/display.c \
