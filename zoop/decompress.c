@@ -12,6 +12,7 @@
 #include <stdint.h>
 
 static inline int Zoop_header(struct Gunc_iByteStream *bs);
+static inline int Zoop_checkAdler(struct Gunc_iByteStream *bs, uint32_t computedAdler);
 
 #define CM_PNG 8
 #define ZLIB_MODCHECK 31
@@ -42,7 +43,6 @@ int Zoop_decompress(struct Gunc_iByteStream *bs, struct Gunc_iByteWriter *bw, st
 		Gunc_nerr(e, "failed to init iByteWriter");
 		return __LINE__;
 	}
-
 	struct Gunc_BitStream bis = { .bys = *bs };
 	e = Zoop_deflate(&bis, &aldermanBw, bl);
 	if (e) {
@@ -50,28 +50,11 @@ int Zoop_decompress(struct Gunc_iByteStream *bs, struct Gunc_iByteWriter *bw, st
 		return __LINE__;
 	}
 
-
-	uint8_t byte = 0;
-	uint32_t adler = 0;
-
-	for (int i = 0; i < 4; ++i) {
-		e = Gunc_iByteStream_next(bs, &byte);
-		if (e) {
-			Gunc_nerr(e, "failed to read byte[%d] of adler", i);
-			return __LINE__;
-		}
-		adler <<= 8;
-		adler |= byte;
-	}
-	Gunc_say("adler: 0x%x", adler);
-
-	uint32_t computedAdler = Zoop_Alderman_total(&john);
-
-	if (adler != computedAdler) {
-		Gunc_err("Adler32 check failed! read: 0x%x computed: 0x%x", adler, computedAdler);
+	e = Zoop_checkAdler(bs, Zoop_Alderman_total(&john));
+	if (e) {
+		Gunc_nerr(e, "couldn't confirm adler");
 		return __LINE__;
 	}
-	Gunc_say("adler check passed!");
 
 	return 0;
 }
@@ -115,6 +98,34 @@ static inline int Zoop_header(struct Gunc_iByteStream *bs) {
 	}
 
 	// 2b compression level indicator, irrelevant
+
+	return 0;
+}
+
+static inline int Zoop_checkAdler(struct Gunc_iByteStream *bs, uint32_t computedAdler) {
+	
+	int e = 0;
+
+	uint8_t byte = 0;
+	uint32_t adler = 0;
+
+	for (int i = 0; i < 4; ++i) {
+		e = Gunc_iByteStream_next(bs, &byte);
+		if (e) {
+			Gunc_nerr(e, "failed to read byte[%d] of adler", i);
+			return 1;
+		}
+		adler <<= 8;
+		adler |= byte;
+	}
+	Gunc_say("adler: 0x%x", adler);
+
+
+	if (adler != computedAdler) {
+		Gunc_err("Adler32 check failed! read: 0x%x computed: 0x%x", adler, computedAdler);
+		return 2;
+	}
+	Gunc_say("adler check passed!");
 
 	return 0;
 }
