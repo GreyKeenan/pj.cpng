@@ -1,6 +1,7 @@
 #ifndef ZOOP_ALDERMAN_H
 #define ZOOP_ALDERMAN_H
 
+#include "gunc/log.h"
 #include "gunc/iByteWriter.h"
 
 #include <stdint.h>

@@ -3,7 +3,10 @@
 
 #include "./reads.h"
 
+#include "gunc/log.h"
+#include "gunc/iByteStream.h"
 #include "gunc/ascii.h"
+
 #include <stdbool.h>
 #include <stddef.h>
 

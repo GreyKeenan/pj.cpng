@@ -1,11 +1,30 @@
 
 png = assets/uncompressed.png
 
+cfiles = \
+	main.c \
+	pix_as_imt.c \
+	\
+	gunc/log.c \
+	gunc/files.c \
+	gunc/byteBalloon.c \
+	gunc/sequence.c \
+	gunc/bitStream.c \
+	gunc/byteSeq64.c \
+	\
+	whine/all.c \
+	\
+	zoop/all.c \
+	\
+	sdaubler/convert.c \
+	sdaubler/display.c \
+
+
 d:
 	gcc -std=c99 -Wpedantic \
 		-iquote . \
 		\
-		main.c \
+		$(cfiles) \
 		-lSDL2 \
 
 debug:
@@ -13,7 +32,7 @@ debug:
 		-iquote . \
 		-DDEBUG \
 		\
-		main.c \
+		$(cfiles) \
 		-lSDL2 \
 
 run: a.out

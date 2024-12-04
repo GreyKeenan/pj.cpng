@@ -7,6 +7,7 @@
 #include "gunc/iByteStream.h"
 #include "gunc/iByteWriter.h"
 #include "gunc/iByteLooker.h"
+#include "gunc/bitStream.h"
 
 #include <stdint.h>
 

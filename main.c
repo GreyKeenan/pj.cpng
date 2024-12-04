@@ -301,20 +301,3 @@ static inline int show(struct Whine_Image image) {
 
 	return 0;
 }
-
-
-
-#include "./pix_as_imt.c"
-
-#include "gunc/log.c"
-#include "gunc/files.c"
-#include "gunc/byteBalloon.c"
-#include "gunc/sequence.c"
-#include "gunc/bitStream.c"
-#include "gunc/byteSeq64.c"
-
-#include "whine/all.c"
-#include "zoop/all.c"
-
-#include "sdaubler/convert.c"
-#include "sdaubler/display.c"
