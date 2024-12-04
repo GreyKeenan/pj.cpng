@@ -11,6 +11,7 @@ struct Gunc_BitStream {
 	uint8_t byte;
 	//	will always be the byte that the last bit was read from
 	uint8_t bitpos;
+	bool isMSbitFirst;
 };
 
 int Gunc_BitStream_bit(struct Gunc_BitStream *self, bool *nDestination);
