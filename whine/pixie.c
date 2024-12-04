@@ -38,7 +38,8 @@ int Whine_Pixie_init(struct Whine_Pixie *self, struct Whine_Image image) {
 		.seq = (struct Gunc_ByteSeq64) {
 			.data = image.nScanlineData,
 			.length = image.h * bytesPerScanline
-		}
+		},
+		.bis = (struct Gunc_BitStream) { .isMSbitFirst = true }
 	};
 
 	e = Gunc_ByteSeq64_as_iByteStream(&self->seq, &self->bis.bys);
@@ -117,36 +118,61 @@ int Whine_Pixie_nextPixel(struct Whine_Pixie *self, uint32_t *nDestination) {
 static inline int Whine_Pixie_onesample(struct Gunc_BitStream *bis, uint8_t bitsPerSample, uint32_t *pixel) {
 
 	int e = 0;
-	uint8_t b = 0;
+	uint8_t byte = 0;
+	bool bit = 0;
 
 	switch (bitsPerSample) {
 		case 8:
-			e = Gunc_BitStream_nextByte(bis, &b);
+			e = Gunc_BitStream_nextByte(bis, &byte);
 			if (e) {
 				Gunc_nerr(e, "failed to read byte");
 				return __LINE__;
 			}
 			*pixel <<= 8;
-			*pixel |= b;
-			break;
+			*pixel |= byte;
+			return 0;
 		case 16:
-			e = Gunc_BitStream_nextByte(bis, &b);
+			e = Gunc_BitStream_nextByte(bis, &byte);
 			if (e) {
 				Gunc_nerr(e, "failed to read MSB");
 				return __LINE__;
 			}
-			*pixel <<= 8;
-			*pixel |= b;
 			e = Gunc_BitStream_nextByte(bis, NULL);
 			if (e) {
 				Gunc_nerr(e, "failed to read LSB");
 				return __LINE__;
 			}
+			*pixel <<= 8;
+			*pixel |= byte;
+			return 0;
+		case 1:
+		case 2:
+		case 4:
 			break;
 		default:
 			Gunc_err("unable to handle (%d) bits per sample", bitsPerSample);
 			return __LINE__;
 	}
 
+	for (int i = 0; i < bitsPerSample; ++i) {
+		e = Gunc_BitStream_bit(bis, &bit);
+		if (e) {
+			Gunc_nerr(e, "bit %d read failed", i);
+			return __LINE__;
+		}
+
+		byte <<= 1;
+		byte |= bit;
+	}
+
+	*pixel = byte;
+	for (int i = 0; i < 8 / bitsPerSample - 1; ++i) {
+		*pixel <<= bitsPerSample;
+		*pixel |= byte;
+	}
+
 	return 0;
 }
+
+// linear scale from PNG spec:
+//	floor((input * MAXOUTSAMPLE / MAXINSAMPLE) + 0.5)
