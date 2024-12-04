@@ -13,7 +13,7 @@ struct Shrub_LitTree {
 };
 
 static inline int Shrub_LitTree_init(struct Shrub_LitTree *self) {
-	return Shrub_Tree_init(self->tree, self->data, Shrub_LitTree_DATALENGTH, Shrub_LitTree_MAXLEAVES, Shrub_LitTree_BITSPERLEAF);
+	return Shrub_Tree_init(&self->tree, self->data, Shrub_LitTree_DATALENGTH, Shrub_LitTree_MAXLEAVES, Shrub_LitTree_BITSPERLEAF);
 }
 
 #endif
