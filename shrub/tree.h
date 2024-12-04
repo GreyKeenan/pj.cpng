@@ -10,6 +10,21 @@
 #define Shrub_Tree_NODE 0
 #define Shrub_Tree_LEAF 1
 
+#define Shrub_Tree_MEASURE(maxleaves, bitsPerValue) ( \
+	(maxleaves - 1) * (                           \
+		(bitsPerValue * 2 + 2) / 8            \
+		+ (((bitsPerValue * 2 + 2) % 8) > 0)  \
+	)                                             \
+) // gives byte-length necessary for data array that will be used to store a tree
+
+enum Shrub_Tree_status {
+	Shrub_Tree_ERROR = 1
+	, Shrub_Tree_OUTOFBOUNDS
+	, Shrub_Tree_HALT
+	, Shrub_Tree_TOOMUCH
+	, Shrub_Tree_BADCODE
+};
+
 struct Shrub_Tree {
 	uint8_t *data;
 	uint16_t maxNodes;
@@ -18,14 +33,20 @@ struct Shrub_Tree {
 	uint8_t bytesPerNode;
 };
 
+//uint16_t Shrub_Tree_measure(uint16_t maxLeaves);
 
-int Shrub_Tree_init(struct Shrub_Tree *self, uint8_t *data, uint16_t length, uint16_t maxLeaves);
+
+int Shrub_Tree_init(struct Shrub_Tree *self, uint8_t *data, uint16_t length, uint16_t maxLeaves, uint8_t bitsPerLeaf);
 /*
 	data: pointer to amt of memory that can hold the tree
 	length: length of the data in bytes, to verify it is large enough
 	maxLeaves: how many leaves it should be able to support
+		*number of leaves* not maximum leaf value
+	bitsPerLeaf:
+		== ceil(log2(maxLeaves))
+		if 0, will calculate anyways
 
-	TODO? measure() function which uses maxLeaves to determine necessary data size, as the init() function does internally anyways
+		option to give it since you might have it as a macro for MEASURE
 
 	initializes the tree with
 		maxNodes (maxLeaves - 1)
@@ -36,15 +57,6 @@ int Shrub_Tree_init(struct Shrub_Tree *self, uint8_t *data, uint16_t length, uin
 
 	returns 0 on success
 */
-
-enum Shrub_Tree_status {
-	Shrub_Tree_ERROR = 1
-	, Shrub_Tree_OUTOFBOUNDS
-	, Shrub_Tree_HALT
-	, Shrub_Tree_TOOMUCH
-	, Shrub_Tree_BADCODE
-};
-
 
 int Shrub_Tree_walk(const struct Shrub_Tree *self, bool isRight, uint16_t fromIndex, uint16_t *destination);
 /*

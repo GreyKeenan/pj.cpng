@@ -7,7 +7,37 @@
 #include <stddef.h>
 #include <math.h>
 
-int Shrub_Tree_init(struct Shrub_Tree *self, uint8_t *data, uint16_t length, uint16_t maxLeaves) {
+
+/*
+uint16_t Shrub_Tree_measure(uint16_t maxLeaves, uint8_t bitsPerLeaf) {
+	if (maxLeaves < 2) {
+		Gunc_err("too few leaves");
+		return __LINE__;
+	}
+	uint16_t maxNodes = maxLeaves - 1;
+
+	if (!bitsPerLeaf) {
+		bitsPerLeaf = ceil(log2(maxLeaves));
+	}
+	uint8_t bitsPerChild = bitsPerLeaf + 1;
+	if (bitsPerChild > 16) {
+		Gunc_err("children too large (%d bits)", bitsPerChild);
+		return 0;
+	}
+
+	uint8_t bytesPerNode = (bitsPerChild * 2) / 8 + (bool)((bitsPerChild * 2) % 8);
+
+	uint32_t length = (uint32_t)maxNodes * bytesPerNode;
+	if (length > UINT16_MAX) {
+		Gunc_err("length too large: %d", length);
+		return 0;
+	}
+
+	return length;
+}
+*/
+
+int Shrub_Tree_init(struct Shrub_Tree *self, uint8_t *data, uint16_t length, uint16_t maxLeaves, uint8_t bitsPerLeaf) {
 	if (data == NULL || self == NULL) {
 		Gunc_err("null arg");
 		return __LINE__;
@@ -19,7 +49,10 @@ int Shrub_Tree_init(struct Shrub_Tree *self, uint8_t *data, uint16_t length, uin
 	}
 	uint16_t maxNodes = maxLeaves - 1;
 
-	uint8_t bitsPerChild = ceil(log2(maxLeaves)) + 1;
+	if (!bitsPerLeaf) {
+		bitsPerLeaf = ceil(log2(maxLeaves));
+	}
+	uint8_t bitsPerChild = bitsPerLeaf + 1;
 	if (bitsPerChild > 16) {
 		Gunc_err("children too large (%d bits)", bitsPerChild);
 		return __LINE__;
