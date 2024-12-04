@@ -25,8 +25,14 @@ cfiles = \
 	zoop/alderman.c \
 	zoop/deflate.c \
 	\
+	shrub/tree.c \
+	\
 	sdaubler/convert.c \
 	sdaubler/display.c \
+
+links = \
+	-lm \
+	-lSDL2 \
 
 
 d:
@@ -34,7 +40,7 @@ d:
 		-iquote . \
 		\
 		$(cfiles) \
-		-lSDL2 \
+		$(links) \
 
 debug:
 	gcc -std=c99 -Wpedantic \
@@ -42,7 +48,7 @@ debug:
 		-DDEBUG \
 		\
 		$(cfiles) \
-		-lSDL2 \
+		$(links) \
 
 run: a.out
 	./a.out $(png)
