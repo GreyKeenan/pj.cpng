@@ -16,10 +16,10 @@ const uint8_t Shrub_FixedTree_codeLengths[NUM] = CODELENGTHS;
 const uint8_t Shrub_FixedTree_codeLengthCounts[NUM] = CODELENGTHCOUNTS;
 
 struct Shrub_LitTree Shrub_FixedTree_self = {0};
-const struct Shrub_LitTree *Shrub_FIXEDTREE = NULL;
+const struct Shrub_LitTree *Shrub_nFIXEDTREE = NULL;
 
 int Shrub_FixedTree_init() {
-	if (Shrub_FIXEDTREE != NULL) {
+	if (Shrub_nFIXEDTREE != NULL) {
 		return 0;
 	}
 
@@ -50,11 +50,11 @@ int Shrub_FixedTree_init() {
 	}
 
 
-	if (Shrub_FIXEDTREE != NULL) {
+	if (Shrub_nFIXEDTREE != NULL) {
 		return 0;
 	}
 	Shrub_FixedTree_self = worktree;
-	Shrub_FIXEDTREE = &Shrub_FixedTree_self;
+	Shrub_nFIXEDTREE = &Shrub_FixedTree_self;
 
 	return 0;
 }

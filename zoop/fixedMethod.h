@@ -1,8 +1,10 @@
 #ifndef ZOOP_fixedMethod_H
 #define ZOOP_fixedMethod_H
 
+#include "./walkLitTree.h"
+
 #include "shrub/fixedTree.h"
-#include "shrub/tree.h"
+#include "shrub/litTree.h"
 
 #include "gunc/log.h"
 #include "gunc/bitStream.h"
@@ -20,6 +22,13 @@ static inline int Zoop_fixedMethod(struct Gunc_BitStream *bis, struct Gunc_iByte
 	e = Shrub_FixedTree_init();
 	if (e) {
 		Gunc_nerr(e, "failed to init FixedTree");
+		return __LINE__;
+	}
+
+
+	e = Zoop_walkLitTree(&Shrub_nFIXEDTREE->tree, bis, bw, bl);
+	if (e) {
+		Gunc_nerr(e, "failed to walk");
 		return __LINE__;
 	}
 

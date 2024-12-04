@@ -24,6 +24,7 @@ cfiles = \
 	zoop/decompress.c \
 	zoop/alderman.c \
 	zoop/deflate.c \
+	zoop/walkLitTree.c \
 	\
 	shrub/tree.c \
 	shrub/fixedTree.c \
