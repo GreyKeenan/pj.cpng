@@ -1,5 +1,6 @@
 
-png = assets/uncompressed.png
+# png = assets/uncompressed.png
+png = assets/my_zlibFixed.png
 
 cfiles = \
 	main.c \

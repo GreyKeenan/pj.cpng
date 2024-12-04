@@ -1,5 +1,7 @@
 #include "./deflate.h"
 
+#include "./fixedMethod.h"
+
 #include "gunc/log.h"
 #include "gunc/bitStream.h"
 #include "gunc/iByteWriter.h"
@@ -8,8 +10,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
-static inline int Zoop_readInt16(struct Gunc_BitStream *bis, uint16_t *nDestination);
 static inline int Zoop_uncompressed(struct Gunc_BitStream *bis, struct Gunc_iByteWriter *bw);
+static inline int Zoop_readInt16(struct Gunc_BitStream *bis, uint16_t *nDestination);
 
 
 int Zoop_deflate(struct Gunc_BitStream *bis, struct Gunc_iByteWriter *bw, struct Gunc_iByteLooker *bl) {
@@ -50,10 +52,15 @@ int Zoop_deflate(struct Gunc_BitStream *bis, struct Gunc_iByteWriter *bw, struct
 				}
 				break;
 			case 1:
-				Gunc_TODO("fixed compression type");
+				e = Zoop_fixedMethod(bis, bw, bl);
+				if (e) {
+					Gunc_nerr(e, "fixed-block failed");
+					return __LINE__;
+				}
 				break;
 			case 2:
 				Gunc_TODO("dynamic compression type");
+				return __LINE__;
 				break;
 			case 3:
 				Gunc_err("reserved compression type (%d).", compressionType);
