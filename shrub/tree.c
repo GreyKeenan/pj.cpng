@@ -39,7 +39,9 @@ int Shrub_Tree_init(struct Shrub_Tree *self, uint8_t *data, uint16_t length, uin
 		.bytesPerNode = bytesPerNode
 	};
 
-	Shrub_Tree_set(self, Shrub_Tree_ROOT, 0);
+	if (Shrub_Tree_set(self, Shrub_Tree_ROOT, 0)) {
+		return __LINE__;
+	}
 	return 0;
 }
 
@@ -71,26 +73,64 @@ int Shrub_Tree_birthNode(struct Shrub_Tree *self, bool isRight, uint16_t parent,
 		return Shrub_Tree_TOOMUCH;
 	}
 
-	//get parent32
-	//confirm null
-	//increment currentNodes
-	//set highest index as null
-	//set parent32 value as newborn index
-	//update parentIndex
-	//update nNewborn
+	int e = 0;
+	uint32_t parent32 = 0;
 
-	Gunc_TODO("this");
-	return 1;
+	e = Shrub_Tree_get(self, parent, &parent32);
+	if (e) {
+		Gunc_nerr(e, "out of bounds");
+		return Shrub_Tree_OUTOFBOUNDS;
+	}
+
+	uint16_t child = Shrub_Tree_shiftOut(parent32, self->bitsPerChild, isRight);
+	if (child) {
+		Gunc_err("collision, non-null child(%d): 0x%x", isRight, parent32);
+		return Shrub_Tree_HALT;
+	}
+
+	uint16_t newbornIndex = self->currentNodes;
+	self->currentNodes++;
+	if (Shrub_Tree_set(self, newbornIndex, 0)) {
+		return Shrub_Tree_ERROR;
+	}
+
+	Shrub_Tree_shiftIn(&parent32, self->bitsPerChild, isRight, newbornIndex, Shrub_Tree_NODE);
+	if (Shrub_Tree_set(self, parent, parent32)) {
+		return Shrub_Tree_ERROR;
+	}
+
+	if (nNewborn != NULL) {
+		*nNewborn = newbornIndex;
+	}
+
+	return 0;
 }
 int Shrub_Tree_growLeaf(struct Shrub_Tree *self, bool isRight, uint16_t parent, uint16_t value) {
 
-	//validate value
+	if (value >> (self->bitsPerChild - 1)) {
+		Gunc_err("bad value: %d", value);
+		return Shrub_Tree_TOOMUCH;
+	}
 
-	//get parent32
-	//confirm null
-	//set parent32 value
-	//update parentIndex
+	int e = 0;
+	uint32_t parent32 = 0;
 
-	Gunc_TODO("this");
-	return 1;
+	e = Shrub_Tree_get(self, parent, &parent32);
+	if (e) {
+		Gunc_nerr(e, "out of bounds");
+		return Shrub_Tree_OUTOFBOUNDS;
+	}
+
+	uint16_t child = Shrub_Tree_shiftOut(parent32, self->bitsPerChild, isRight);
+	if (child) {
+		Gunc_err("collision, non-null child(%d): 0x%x", isRight, parent32);
+		return Shrub_Tree_HALT;
+	}
+
+	Shrub_Tree_shiftIn(&parent32, self->bitsPerChild, isRight, value, Shrub_Tree_LEAF);
+	if (Shrub_Tree_set(self, parent, parent32)) {
+		return Shrub_Tree_ERROR;
+	}
+
+	return 0;
 }
