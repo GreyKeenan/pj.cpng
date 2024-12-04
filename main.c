@@ -282,14 +282,6 @@ static inline int show(struct Whine_Image image) {
 		return __LINE__;
 	}
 
-	uint32_t n = 0;
-	e = Whine_Pixie_nextPixel(&pix, &n);
-	if (e) {
-		Gunc_nerr(e, "failed to read pixel");
-		return __LINE__;
-	}
-	Gunc_say("pixel 0: 0x%x", n);
-
 
 	Gunc_title("showing");
 
