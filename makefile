@@ -11,10 +11,18 @@ cfiles = \
 	gunc/sequence.c \
 	gunc/bitStream.c \
 	gunc/byteSeq64.c \
+	gunc/ascii.c \
 	\
-	whine/all.c \
+	whine/stripng.c \
+	whine/reads.c \
+	whine/chunk.c \
+	whine/nofilter.c \
+	whine/image.c \
+	whine/pixie.c \
 	\
-	zoop/all.c \
+	zoop/decompress.c \
+	zoop/alderman.c \
+	zoop/deflate.c \
 	\
 	sdaubler/convert.c \
 	sdaubler/display.c \
@@ -39,6 +47,5 @@ run: a.out
 	./a.out $(png)
 runlog: a.out
 	./a.out $(png) 2> proglog.txt
-	cat proglog.txt
 clean:
 	rm a.out
