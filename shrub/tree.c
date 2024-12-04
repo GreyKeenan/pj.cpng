@@ -92,7 +92,7 @@ int Shrub_Tree_walk(const struct Shrub_Tree *self, bool isRight, uint16_t fromIn
 	uint16_t child = Shrub_Tree_shiftOut(from32, self->bitsPerChild, isRight);
 
 	if (!child) {
-		Gunc_err("child (%d) of (0x%x, index %d) is null", isRight, from32, fromIndex);
+		Gunc_warn("child (%d) of (0x%x, index %d) is null", isRight, from32, fromIndex);
 		return Shrub_Tree_HALT;
 	}
 
