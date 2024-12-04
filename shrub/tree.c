@@ -134,3 +134,63 @@ int Shrub_Tree_growLeaf(struct Shrub_Tree *self, bool isRight, uint16_t parent, 
 
 	return 0;
 }
+
+
+int Shrub_Tree_enterCode(struct Shrub_Tree *self, uint16_t code, uint16_t length, uint16_t leaf) {
+
+	Gunc_say("entering leaf (%d) for code (0x%x) of length %d", leaf, code, length);
+
+	if (length < 1 || 16 < length) { // fit within int16
+		Gunc_err("invalid codelength: %d", length);
+		return Shrub_Tree_BADCODE;
+	}
+	if (length > self->maxNodes) { // fit within tree.data
+		Gunc_err("codelength (%d) > maxNodes (%d)", length, self->maxNodes);
+		return Shrub_Tree_BADCODE;
+	}
+	// could validate leaf here too
+
+	int e = 0;
+	uint16_t currentIndex = Shrub_Tree_ROOT;
+	uint16_t child = 0;
+
+	for (
+		uint16_t i = 1 << (length - 1);
+		i != 0;
+		i >>= 1
+	) {
+		if (i == 1) {
+			e = Shrub_Tree_growLeaf(self, code & i, currentIndex, leaf);
+			if (e) {
+				Gunc_nerr(e, "failed grow");
+				return e;
+			}
+			break;
+		}
+
+		e = Shrub_Tree_walk(self, code & i, currentIndex, &child);
+		switch (e) {
+			case 0: // non-null value
+				if (child & Shrub_Tree_LEAF) {
+					Gunc_err("collision. Leaf already exists.");
+					return Shrub_Tree_HALT;
+				}
+				currentIndex = child >> 1;
+				break;
+			case Shrub_Tree_HALT: // null, so make new node
+				e = Shrub_Tree_birthNode(self, code & i, currentIndex, &child);
+				if (e) {
+					Gunc_nerr(e, "failed birth");
+					return e;
+				}
+				currentIndex = child;
+				break;
+
+			default: // other errors
+				Gunc_nerr(e, "failed walk");
+				return e;
+		}
+	}
+
+	return 0;
+}

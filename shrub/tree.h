@@ -42,6 +42,7 @@ enum Shrub_Tree_status {
 	, Shrub_Tree_OUTOFBOUNDS
 	, Shrub_Tree_HALT
 	, Shrub_Tree_TOOMUCH
+	, Shrub_Tree_BADCODE
 };
 
 
@@ -75,6 +76,17 @@ int Shrub_Tree_growLeaf(struct Shrub_Tree *self, bool isRight, uint16_t parent, 
 		returns HALT if $parent already has a left/right child (not null)
 		returns OUTOFBOUNDS if $parent is out of bounds
 		returns TOOMUCH if $value doesnt fit in available bitsize
+*/
+
+int Shrub_Tree_enterCode(struct Shrub_Tree *self, uint16_t code, uint16_t length, uint16_t leaf);
+/*
+	using walk, birthNode, growLeaf to build the tree according to code and place $leaf at the end
+	reads the code from MSbit toLSbit, to work with DEFLATE
+	length must be > 0 and < 17, to fit in the uint16_t
+		length must be <= maxNodes to fit in the data array
+	returns 0 on success
+		returns BADCODE if code invalid
+		passes out error vals from subcalls
 */
 
 #endif
