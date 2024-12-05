@@ -36,7 +36,7 @@ int Zoop_getLength(struct Gunc_BitStream *bis, uint16_t *symbol) {
 		return __LINE__;
 	}
 
-	Gunc_say("length symbol: %d base: %d extraBits: %d additional: %d", *symbol, baseValue, extraBits, additional);
+	//Gunc_say("length symbol: %d base: %d extraBits: %d additional: %d", *symbol, baseValue, extraBits, additional);
 
 	*symbol = baseValue + additional;
 
@@ -57,7 +57,7 @@ int Zoop_getFixedDist(struct Gunc_BitStream *bis, uint16_t *distDest) {
 			return __LINE__;
 		}
 		symbol |= bit << (FIXED_DISTCODELENGTH - i - 1);
-		Gunc_say("bit: %d (0x%x)", bit, symbol);
+		//Gunc_say("bit: %d (0x%x)", bit, symbol);
 	}
 
 	uint16_t baseValue = 0;
@@ -87,7 +87,7 @@ int Zoop_getFixedDist(struct Gunc_BitStream *bis, uint16_t *distDest) {
 int Zoop_nostalgize(struct Gunc_iByteWriter *bw, struct Gunc_iByteLooker *bl, uint16_t length, uint16_t distance) {
 
 	// ? validate length & distance
-	Gunc_say("nostalgizing: %d / %d", length, distance);
+	//Gunc_say("nostalgizing: %d / %d", length, distance);
 
 	int e = 0;
 	uint8_t byte = 0;
@@ -121,8 +121,7 @@ static inline int Zoop_extraBits(struct Gunc_BitStream *bis, uint8_t extraBits, 
 
 	uint16_t extra = 0;
 
-	while (extraBits > 0) {
-		extraBits--;
+	for (int i = 0; i < extraBits; ++i) {
 
 		e = Gunc_BitStream_bit(bis, &bit);
 		if (e) {
@@ -130,7 +129,7 @@ static inline int Zoop_extraBits(struct Gunc_BitStream *bis, uint8_t extraBits, 
 			return __LINE__;
 		}
 
-		extra |= (bit << extraBits);
+		extra |= bit << i;
 	}
 
 	*destination = extra;
