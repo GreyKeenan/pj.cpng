@@ -32,9 +32,7 @@ static inline int Zoop_fixedMethod(struct Gunc_BitStream *bis, struct Gunc_iByte
 		return __LINE__;
 	}
 
-
-	Gunc_TODO("this");
-	return 1;
+	return 0;
 }
 
 #endif

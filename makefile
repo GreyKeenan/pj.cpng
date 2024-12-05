@@ -26,6 +26,7 @@ cfiles = \
 	zoop/deflate.c \
 	zoop/walkLitTree.c \
 	zoop/walkUntilLeaf.c \
+	zoop/lengthDist.c \
 	\
 	shrub/tree.c \
 	shrub/fixedTree.c \
