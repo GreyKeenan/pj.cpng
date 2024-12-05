@@ -60,6 +60,8 @@ int Whine_Image_validateIhdr(const struct Whine_Image *image) {
 		Gunc_err("invalid interlace method: %d", image->interlaceMethod);
 		return 6;
 	}
+
+	return 0;
 }
 
 int Whine_Image_validateBDCT(uint8_t bitDepth, uint8_t colorType) {

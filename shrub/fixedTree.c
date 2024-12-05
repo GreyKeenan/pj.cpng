@@ -18,7 +18,7 @@ const uint8_t Shrub_FixedTree_codeLengthCounts[NUM] = CODELENGTHCOUNTS;
 struct Shrub_LitTree Shrub_FixedTree_self = {0};
 const struct Shrub_LitTree *Shrub_nFIXEDTREE = NULL;
 
-int Shrub_FixedTree_init() {
+int Shrub_FixedTree_init(void) {
 	if (Shrub_nFIXEDTREE != NULL) {
 		return 0;
 	}
