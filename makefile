@@ -24,7 +24,6 @@ cfiles = \
 	zoop/decompress.c \
 	zoop/alderman.c \
 	zoop/deflate.c \
-	zoop/walkLitTree.c \
 	zoop/walkUntilLeaf.c \
 	zoop/lengthDist.c \
 	\

@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#define Zoop_HUFFMAN_END 256
+
 struct Gunc_BitStream;
 struct Gunc_iByteWriter;
 struct Gunc_iByteLooker;
