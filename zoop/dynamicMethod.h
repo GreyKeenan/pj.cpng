@@ -12,6 +12,10 @@
 #include "gunc/iByteWriter.h"
 #include "gunc/iByteLooker.h"
 
+#define LITLEN_MIN 257
+#define DISTLEN_MIN 1
+#define METALEN_MIN 4
+
 
 static inline int Zoop_dynamicMethod(struct Gunc_BitStream *bis, struct Gunc_iByteWriter *bw, struct Gunc_iByteLooker *bl) {
 
@@ -28,15 +32,29 @@ static inline int Zoop_dynamicMethod(struct Gunc_BitStream *bis, struct Gunc_iBy
 			3b ints
 	*/
 
-	for (int i = 0; i < 10; ++i) {
-		e =	Gunc_BitStream_bit(bis, NULL);
+	bool bit = 0;
+
+	uint16_t litLen = 0;
+	for (int i = 0; i < 5; ++i) {
+		e =	Gunc_BitStream_bit(bis, &bit);
+		if (e) {
+			Gunc_nerr(e, "failed to read litLen");
+			return __LINE__;
+		}
+		litLen |= bit << i;
+	}
+	litLen += LITLEN_MIN;
+
+	uint8_t distLen = 0;
+	for (int i = 0; i < 5; ++i) {
+		e =	Gunc_BitStream_bit(bis, &bit);
 		if (e) {
 			Gunc_nerr(e, "failed to waste bit");
 			return __LINE__;
 		}
+		distLen = bit << i;
 	}
-
-	bool bit = 0;
+	distLen += DISTLEN_MIN;
 
 	uint8_t metaLen = 0;
 	for (int i = 0; i < 4; ++i) {
@@ -48,7 +66,9 @@ static inline int Zoop_dynamicMethod(struct Gunc_BitStream *bis, struct Gunc_iBy
 
 		metaLen |= bit << i;
 	}
-	metaLen += 4;
+	metaLen += METALEN_MIN;
+
+	Gunc_say("litLen: %d distLen: %d metaLen: %d", litLen, distLen, metaLen);
 
 	// build metatree
 	/*
@@ -67,6 +87,7 @@ static inline int Zoop_dynamicMethod(struct Gunc_BitStream *bis, struct Gunc_iBy
 
 		maybe create a byteStream that the build lit/dist trees use
 			makes it easier to overflow repeat codes btwn them
+		doesnt need the interface part since they know its a metaTree
 	*/
 
 	struct Shrub_MetaTree mTree = {0};
@@ -76,7 +97,6 @@ static inline int Zoop_dynamicMethod(struct Gunc_BitStream *bis, struct Gunc_iBy
 		Gunc_nerr(e, "failed to init meta tree.");
 		return __LINE__;
 	}
-
 	Gunc_say("metaTree initialized!");
 
 	// build litTree
