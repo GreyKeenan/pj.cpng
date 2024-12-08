@@ -1,6 +1,7 @@
 
 # png = assets/uncompressed.png
-png = assets/my_zlibFixed.png
+# png = assets/my_zlibFixed.png
+png = assets/PNG_transparency_demonstration.png
 
 cfiles = \
 	main.c \
@@ -29,6 +30,7 @@ cfiles = \
 	\
 	shrub/tree.c \
 	shrub/fixedTree.c \
+	shrub/metaTree.c \
 	\
 	sdaubler/convert.c \
 	sdaubler/display.c \

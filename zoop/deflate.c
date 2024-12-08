@@ -1,6 +1,7 @@
 #include "./deflate.h"
 
 #include "./fixedMethod.h"
+#include "./dynamicMethod.h"
 
 #include "gunc/log.h"
 #include "gunc/bitStream.h"
@@ -59,8 +60,11 @@ int Zoop_deflate(struct Gunc_BitStream *bis, struct Gunc_iByteWriter *bw, struct
 				}
 				break;
 			case 2:
-				Gunc_TODO("dynamic compression type");
-				return __LINE__;
+				e = Zoop_dynamicMethod(bis, bw, bl);
+				if (e) {
+					Gunc_nerr(e, "dynamic-block failed");
+					return __LINE__;
+				}
 				break;
 			case 3:
 				Gunc_err("reserved compression type (%d).", compressionType);
