@@ -6,6 +6,7 @@
 #include <stdbool.h>
 
 #define BITINT 3
+#define MAXSIZE (1 << BITINT)
 #define GIVEN_MIN 4
 #define ORDERLEN Shrub_MetaTree_MAXLEAVES
 //const uint8_t Shrub_MetaTree_ORDER[ORDERLEN] = {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
@@ -42,7 +43,7 @@ int Shrub_MetaTree_init(struct Shrub_MetaTree *self, struct Gunc_BitStream *bis,
 		}
 	}
 
-	uint8_t sizeCounts[1 << BITINT] = {0};
+	uint8_t sizeCounts[MAXSIZE] = {0};
 	for (int i = 0; i < countGiven; ++i) {
 		if (sizes[i] == 0) {
 			continue;
@@ -52,7 +53,7 @@ int Shrub_MetaTree_init(struct Shrub_MetaTree *self, struct Gunc_BitStream *bis,
 	uint8_t *codeStarters = sizeCounts;
 	uint8_t code = 0;
 	uint8_t lastCount = 0;
-	for (int i = 1; i < countGiven; ++i) {
+	for (int i = 1; i < MAXSIZE; ++i) {
 		code = (code + lastCount) << 1;
 		lastCount = sizeCounts[i];
 		codeStarters[i] = code;
