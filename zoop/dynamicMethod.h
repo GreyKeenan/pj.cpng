@@ -6,6 +6,7 @@
 
 #include "shrub/metaTree.h"
 #include "shrub/litTree.h"
+#include "shrub/distTree.h"
 
 #include "gunc/log.h"
 #include "gunc/bitStream.h"
@@ -26,10 +27,6 @@ static inline int Zoop_dynamicMethod(struct Gunc_BitStream *bis, struct Gunc_iBy
 		5b: num of literal/length codeSizes - 257
 		5b: num of distance codeSizes - 1
 		4b: num of metaTree codeSizes - 4
-			order:
-			16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
-
-			3b ints
 	*/
 
 	bool bit = 0;
@@ -72,24 +69,8 @@ static inline int Zoop_dynamicMethod(struct Gunc_BitStream *bis, struct Gunc_iBy
 
 	// build metatree
 	/*
-		5bit metaTree codelengths in specific order
-		0through15 are lengths
-		16through18 are special repeat indicators
-		16:
-			copy prev, 3through6 times
-			grab 2 more bits
-		17:
-			repeat '0', 3through10 times
-			grab 3 more bits
-		18:
-			repeat '0', 11through138 times
-			grab 7 more bits
-
-		maybe create a byteStream that the build lit/dist trees use
-			makes it easier to overflow repeat codes btwn them
-		doesnt need the interface part since they know its a metaTree
+		3bit metaTree codesizes in specific order
 	*/
-
 	struct Shrub_MetaTree mTree = {0};
 
 	e = Shrub_MetaTree_init(&mTree, bis, metaLen);
@@ -103,11 +84,96 @@ static inline int Zoop_dynamicMethod(struct Gunc_BitStream *bis, struct Gunc_iBy
 	/*
 		metaTree codes in specific order
 	*/
-
 	// build distTree
 	/*
 		metaTree codes in specific order
 	*/
+
+	uint8_t sizes[Shrub_LitTree_MAXLEAVES + Shrub_DistTree_MAXLEAVES] = {0};
+		//store adjacent to simplify overlapping metaTree repeats
+	uint8_t *litSizes = sizes;
+	uint8_t *distSizes = sizes + litLen;
+
+	uint16_t leaf = 0;
+	uint16_t repeatFor = 0;
+	uint8_t moreBits = 0;
+
+	for (uint16_t i = 0; i < litLen + distLen; ++i) {
+		e = Zoop_walkUntilLeaf(&mTree.tree, bis, &leaf);
+		if (e) {
+			Gunc_nerr(e, "failed to walk metaTree (%d)th", i);
+			return __LINE__;
+		}
+
+		if (leaf < 16) {
+			sizes[i] = leaf;
+			continue;
+		}
+		switch (leaf) {
+			case 16:
+				// 2 bits, 3-6 (prev)
+				if (i == 0) {
+					Gunc_nerr(e, "First leaf (%d). Cannot repeat.", i);
+					return __LINE__;
+				}
+
+				repeatFor = 3;
+				moreBits = 2;
+
+				break;
+			case 17:
+				// 3 bits, 3-10 (0)
+				repeatFor = 3 - 1;
+				moreBits = 3;
+
+				sizes[i] = 0;
+				++i;
+				if (i == 0) {
+					Gunc_err("overflowed i");
+					return __LINE__;
+				}
+				break;
+			case 18:
+				// 7 bits, 11-138 (0)
+				repeatFor = 11 - 1;
+				moreBits = 7;
+
+				sizes[i] = 0;
+				++i;
+				if (i == 0) {
+					Gunc_err("overflowed i");
+					return __LINE__;
+				}
+				break;
+			default:
+				Gunc_err("unrecognized mTree leaf: %d (%d)th", leaf, i);
+				return __LINE__;
+		}
+
+		for (int j = 0; j < moreBits; ++j) {
+			e = Gunc_BitStream_bit(bis, &bit);
+			if (e) {
+				Gunc_nerr(e, "failed extra bit for (%d).", leaf);
+				return __LINE__;
+			}
+			repeatFor += bit << j;
+		}
+
+		for (int j = 0; j < repeatFor; ++j) {
+			sizes[i] = sizes[i - 1];
+			++i;
+			if (i == 0) {
+				Gunc_nerr(e, "overflowed i");
+				return __LINE__;
+			}
+		}
+		--i;
+
+	}
+
+	// actually init the trees using the codeSize sequences
+
+	
 
 	// read literal sequence
 	/*
