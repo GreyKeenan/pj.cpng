@@ -1,7 +1,8 @@
 
 # png = assets/uncompressed.png
 # png = assets/my_zlibFixed.png
-png = assets/PNG_transparency_demonstration.png
+# png = assets/PNG_transparency_demonstration.png
+png = assets/rgb8.png
 
 cfiles = \
 	main.c \
@@ -41,6 +42,8 @@ links = \
 	-lm \
 	-lSDL2 \
 
+args =
+
 
 d:
 	gcc -std=c99 -Wpedantic \
@@ -48,6 +51,7 @@ d:
 		\
 		$(cfiles) \
 		$(links) \
+		$(args) \
 
 debug:
 	gcc -std=c99 -Wpedantic \
@@ -56,6 +60,7 @@ debug:
 		\
 		$(cfiles) \
 		$(links) \
+		$(args) \
 
 run: a.out
 	./a.out $(png)

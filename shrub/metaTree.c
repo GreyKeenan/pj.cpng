@@ -19,6 +19,10 @@ const uint8_t Shrub_MetaTree_UNORDER[ORDERLEN] = {3, 17, 15, 13, 11, 9, 7, 5, 4,
 
 int Shrub_MetaTree_init(struct Shrub_MetaTree *self, struct Gunc_BitStream *bis, uint8_t countGiven) {
 
+	#ifdef DEBUG_Shrub_MetaTree_init
+	Gunc_title("metaTree_init()");
+	#endif
+
 	if (self == NULL || bis == NULL) {
 		Gunc_err("null");
 		return __LINE__;
@@ -42,6 +46,12 @@ int Shrub_MetaTree_init(struct Shrub_MetaTree *self, struct Gunc_BitStream *bis,
 			sizes[i] |= bit << j;
 		}
 	}
+
+	#ifdef DEBUG_Shrub_MetaTree_init
+	for (int i = 0; i < ORDERLEN; ++i) {
+		Gunc_say("sizes[%d]: %d", i, sizes[i]);
+	}
+	#endif
 
 	uint8_t sizeCounts[MAXSIZE] = {0};
 	for (int i = 0; i < countGiven; ++i) {
@@ -75,7 +85,7 @@ int Shrub_MetaTree_init(struct Shrub_MetaTree *self, struct Gunc_BitStream *bis,
 		return __LINE__;
 	}
 
-	for (int i = 0; i < countGiven; ++i) {
+	for (int i = 0; i < ORDERLEN; ++i) {
 		uint8_t x = Shrub_MetaTree_UNORDER[i];
 		if (sizes[x] == 0) {
 			continue;
