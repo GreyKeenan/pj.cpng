@@ -50,7 +50,7 @@ static inline int Zoop_dynamicMethod(struct Gunc_BitStream *bis, struct Gunc_iBy
 			Gunc_nerr(e, "failed to waste bit");
 			return __LINE__;
 		}
-		distLen = bit << i;
+		distLen |= bit << i;
 	}
 	distLen += DISTLEN_MIN;
 
@@ -171,6 +171,7 @@ static inline int Zoop_dynamicMethod(struct Gunc_BitStream *bis, struct Gunc_iBy
 		--i;
 
 	}
+	Gunc_TODO("catch when the final meta code is a repeat code. This will cause an error, but explicit catch is clearer");
 
 	struct Shrub_LitTree lTree = {0};
 	e = Shrub_DynaTree_init(&lTree, litSizes, litLen);
