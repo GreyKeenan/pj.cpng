@@ -4,8 +4,9 @@
 #include "./walkUntilLeaf.h"
 #include "./lengthDist.h"
 
-#include "shrub/metaTree.h"
 #include "shrub/litTree.h"
+#include "shrub/metaTree.h"
+#include "shrub/dynaTree.h"
 #include "shrub/distTree.h"
 
 #include "gunc/log.h"
@@ -172,6 +173,24 @@ static inline int Zoop_dynamicMethod(struct Gunc_BitStream *bis, struct Gunc_iBy
 	}
 
 	// actually init the trees using the codeSize sequences
+
+	struct Shrub_LitTree lTree = {0};
+	e = Shrub_DynaTree_init(&lTree, litSizes, litLen);
+	if (e) {
+		Gunc_nerr(e, "failed to init dynamic lit tree");
+		return __LINE__;
+	}
+
+	struct Shrub_DistTree dTree = {0};
+	e = Shrub_DistTree_init(&dTree);
+	if (e) {
+		Gunc_nerr(e, "failed to init distTree");
+		return __LINE__;
+	}
+
+	// ...
+
+
 
 	
 

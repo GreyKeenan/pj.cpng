@@ -12,10 +12,9 @@ struct Shrub_DistTree {
 	uint8_t data[Shrub_DistTree_DATALENGTH];
 };
 
-/*
+
 static inline int Shrub_DistTree_init(struct Shrub_DistTree *self) {
 	return Shrub_Tree_init(&self->tree, self->data, Shrub_DistTree_DATALENGTH, Shrub_DistTree_MAXLEAVES, Shrub_DistTree_BITSPERLEAF);
 }
-*/
 
 #endif
