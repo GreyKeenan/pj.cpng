@@ -172,8 +172,6 @@ static inline int Zoop_dynamicMethod(struct Gunc_BitStream *bis, struct Gunc_iBy
 
 	}
 
-	// actually init the trees using the codeSize sequences
-
 	struct Shrub_LitTree lTree = {0};
 	e = Shrub_DynaTree_init(&lTree, litSizes, litLen);
 	if (e) {
@@ -188,17 +186,14 @@ static inline int Zoop_dynamicMethod(struct Gunc_BitStream *bis, struct Gunc_iBy
 		return __LINE__;
 	}
 
-	// ...
-
-
-
-	
 
 	// read literal sequence
-	/*
+
+	//leaf
+	uint16_t dist = 0;
 	while (1) {
 
-		e = Zoop_walkUntilLeaf(tree, bis, &leaf);
+		e = Zoop_walkUntilLeaf(&lTree.tree, bis, &leaf);
 		if (e) {
 			Gunc_nerr(e, "failed to go to leaf.");
 			return __LINE__;
@@ -217,17 +212,22 @@ static inline int Zoop_dynamicMethod(struct Gunc_BitStream *bis, struct Gunc_iBy
 			continue;
 		}
 
+		Gunc_TODO("length symbol detected: %d", leaf);
+		return -5555;
+
 		e = Zoop_getLength(bis, &leaf);
 		if (e) {
 			Gunc_nerr(e, "unable to decipher length symbol: ", leaf);
 			return __LINE__;
 		}
 
+		/*
 		e = Zoop_getFixedDist(bis, &dist);
 		if (e) {
 			Gunc_nerr(e, "failed to read length");
 			return __LINE__;
 		}
+		*/
 
 
 		e = Zoop_nostalgize(bw, bl, leaf, dist);
@@ -236,7 +236,6 @@ static inline int Zoop_dynamicMethod(struct Gunc_BitStream *bis, struct Gunc_iBy
 			return __LINE__;
 		}
 	}
-	*/
 
 	return -444;
 }
