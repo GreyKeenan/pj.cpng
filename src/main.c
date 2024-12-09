@@ -108,9 +108,15 @@ static inline int unwrap_png(const char *path, uint8_t **dataDest, uint32_t *len
 
 	Gunc_title("Whine_stripng Setup");
 
-	e = Gunc_file_as_iByteStream(&f, &bs, path);
+	f = fopen(path, "rb");
+	if (f == NULL) {
+		Gunc_nerr(e, "failed to open file: %s", path);
+		r = __LINE__;
+		goto fin;
+	}
+	e = Gunc_file_as_iByteStream(f, &bs);
 	if (e) {
-		Gunc_nerr(e, "Failed to open file: %s", path);
+		Gunc_nerr(e, "failed to create iByteStream from file");
 		r = __LINE__;
 		goto fin;
 	}

@@ -1,12 +1,11 @@
-
 #include "./files.h"
 
-#include "./iByteStream.h"
 #include "./log.h"
+
 #include <stddef.h>
 
-int Gunc_file_next(void *vself, uint8_t *nDestination) {
-	int byte = fgetc(vself);
+int Gunc_file_next(FILE *self, uint8_t *nDestination) {
+	int byte = fgetc(self);
 	if (byte == EOF) {
 		return Gunc_iByteStream_END;
 	}
@@ -17,23 +16,12 @@ int Gunc_file_next(void *vself, uint8_t *nDestination) {
 	*nDestination = byte;
 	return 0;
 }
+int Gunc_file_give(FILE *self, uint8_t byte) {
 
-int Gunc_file_as_iByteStream(FILE **f, struct Gunc_iByteStream *bs, const char *path) {
-	if (f == NULL || bs == NULL || path == NULL) {
-		Gunc_err("NULL pointer arguments.");
+	int e = fputc(byte, self);
+	if (e == EOF) {
+		Gunc_nerr(e, "failed to write byte: 0x%x (%d)", byte, byte);
 		return 1;
-	}
-
-	*f = fopen(path, "rb");
-	if (*f == NULL) {
-		Gunc_err("failed to open file: %s", path);
-		return 2;
-	}
-
-	int e = Gunc_iByteStream_init(bs, *f, &Gunc_file_next);
-	if (e) {
-		Gunc_nerr(e, "failed to initialize iByteStream.");
-		return 3;
 	}
 
 	return 0;

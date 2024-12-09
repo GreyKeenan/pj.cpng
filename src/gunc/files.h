@@ -1,22 +1,32 @@
 #ifndef GUNC_FILES_H
 #define GUNC_FILES_H
 
+#include "./iByteStream.h"
+#include "./iByteWriter.h"
+
 #include <stdint.h>
 #include <stdio.h>
 
-struct Gunc_iByteStream;
+int Gunc_file_next(FILE *self, uint8_t *nDestination);
+int Gunc_file_give(FILE *self, uint8_t byte);
 
-int Gunc_file_next(void *vself, uint8_t *nDestination);
-
-int Gunc_file_as_iByteStream(FILE **f, struct Gunc_iByteStream *bs, const char *path);
-/*
-	create an iByteStream from a f stream, gives to $bs
-	gives FILE* to $f, it must be closed later.
-		as an "rb" type
-	returns 0 on success
-		1 on null function arguments
-		2 on failure to open file
-		3 on failure to init iByteStream
-*/
+static inline int Gunc_file_as_iByteStream(FILE *self, struct Gunc_iByteStream *bs) {
+	/*
+	will try to read from the file.
+	'rb' mode is recommended
+	*/
+	return Gunc_iByteStream_init(bs, self,
+		(int(*)(void*, uint8_t*))&Gunc_file_next
+	);
+}
+static inline int Gunc_file_as_iByteWrite(FILE *self, struct Gunc_iByteWriter *bw) {
+	/*
+	will try to write to the file
+	'wb' mode is recommended
+	*/
+	return Gunc_iByteWriter_init(bw, self,
+		(int(*)(void*, uint8_t))&Gunc_file_give
+	);
+}
 
 #endif
