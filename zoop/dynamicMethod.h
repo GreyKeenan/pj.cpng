@@ -213,23 +213,17 @@ static inline int Zoop_dynamicMethod(struct Gunc_BitStream *bis, struct Gunc_iBy
 			continue;
 		}
 
-		Gunc_TODO("length symbol detected: %d", leaf);
-		return -5555;
-
 		e = Zoop_getLength(bis, &leaf);
 		if (e) {
 			Gunc_nerr(e, "unable to decipher length symbol: ", leaf);
 			return __LINE__;
 		}
 
-		/*
-		e = Zoop_getFixedDist(bis, &dist);
+		e = Zoop_getDynaDist(&dTree.tree, bis, &dist);
 		if (e) {
-			Gunc_nerr(e, "failed to read length");
+			Gunc_nerr(e, "failed to get dist");
 			return __LINE__;
 		}
-		*/
-
 
 		e = Zoop_nostalgize(bw, bl, leaf, dist);
 		if (e) {
@@ -238,7 +232,8 @@ static inline int Zoop_dynamicMethod(struct Gunc_BitStream *bis, struct Gunc_iBy
 		}
 	}
 
-	return -444;
+	return 0;
 }
+
 
 #endif

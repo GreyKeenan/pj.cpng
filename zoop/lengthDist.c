@@ -1,5 +1,9 @@
 #include "./lengthDist.h"
 
+#include "./walkUntilLeaf.h"
+
+#include "shrub/tree.h"
+
 #include "gunc/log.h"
 #include "gunc/bitStream.h"
 #include "gunc/iByteWriter.h"
@@ -80,6 +84,40 @@ int Zoop_getFixedDist(struct Gunc_BitStream *bis, uint16_t *distDest) {
 	Gunc_say("distance symbol: %d base: %d extraBits: %d additional: %d", symbol, baseValue, extraBits, additional);
 
 	*distDest = baseValue + additional;
+
+	return 0;
+}
+int Zoop_getDynaDist(struct Shrub_Tree *tree, struct Gunc_BitStream *bis, uint16_t *destination) {
+
+	int e = 0;
+	uint16_t leaf = 0;
+
+	e = Zoop_walkUntilLeaf(tree, bis, &leaf);
+	if (e) {
+		Gunc_nerr(e, "failed walk");
+		return __LINE__;
+	}
+
+	uint16_t baseValue = 0;
+	uint16_t extraBits = 0;
+
+	e = Zoop_distanceSymbol(leaf, &baseValue, &extraBits);
+	if (e) {
+		Gunc_nerr(e, "failed to decipher distance symbol: %d", leaf);
+		return __LINE__;
+	}
+
+	uint16_t additional = 0;
+
+	e = Zoop_extraBits(bis, extraBits, &additional);
+	if (e) {
+		Gunc_nerr(e, "unable to grab extra bits (%d)", extraBits);
+		return __LINE__;
+	}
+
+	//Gunc_say("distance symbol: %d base: %d extraBits: %d additional: %d", symbol, baseValue, extraBits, additional);
+
+	*destination = baseValue + additional;
 
 	return 0;
 }
