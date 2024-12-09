@@ -48,29 +48,40 @@ flags = \
 	-Wall \
 	-Wextra \
 
+src = src/
+out = a.out
+log = proglog.txt
+
 args =
 
 
 d:
+	cd $(src) && \
 	gcc $(flags) \
+		-o ../$(out) \
 		-iquote . \
+		\
+		$(args) \
 		\
 		$(cfiles) \
 		$(links) \
-		$(args) \
 
 debug:
+	cd $(src) && \
 	gcc $(flags) \
+		-o ../$(out) \
 		-iquote . \
+		\
 		-DDEBUG \
+		$(args) \
 		\
 		$(cfiles) \
 		$(links) \
-		$(args) \
 
 run: a.out
-	./a.out $(png)
+	./$(out) $(png)
 runlog: a.out
-	./a.out $(png) 2> proglog.txt
+	./$(out) $(png) 2> $(log)
 clean:
-	rm a.out
+	rm $(out)
+	rm $(log)
