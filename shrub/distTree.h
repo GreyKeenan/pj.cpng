@@ -13,8 +13,12 @@ struct Shrub_DistTree {
 };
 
 
+/*
 static inline int Shrub_DistTree_init(struct Shrub_DistTree *self) {
 	return Shrub_Tree_init(&self->tree, self->data, Shrub_DistTree_DATALENGTH, Shrub_DistTree_MAXLEAVES, Shrub_DistTree_BITSPERLEAF);
 }
+*/
+
+int Shrub_DistTree_init(struct Shrub_DistTree *self, uint8_t *sizes, uint8_t countGiven);
 
 #endif

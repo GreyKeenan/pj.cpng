@@ -182,7 +182,7 @@ static inline int Zoop_dynamicMethod(struct Gunc_BitStream *bis, struct Gunc_iBy
 	}
 
 	struct Shrub_DistTree dTree = {0};
-	e = Shrub_DistTree_init(&dTree);
+	e = Shrub_DistTree_init(&dTree, distSizes, distLen);
 	if (e) {
 		Gunc_nerr(e, "failed to init distTree");
 		return __LINE__;

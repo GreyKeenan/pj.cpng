@@ -32,6 +32,7 @@ cfiles = \
 	shrub/fixedTree.c \
 	shrub/metaTree.c \
 	shrub/dynaTree.c \
+	shrub/distTree.c \
 	\
 	sdaubler/convert.c \
 	sdaubler/display.c \
