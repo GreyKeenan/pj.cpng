@@ -79,7 +79,7 @@ int Whine_nofilter(struct Whine_Image *image, struct Gunc_iByteStream *bs) {
 	}
 
 	uint8_t filterType = 0;
-	for (uint32_t j = 0; j < image->h; ++j) {
+	for (int32_t j = 0; j < image->h; ++j) {
 		e = Gunc_iByteStream_next(bs, &filterType);
 		if (e) {
 			Gunc_nerr(e, "failed to read filterType for line %d", j);

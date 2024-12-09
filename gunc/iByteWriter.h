@@ -22,7 +22,7 @@ struct Gunc_iByteWriter {
 };
 
 static inline int Gunc_iByteWriter_give(struct Gunc_iByteWriter *self, uint8_t byte) {
-	if (self == NULL || self->vself == NULL | self->give == NULL) {
+	if (self == NULL || self->vself == NULL || self->give == NULL) {
 		return Gunc_iByteWriter_NULL;
 	}
 	return self->give(self->vself, byte);

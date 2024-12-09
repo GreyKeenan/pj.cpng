@@ -42,11 +42,17 @@ links = \
 	-lm \
 	-lSDL2 \
 
+flags = \
+	-std=c99 \
+	-Wpedantic \
+	-Wall \
+	-Wextra \
+
 args =
 
 
 d:
-	gcc -std=c99 -Wpedantic \
+	gcc $(flags) \
 		-iquote . \
 		\
 		$(cfiles) \
@@ -54,7 +60,7 @@ d:
 		$(args) \
 
 debug:
-	gcc -std=c99 -Wpedantic \
+	gcc $(flags) \
 		-iquote . \
 		-DDEBUG \
 		\

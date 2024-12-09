@@ -21,7 +21,6 @@ static inline int Zoop_extraBits(struct Gunc_BitStream *bis, uint8_t extraBits, 
 int Zoop_getLength(struct Gunc_BitStream *bis, uint16_t *symbol) {
 
 	int e = 0;
-	bool bit = 0;
 
 	uint16_t baseValue = 0;
 	uint16_t extraBits = 0;

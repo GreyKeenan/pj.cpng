@@ -68,7 +68,7 @@ int Gunc_ByteBalloon_look(void *vself, uint8_t *destination, int32_t at) {
 	struct Gunc_ByteBalloon *self = vself;
 
 	if (at >= 0) {
-		if (at >= self->length) {
+		if ((uint32_t)at >= self->length) {
 			return Gunc_iByteLooker_END;
 		}
 		*destination = self->hData[at];

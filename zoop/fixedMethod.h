@@ -28,8 +28,6 @@ static inline int Zoop_fixedMethod(struct Gunc_BitStream *bis, struct Gunc_iByte
 
 	const struct Shrub_Tree *tree = &Shrub_nFIXEDTREE->tree;
 
-	bool bit = 0;
-
 	uint16_t leaf = 0;
 	uint16_t dist = 0;
 

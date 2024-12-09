@@ -31,8 +31,8 @@ void Gunc_log_f(
 
 void Gunc_title_f(
 	char h,
-	const char *functionname,
-	const int linenumber,
+	//const char *functionname,
+	//const int linenumber,
 	const char *message,
 	int va_count,
 	...
