@@ -40,8 +40,6 @@ int Zoop_getLength(struct Gunc_BitStream *bis, uint16_t *symbol) {
 		return __LINE__;
 	}
 
-	//Gunc_say("length symbol: %d base: %d extraBits: %d additional: %d", *symbol, baseValue, extraBits, additional);
-
 	*symbol = baseValue + additional;
 
 	return 0;
@@ -61,7 +59,6 @@ int Zoop_getFixedDist(struct Gunc_BitStream *bis, uint16_t *distDest) {
 			return __LINE__;
 		}
 		symbol |= bit << (FIXED_DISTCODELENGTH - i - 1);
-		//Gunc_say("bit: %d (0x%x)", bit, symbol);
 	}
 
 	uint16_t baseValue = 0;
@@ -80,8 +77,6 @@ int Zoop_getFixedDist(struct Gunc_BitStream *bis, uint16_t *distDest) {
 		Gunc_nerr(e, "unable to grab extra bits (%d)", extraBits);
 		return __LINE__;
 	}
-
-	Gunc_say("distance symbol: %d base: %d extraBits: %d additional: %d", symbol, baseValue, extraBits, additional);
 
 	*distDest = baseValue + additional;
 
@@ -115,8 +110,6 @@ int Zoop_getDynaDist(struct Shrub_Tree *tree, struct Gunc_BitStream *bis, uint16
 		return __LINE__;
 	}
 
-	//Gunc_say("distance symbol: %d base: %d extraBits: %d additional: %d", symbol, baseValue, extraBits, additional);
-
 	*destination = baseValue + additional;
 
 	return 0;
@@ -125,7 +118,6 @@ int Zoop_getDynaDist(struct Shrub_Tree *tree, struct Gunc_BitStream *bis, uint16
 int Zoop_nostalgize(struct Gunc_iByteWriter *bw, struct Gunc_iByteLooker *bl, uint16_t length, uint16_t distance) {
 
 	// ? validate length & distance
-	//Gunc_say("nostalgizing: %d / %d", length, distance);
 
 	int e = 0;
 	uint8_t byte = 0;
@@ -138,7 +130,9 @@ int Zoop_nostalgize(struct Gunc_iByteWriter *bw, struct Gunc_iByteLooker *bl, ui
 			return 1;
 		}
 
+		#ifdef DEBUG_Zoop_nostalgize
 		Gunc_say("writing 0x%x from %d back", byte, (int32_t)-1 * distance);
+		#endif
 
 		e = Gunc_iByteWriter_give(bw, byte);
 		if (e) {

@@ -92,7 +92,9 @@ int Shrub_Tree_walk(const struct Shrub_Tree *self, bool isRight, uint16_t fromIn
 	uint16_t child = Shrub_Tree_shiftOut(from32, self->bitsPerChild, isRight);
 
 	if (!child) {
+		#ifdef DEBUG_Shrub_Tree_walk
 		Gunc_warn("child (%d) of (0x%x, index %d) is null", isRight, from32, fromIndex);
+		#endif
 		return Shrub_Tree_HALT;
 	}
 
@@ -171,7 +173,9 @@ int Shrub_Tree_growLeaf(const struct Shrub_Tree *self, bool isRight, uint16_t pa
 
 int Shrub_Tree_enterCode(struct Shrub_Tree *self, uint16_t code, uint16_t length, uint16_t leaf) {
 
+	#ifdef DEBUG_Shrub_Tree_enterCode
 	Gunc_say("entering leaf (%d) for code (0x%x) of length %d", leaf, code, length);
+	#endif
 
 	if (length < 1 || 16 < length) { // fit within int16
 		Gunc_err("invalid codelength: %d", length);

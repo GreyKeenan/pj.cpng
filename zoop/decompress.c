@@ -28,7 +28,6 @@ int Zoop_decompress(struct Gunc_iByteStream *bs, struct Gunc_iByteWriter *bw, st
 		Gunc_nerr(e, "ZLIB header read failed");
 		return __LINE__;
 	}
-	Gunc_say("ZLIB header confirmed");
 
 	
 	struct Zoop_Alderman john = {0};
@@ -118,14 +117,12 @@ static inline int Zoop_checkAdler(struct Gunc_iByteStream *bs, uint32_t computed
 		adler <<= 8;
 		adler |= byte;
 	}
-	Gunc_say("adler: 0x%x", adler);
 
 
 	if (adler != computedAdler) {
 		Gunc_err("Adler32 check failed! read: 0x%x computed: 0x%x", adler, computedAdler);
 		return 2;
 	}
-	Gunc_say("adler check passed!");
 
 	return 0;
 }

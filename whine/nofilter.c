@@ -86,7 +86,9 @@ int Whine_nofilter(struct Whine_Image *image, struct Gunc_iByteStream *bs) {
 			r = __LINE__;
 			goto fin;
 		}
+		#ifdef DEBUG_Whine_nofilter
 		Gunc_say("line %d filter type: %d", j, filterType);
+		#endif
 
 		e = Whine_scanline(bs, &bw, hnScanline, bytesPerScanline, bytesPerPixel, filterType);
 		if (e) {

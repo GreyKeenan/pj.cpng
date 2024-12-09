@@ -29,7 +29,6 @@ int Zoop_deflate(struct Gunc_BitStream *bis, struct Gunc_iByteWriter *bw, struct
 			Gunc_nerr(e, "failed to fetch bit");
 			return __LINE__;
 		}
-		Gunc_say("is last block: %d", isLastBlock);
 
 		e = Gunc_BitStream_bit(bis, &bit);
 		if (e) {
@@ -91,13 +90,11 @@ static inline int Zoop_uncompressed(struct Gunc_BitStream *bis, struct Gunc_iByt
 		Gunc_nerr(e, "failed to read length");
 		return 1;
 	}
-	Gunc_say("length: %d", length);
 	e = Zoop_readInt16(bis, &nLength);
 	if (e) {
 		Gunc_nerr(e, "failed to read nLength");
 		return 2;
 	}
-	Gunc_say("nLength: %d", nLength);
 
 	if (length != (~nLength & 0xffff)) {
 		Gunc_err("length-inverted-length check failed: 0x%x / 0x%x (~0x%x)", length, nLength, (~nLength & 0xffff));

@@ -47,8 +47,9 @@ int Zoop_walkUntilLeaf(const struct Shrub_Tree *tree, struct Gunc_BitStream *bis
 
 		child >>= 1;
 
+		#ifdef DEBUG_Zoop_walkUntilLeaf
 		Gunc_say("hit leaf: %d", child);
-		//Gunc_say("code: 0x%x length: %d", Dcode, DcodeLength);
+		#endif
 
 		break;
 	}

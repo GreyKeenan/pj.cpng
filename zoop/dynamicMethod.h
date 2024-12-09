@@ -22,14 +22,6 @@
 static inline int Zoop_dynamicMethod(struct Gunc_BitStream *bis, struct Gunc_iByteWriter *bw, struct Gunc_iByteLooker *bl) {
 
 	int e = 0;
-
-	// read tree codelength-sequence-lengths
-	/*
-		5b: num of literal/length codeSizes - 257
-		5b: num of distance codeSizes - 1
-		4b: num of metaTree codeSizes - 4
-	*/
-
 	bool bit = 0;
 
 	uint16_t litLen = 0;
@@ -42,7 +34,6 @@ static inline int Zoop_dynamicMethod(struct Gunc_BitStream *bis, struct Gunc_iBy
 		litLen |= bit << i;
 	}
 	litLen += LITLEN_MIN;
-
 	uint8_t distLen = 0;
 	for (int i = 0; i < 5; ++i) {
 		e =	Gunc_BitStream_bit(bis, &bit);
@@ -53,7 +44,6 @@ static inline int Zoop_dynamicMethod(struct Gunc_BitStream *bis, struct Gunc_iBy
 		distLen |= bit << i;
 	}
 	distLen += DISTLEN_MIN;
-
 	uint8_t metaLen = 0;
 	for (int i = 0; i < 4; ++i) {
 		e =	Gunc_BitStream_bit(bis, &bit);
@@ -66,29 +56,13 @@ static inline int Zoop_dynamicMethod(struct Gunc_BitStream *bis, struct Gunc_iBy
 	}
 	metaLen += METALEN_MIN;
 
-	Gunc_say("litLen: %d distLen: %d metaLen: %d", litLen, distLen, metaLen);
-
-	// build metatree
-	/*
-		3bit metaTree codesizes in specific order
-	*/
 	struct Shrub_MetaTree mTree = {0};
-
 	e = Shrub_MetaTree_init(&mTree, bis, metaLen);
 	if (e) {
 		Gunc_nerr(e, "failed to init meta tree.");
 		return __LINE__;
 	}
-	Gunc_say("metaTree initialized!");
 
-	// build litTree
-	/*
-		metaTree codes in specific order
-	*/
-	// build distTree
-	/*
-		metaTree codes in specific order
-	*/
 
 	uint8_t sizes[Shrub_LitTree_MAXLEAVES + Shrub_DistTree_MAXLEAVES] = {0};
 		//store adjacent to simplify overlapping metaTree repeats
@@ -188,9 +162,7 @@ static inline int Zoop_dynamicMethod(struct Gunc_BitStream *bis, struct Gunc_iBy
 	}
 
 
-	// read literal sequence
-
-	//leaf
+	// uint16_t leaf = 0;
 	uint16_t dist = 0;
 	while (1) {
 

@@ -24,7 +24,7 @@ int Gunc_ByteBalloon_give(void *vself, uint8_t byte) {
 	void *vptr = NULL;
 
 	if (self->length >= self->cap) {
-		Gunc_say("attempting to extend length of balloon (%p) from %d past %d.", self, self->length, self->cap);
+		//Gunc_say("attempting to extend length of balloon (%p) from %d past %d.", self, self->length, self->cap);
 		if (0x80000000 & self->cap) {
 			Gunc_err("maxlength cannot be increased: %d", self->cap);
 			return Gunc_iByteWriter_CAP;

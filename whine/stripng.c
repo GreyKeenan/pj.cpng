@@ -28,14 +28,12 @@ int Whine_stripng(struct Whine_Image *destination, struct Gunc_iByteStream *bs, 
 	if (e) {
 		return 1;
 	}
-	Gunc_say("PNG header matched.");
 
 	e = Whine_ihdr(destination, bs);
 	if (e) {
 		Gunc_nerr(e, "failed to read IHDR");
 		return 2;
 	}
-	Gunc_say("ihdr confirmed.");
 
 	e = Whine_chunkstream(bs, bw, (destination->colorType == 3));
 	if (e) {
@@ -83,14 +81,18 @@ static inline int Whine_chunkstream(struct Gunc_iByteStream *bs, struct Gunc_iBy
 			Gunc_nerr(e, "failed to read length");
 			return __LINE__;
 		}
+		#ifdef DEBUG_Whine_chunkstream
 		Gunc_say("chunk length: %d (0x%x)", length, length);
+		#endif
 
 		e = Whine_chunk_readName(bs, name);
 		if (e) {
 			Gunc_nerr(e, "failed to read name");
 			return __LINE__;
 		}
+		#ifdef DEBUG_Whine_chunkstream
 		Gunc_say("chunk name: %s", name);
+		#endif
 
 		if (Whine_chunk_isAncillary(name)) {
 			Whine_waste(bs, length + Whine_chunk_CRCLENGTH);
