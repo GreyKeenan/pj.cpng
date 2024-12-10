@@ -2,7 +2,9 @@
 # png = assets/uncompressed.png
 # png = assets/my_zlibFixed.png
 # png = assets/PNG_transparency_demonstration.png
-png = assets/rgb8.png
+# png = assets/rgb8.png
+# png = assets/blog-90-funny-jokes-to-share-with-coworkers.png
+png = assets/spiderman.png
 
 cfiles = \
 	main.c \

@@ -2,6 +2,7 @@
 #include "./error.h"
 
 #include "./convert.h"
+#include "./iImageTrain.h"
 
 #include "SDL2/SDL.h"
 
@@ -43,7 +44,7 @@ int Sdaubler_display(Sdaubler_iImageTrain *imt) {
 	window = SDL_CreateWindow(
 		"Decoded PNG!",
 		SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-		displayMode.w >> 1, displayMode.h >> 1,
+		displayMode.w / 2, displayMode.h / 2,
 		0
 		
 	);
@@ -70,7 +71,18 @@ int Sdaubler_display(Sdaubler_iImageTrain *imt) {
 	SDL_FreeSurface(surface);
 	surface = NULL;
 
-	rect = (SDL_Rect){0,0, displayMode.h >> 1, displayMode.h >> 1};
+	//rect = (SDL_Rect){0,0, displayMode.h / 2, displayMode.h / 2};
+	uint32_t imW = 0;
+	uint32_t imH = 0;
+	e = Sdaubler_iImageTrain_gauge(imt, &imW, &imH);
+	if (e) {
+		e = Sdaubler_ERROR;
+		goto finalize;
+	}
+	double ratio = imW /(double) imH;
+	int height = displayMode.h / 3;
+	int width = height * ratio;
+	rect = (SDL_Rect){0, 0, width, height};
 
 	e = SDL_RenderCopy(renderer, texture, NULL, &rect);
 	if (e) {

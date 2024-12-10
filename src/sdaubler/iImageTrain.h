@@ -3,10 +3,10 @@
 
 #include "./iImageTrain_impl.h"
 
-int Sdaubler_iImageTrain_choochoo(struct Sdaubler_iImageTrain *self, uint32_t *nDestination) {
+static inline int Sdaubler_iImageTrain_choochoo(struct Sdaubler_iImageTrain *self, uint32_t *nDestination) {
 	return self->choochoo(self->vself, nDestination);
 }
-int Sdaubler_iImageTrain_gauge(struct Sdaubler_iImageTrain *self, uint32_t *nWidth, uint32_t *nHeight) {
+static inline int Sdaubler_iImageTrain_gauge(struct Sdaubler_iImageTrain *self, uint32_t *nWidth, uint32_t *nHeight) {
 	return self->gauge(self->vself, nWidth, nHeight);
 }
 
