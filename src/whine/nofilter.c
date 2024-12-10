@@ -16,7 +16,7 @@ static inline int Whine_unfilterByte(uint8_t *byte, uint8_t filterType, uint32_t
 static inline uint8_t Whine_filt_a(uint32_t wi, const uint8_t *scanlineBuffer, uint8_t bytesPerPixel);
 static inline uint8_t Whine_filt_b(uint32_t wi, const uint8_t *scanlineBuffer);
 static inline uint8_t Whine_filt_c(uint64_t cBuffer, uint8_t bytesPerPixel);
-static inline uint8_t Whine_paeth(uint8_t a, uint8_t b, uint8_t c);
+static inline uint8_t Whine_paeth(int a, int b, int c);
 
 
 int Whine_nofilter(struct Whine_Image *image, struct Gunc_iByteStream *bs) {
@@ -209,12 +209,12 @@ static inline uint8_t Whine_filt_c(uint64_t cBuffer, uint8_t bytesPerPixel) {
 	cBuffer >>= 8 * (bytesPerPixel - 1);
 	return cBuffer & 0xff;
 }
-static inline uint8_t Whine_paeth(uint8_t a, uint8_t b, uint8_t c) {
-	//Gunc_TODO("this is taken from previous prototype. Why am I abs-ing unsigned values?");
-	uint16_t p = a + b - c;
-	uint16_t pa = abs(p - a);
-	uint16_t pb = abs(p - b);
-	uint16_t pc = abs(p - c);
+static inline uint8_t Whine_paeth(int a, int b, int c) {
+	// https://www.w3.org/TR/2003/REC-PNG-20031110/#9Filter-type-4-Paeth
+	int p = a + b - c;
+	int pa = abs(p - a);
+	int pb = abs(p - b);
+	int pc = abs(p - c);
 
 	if (pa <= pb && pa <= pc) {
 		return a;
