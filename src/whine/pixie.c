@@ -14,22 +14,22 @@ int Whine_Pixie_init(struct Whine_Pixie *self, struct Whine_Image image) {
 
 	int e = 0;
 
-	e = Whine_Image_validateIhdr(&image);
+	e = Whine_ImHeader_validate(&image.header);
 	if (e) {
 		Gunc_nerr(e, "invalid ihdr data");
 		return 1;
 	}
-	if (image.nScanlineData == NULL) {
-		Gunc_err("NULL scanline data");
+	if (image.hnImageData == NULL || (image.imageDataStatus != Whine_Image_SCANLINED)) {
+		Gunc_err("missing scanline data: %d", image.imageDataStatus);
 		return 2;
 	}
 
-	uint64_t bytesPerScanline = Whine_Image_bytesPerScanline(&image);
+	uint64_t bytesPerScanline = Whine_ImHeader_bytesPerScanline(&image.header);
 	if (!bytesPerScanline) {
 		Gunc_err("0 bytes per scanline");
 		return 3;
 	}
-	if (Gunc_uCantMultiply(bytesPerScanline, image.h, UINT64_MAX)) {
+	if (Gunc_uCantMultiply(bytesPerScanline, image.header.height, UINT64_MAX)) {
 		// would have failed sooner than this
 		Gunc_err("image size too large to create uint64-length");
 		return 4;
@@ -38,8 +38,8 @@ int Whine_Pixie_init(struct Whine_Pixie *self, struct Whine_Image image) {
 	*self = (struct Whine_Pixie) {
 		.image = image,
 		.seq = (struct Gunc_ByteSeq64) {
-			.data = image.nScanlineData,
-			.length = image.h * bytesPerScanline
+			.data = image.hnImageData,
+			.length = image.header.height * bytesPerScanline
 		},
 		.bis = (struct Gunc_BitStream) { .isMSbitFirst = true }
 	};
@@ -58,14 +58,14 @@ int Whine_Pixie_nextPixel(struct Whine_Pixie *self, uint32_t *nDestination) {
 	uint32_t pixel = 0;
 	uint8_t byte = 0;
 
-	uint8_t samplesPerPixel = Whine_Image_samplesPerPixel(self->image.colorType);
+	uint8_t samplesPerPixel = Whine_ImHeader_samplesPerPixel(self->image.header.colorType);
 	if (samplesPerPixel == 0) {
 		Gunc_err("0 samples per pixel");
 		return __LINE__;
 	}
 
 	for (int i = 0; i < samplesPerPixel; ++i) {
-		e = Whine_Pixie_onesample(&self->bis, self->image.bitDepth, &pixel);
+		e = Whine_Pixie_onesample(&self->bis, self->image.header.bitDepth, &pixel);
 		if (e) {
 			Gunc_nerr(e, "failed to read sample.");
 			Gunc_TODO("handle iByte_END");
@@ -75,7 +75,7 @@ int Whine_Pixie_nextPixel(struct Whine_Pixie *self, uint32_t *nDestination) {
 
 	uint8_t paletteIndex = 0;
 
-	switch (self->image.colorType) {
+	switch (self->image.header.colorType) {
 		case 0: //g
 			//TODO transparent colors
 			byte = pixel;
@@ -94,11 +94,11 @@ int Whine_Pixie_nextPixel(struct Whine_Pixie *self, uint32_t *nDestination) {
 			break;
 		case 3: //i
 			//TODO transparent colors
-			paletteIndex = pixel & ((1 << self->image.bitDepth) - 1);
+			paletteIndex = pixel & ((1 << self->image.header.bitDepth) - 1);
 				//have to mask away since onesample() duplicates bits to fill byte
 			pixel = 0;
 
-			if (self->image.nPalette == NULL) {
+			if (self->image.hnPalette == NULL) {
 				Gunc_err("palette missing");
 				return __LINE__;
 			}
@@ -107,7 +107,7 @@ int Whine_Pixie_nextPixel(struct Whine_Pixie *self, uint32_t *nDestination) {
 				return __LINE__;
 			}
 			for (int i = 0; i < PLTE_ENTRY; ++i) {
-				pixel |= self->image.nPalette[paletteIndex * 3 + i];
+				pixel |= self->image.hnPalette[paletteIndex * 3 + i];
 				pixel <<= 8;
 			}
 			pixel |= 0xff;
@@ -126,7 +126,7 @@ int Whine_Pixie_nextPixel(struct Whine_Pixie *self, uint32_t *nDestination) {
 		case 6: //rgba
 			break;
 		default:
-			Gunc_err("unrecognized colorType: %d", self->image.colorType);
+			Gunc_err("unrecognized colorType: %d", self->image.header.colorType);
 			return __LINE__;
 	}
 

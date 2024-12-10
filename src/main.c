@@ -90,7 +90,7 @@ int main(int argc, char **argv) {
 	if (hnDecompressedData != NULL) {
 		free(hnDecompressedData);
 	}
-	Whine_Image_destroy(&image);
+	Whine_Image_filicide(&image);
 
 	Gunc_title("Program endpoint reached.");
 	return 0;
@@ -271,7 +271,7 @@ static inline int remove_filters(struct Whine_Image *image, uint8_t *decompresse
 		return __LINE__;
 	}
 
-	Gunc_say("scanline image data obtained & defiltered: %p", image->nScanlineData);
+	Gunc_say("scanline image data obtained & defiltered: %p", image->hnImageData);
 
 	return 0;
 }

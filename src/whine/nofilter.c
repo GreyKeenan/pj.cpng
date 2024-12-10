@@ -106,6 +106,7 @@ int Whine_nofilter(struct Whine_Image *image, struct Gunc_iByteStream *bs) {
 		goto fin;
 	}
 
+	Gunc_TODO("ERROR doesnt check if data is already set!");
 	Whine_Image_setData(image, bb.hData, Whine_Image_SCANLINED);
 	bb.hData = NULL;
 	// could give image byteLength here, rather then calcing later
