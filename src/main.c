@@ -89,6 +89,7 @@ int main(int argc, char **argv) {
 	if (image.nScanlineData != NULL) {
 		free(image.nScanlineData);
 	}
+	Whine_Image_destroy(&image);
 
 	Gunc_title("Program endpoint reached.");
 	return 0;

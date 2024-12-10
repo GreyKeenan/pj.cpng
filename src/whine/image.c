@@ -2,6 +2,7 @@
 
 #include "gunc/log.h"
 
+#include <stdlib.h>
 #include <stdbool.h>
 
 uint8_t Whine_samplesMap[Whine_samplesMapLength] = {1, 0, 3, 1, 2, 0, 4};
@@ -105,4 +106,16 @@ int Whine_Image_validateBDCT(uint8_t bitDepth, uint8_t colorType) {
 
 	Gunc_err("invalid bitDepth colorType combo: (%d)/(%d)", bitDepth, colorType);
 	return 3;
+}
+
+void Whine_Image_destroy(struct Whine_Image *self) {
+	if (self->nScanlineData != NULL) {
+		free(self->nScanlineData);
+		self->nScanlineData = NULL;
+	}
+	if (self->nPalette != NULL) {
+		free(self->nPalette);
+		self->nPalette = NULL;
+		self->paletteLength = 0;
+	}
 }

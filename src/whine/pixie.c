@@ -5,6 +5,8 @@
 
 #include <stddef.h>
 
+#define PLTE_ENTRY 3
+
 static inline int Whine_Pixie_onesample(struct Gunc_BitStream *bis, uint8_t bitsPerSample, uint32_t *pixel);
 
 
@@ -71,6 +73,8 @@ int Whine_Pixie_nextPixel(struct Whine_Pixie *self, uint32_t *nDestination) {
 		}
 	}
 
+	uint8_t paletteIndex = 0;
+
 	switch (self->image.colorType) {
 		case 0: //g
 			//TODO transparent colors
@@ -89,8 +93,26 @@ int Whine_Pixie_nextPixel(struct Whine_Pixie *self, uint32_t *nDestination) {
 			pixel |= 0xff;
 			break;
 		case 3: //i
-			Gunc_err("TODO indexed image");
-			return __LINE__;
+			//TODO transparent colors
+			paletteIndex = pixel & ((1 << self->image.bitDepth) - 1);
+				//have to mask away since onesample() duplicates bits to fill byte
+			pixel = 0;
+
+			if (self->image.nPalette == NULL) {
+				Gunc_err("palette missing");
+				return __LINE__;
+			}
+			if (paletteIndex * PLTE_ENTRY + (PLTE_ENTRY - 1) >= self->image.paletteLength) {
+				Gunc_err("palette index too large (%d >= %d)", paletteIndex, self->image.paletteLength);
+				return __LINE__;
+			}
+			for (int i = 0; i < PLTE_ENTRY; ++i) {
+				pixel |= self->image.nPalette[paletteIndex * 3 + i];
+				pixel <<= 8;
+			}
+			pixel |= 0xff;
+
+			break;
 		case 4: //ga
 			byte = pixel & 0xff;
 
