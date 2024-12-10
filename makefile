@@ -24,6 +24,7 @@ cfiles = \
 	whine/chunk.c \
 	whine/nofilter.c \
 	whine/image.c \
+	whine/imHeader.c \
 	whine/pixie.c \
 	\
 	zoop/decompress.c \

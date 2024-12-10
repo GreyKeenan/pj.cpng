@@ -1,47 +1,56 @@
 #ifndef WHINE_IMAGE_H
 #define WHINE_IMAGE_H
 
+#include "./imHeader.h"
+
 #include <stdint.h>
 
-struct Whine_Image {
-	int32_t w;
-	int32_t h;
-	uint8_t bitDepth;
-	uint8_t colorType;
-	uint8_t compressionMethod;
-	uint8_t filterMethod;
-	uint8_t interlaceMethod;
-
-	uint8_t *nScanlineData;
-
-	uint8_t *nPalette;
-	int32_t paletteLength;
+enum Whine_Image_imageDataStatus {
+	Whine_Image_ABSENT = 0
+	, Whine_Image_COMPRESSED
+	, Whine_Image_FILTERED
+	, Whine_Image_SCANLINED
 };
 
-#define Whine_samplesMapLength 7
-extern uint8_t Whine_samplesMap[Whine_samplesMapLength]; // {1, 0, 3, 1, 2, 0, 4}
+struct Whine_Image {
+	struct Whine_ImHeader header;
 
+	uint8_t imageDataStatus;
+	uint8_t *hnImageData;
 
-static inline int8_t Whine_Image_samplesPerPixel(uint8_t colorType) {
+	uint8_t *hnPalette;
+	int32_t paletteLength;
+
+	//transparency data
+	//gamma
+	//chrm
+};
+
+#define Whine_Image_PLTE_ENTRY 3
+#define Whine_Image_PLTE_MIN 1
+#define Whine_Image_PLTE_MAX 256
+
+void Whine_Image_filicide(struct Whine_Image *self);
 /*
-from PNG spec
-returns 0 if unrecognized colorType
+frees the following if they are not null
+	$hnImageData
+	$hnPalette
+sets them to NULL & resets their associated tracking values
+DOES NOT reset $header
 */
-	if (colorType >= Whine_samplesMapLength) {
-		return 0;
-	}
-	return Whine_samplesMap[colorType];
+
+static inline void Whine_Image_setData(struct Whine_Image *self, uint8_t *as, uint8_t status) {
+	self->hnImageData = as;
+	self->imageDataStatus = status;
+} // encourages setting status when setting data
+
+/*
+static inline int Whine_Image_indexPalette(const struct Whine_Image *self, int32_t index, uint32_t *pixel) {
+
+	
+	
+	return 1;
 }
-
-uint8_t Whine_Image_bytesPerPixel(const struct Whine_Image *image);
-	// returns 0 on error
-	// always < 9
-uint64_t Whine_Image_bytesPerScanline(const struct Whine_Image *image);
-	// returns 0 on error
-	// max is 8 * (2^31 - 1)
-
-int Whine_Image_validateIhdr(const struct Whine_Image *image);
-
-void Whine_Image_destroy(struct Whine_Image *self);
+*/
 
 #endif
