@@ -5,7 +5,7 @@ struct Whine_Image;
 struct Gunc_iByteStream;
 struct Gunc_iByteWriter;
 
-int Whine_stripng(struct Whine_Image *destination, struct Gunc_iByteStream *bs, struct Gunc_iByteWriter *bw);
+int Whine_stripng(struct Whine_Image *image, struct Gunc_iByteStream *bs, struct Gunc_iByteWriter *bw);
 /*
 expects $bs to be a png
 reads png measurements to $destination

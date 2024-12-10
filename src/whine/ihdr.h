@@ -1,7 +1,7 @@
 #ifndef WHINE_IHDR_H
 #define WHINE_IHDR_H
 
-#include "./image.h"
+#include "./imHeader.h"
 #include "./reads.h"
 #include "./chunk.h"
 
@@ -13,7 +13,7 @@
 
 #define Whine_ihdr_LENGTH 13
 
-static inline int Whine_ihdr(struct Whine_Image *destination, struct Gunc_iByteStream *bs) {
+static inline int Whine_ihdr(struct Whine_ImHeader *header, struct Gunc_iByteStream *bs) {
 	
 	int e = 0;
 	uint32_t length = 0;
@@ -46,40 +46,40 @@ static inline int Whine_ihdr(struct Whine_Image *destination, struct Gunc_iByteS
 		Gunc_nerr(e, "failed to read width");
 		return __LINE__;
 	}
-	destination->w = n;
+	header->width = n;
 	e = Whine_read_int32(bs, &n);
 	if (e) {
 		Gunc_nerr(e, "failed to read height");
 		return __LINE__;
 	}
-	destination->h = n;
-	e = Gunc_iByteStream_next(bs, &destination->bitDepth);
+	header->height = n;
+	e = Gunc_iByteStream_next(bs, &header->bitDepth);
 	if (e) {
 		Gunc_nerr(e, "failed to read bitDepth");
 		return __LINE__;
 	}
-	e = Gunc_iByteStream_next(bs, &destination->colorType);
+	e = Gunc_iByteStream_next(bs, &header->colorType);
 	if (e) {
 		Gunc_nerr(e, "failed to read colorType");
 		return __LINE__;
 	}
-	e = Gunc_iByteStream_next(bs, &destination->compressionMethod);
+	e = Gunc_iByteStream_next(bs, &header->compressionMethod);
 	if (e) {
 		Gunc_nerr(e, "failed to read compressionMethod");
 		return __LINE__;
 	}
-	e = Gunc_iByteStream_next(bs, &destination->filterMethod);
+	e = Gunc_iByteStream_next(bs, &header->filterMethod);
 	if (e) {
 		Gunc_nerr(e, "failed to read filterMethod");
 		return __LINE__;
 	}
-	e = Gunc_iByteStream_next(bs, &destination->interlaceMethod);
+	e = Gunc_iByteStream_next(bs, &header->interlaceMethod);
 	if (e) {
 		Gunc_nerr(e, "failed to read interlaceMethod");
 		return __LINE__;
 	}
 
-	e = Whine_Image_validateIhdr(destination);
+	e = Whine_ImHeader_validate(header);
 	if (e) {
 		Gunc_nerr(e, "invalid IHDR data");
 		return __LINE__;

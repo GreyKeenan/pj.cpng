@@ -29,13 +29,13 @@ int Whine_nofilter(struct Whine_Image *image, struct Gunc_iByteStream *bs) {
 	struct Gunc_ByteBalloon bb = {0};
 	struct Gunc_iByteWriter bw = {0};
 
-	if (image->filterMethod != 0) {
-		Gunc_err("unrecognized filter method: %d", image->filterMethod);
+	if (image->header.filterMethod != 0) {
+		Gunc_err("unrecognized filter method: %d", image->header.filterMethod);
 		r = __LINE__;
 		goto fin;
 	}
-	if (image->nScanlineData != NULL) {
-		Gunc_err("image already has scanline data %p", image->nScanlineData);
+	if (image->hnImageData != NULL) {
+		Gunc_err("image already has scanline data %p", image->hnImageData);
 		r = __LINE__;
 		goto fin;
 	}
@@ -53,13 +53,13 @@ int Whine_nofilter(struct Whine_Image *image, struct Gunc_iByteStream *bs) {
 		goto fin;
 	}
 
-	uint8_t bytesPerPixel = Whine_Image_bytesPerPixel(image);
+	uint8_t bytesPerPixel = Whine_ImHeader_bytesPerPixel(&image->header);
 	if (bytesPerPixel == 0) {
 		Gunc_nerr(bytesPerPixel, "invalid bytesPerPixel");
 		r = __LINE__;
 		goto fin;
 	}
-	uint64_t bytesPerScanline = Whine_Image_bytesPerScanline(image);
+	uint64_t bytesPerScanline = Whine_ImHeader_bytesPerScanline(&image->header);
 	if (bytesPerScanline == 0) {
 		Gunc_nerr(bytesPerScanline, "invalid bytesPerScanline");
 		r = __LINE__;
@@ -79,7 +79,7 @@ int Whine_nofilter(struct Whine_Image *image, struct Gunc_iByteStream *bs) {
 	}
 
 	uint8_t filterType = 0;
-	for (int32_t j = 0; j < image->h; ++j) {
+	for (int32_t j = 0; j < image->header.height; ++j) {
 		e = Gunc_iByteStream_next(bs, &filterType);
 		if (e) {
 			Gunc_nerr(e, "failed to read filterType for line %d", j);
@@ -106,7 +106,7 @@ int Whine_nofilter(struct Whine_Image *image, struct Gunc_iByteStream *bs) {
 		goto fin;
 	}
 
-	image->nScanlineData = bb.hData;
+	Whine_Image_setData(image, bb.hData, Whine_Image_SCANLINED);
 	bb.hData = NULL;
 	// could give image byteLength here, rather then calcing later
 
