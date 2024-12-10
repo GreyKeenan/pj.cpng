@@ -17,6 +17,7 @@ struct Whine_Image {
 
 	uint8_t imageDataStatus;
 	uint8_t *hnImageData;
+	uint64_t imageDataLength;
 
 	uint8_t *hnPalette;
 	int32_t paletteLength;

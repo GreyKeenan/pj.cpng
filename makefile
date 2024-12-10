@@ -19,6 +19,8 @@ cfiles = \
 	gunc/byteSeq64.c \
 	gunc/ascii.c \
 	\
+	pork/createPixie.c \
+	\
 	whine/stripng.c \
 	whine/reads.c \
 	whine/chunk.c \
