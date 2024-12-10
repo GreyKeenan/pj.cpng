@@ -14,7 +14,6 @@ cfiles = \
 	gunc/log.c \
 	gunc/files.c \
 	gunc/byteBalloon.c \
-	gunc/sequence.c \
 	gunc/bitStream.c \
 	gunc/byteSeq64.c \
 	gunc/ascii.c \
