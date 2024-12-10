@@ -21,6 +21,11 @@ static inline uint8_t Whine_paeth(int a, int b, int c);
 
 int Whine_nofilter(struct Whine_Image *image, struct Gunc_iByteStream *bs) {
 
+	if (image->header.interlaceMethod != Whine_ImHeader_INTERLACE_NONE) {
+		Gunc_err("TODO: unable to defilter interlaced images");
+		return __LINE__;
+	}
+
 	int r = 0;
 	int e = 0;
 

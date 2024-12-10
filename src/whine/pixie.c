@@ -58,6 +58,11 @@ int Whine_Pixie_nextPixel(struct Whine_Pixie *self, uint32_t *nDestination) {
 	uint32_t pixel = 0;
 	uint8_t byte = 0;
 
+	if (self->image.header.interlaceMethod != Whine_ImHeader_INTERLACE_NONE) {
+		Gunc_err("TODO: does not support interlaced images");
+		return __LINE__;
+	}
+
 	uint8_t samplesPerPixel = Whine_ImHeader_samplesPerPixel(self->image.header.colorType);
 	if (samplesPerPixel == 0) {
 		Gunc_err("0 samples per pixel");
