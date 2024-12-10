@@ -78,6 +78,10 @@ int main(int argc, char **argv) {
 	decompressedDataLength = 0;
 
 	e = show(image);
+	if (e) {
+		Gunc_nerr(e, "show() error");
+		goto fin;
+	}
 
 	fin:
 	if (hnZlibData != NULL) {
@@ -85,9 +89,6 @@ int main(int argc, char **argv) {
 	}
 	if (hnDecompressedData != NULL) {
 		free(hnDecompressedData);
-	}
-	if (image.nScanlineData != NULL) {
-		free(image.nScanlineData);
 	}
 	Whine_Image_destroy(&image);
 
