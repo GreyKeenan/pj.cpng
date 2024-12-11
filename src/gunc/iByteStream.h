@@ -23,13 +23,13 @@ struct Gunc_iByteStream {
 	*/
 };
 
-static inline int Gunc_iByteStream_next(struct Gunc_iByteStream *self, uint8_t *nDestination) {
+static inline int Gunc_iByteStream_next(const struct Gunc_iByteStream *self, uint8_t *nDestination) {
 	if (self == NULL || self->vself == NULL || self->next == NULL) {
 		return Gunc_iByteStream_NULL;
 	}
 	return self->next(self->vself, nDestination);
 }
-static inline int Gunc_iByteStream_next_unnull(struct Gunc_iByteStream *self, uint8_t *nDestination) {
+static inline int Gunc_iByteStream_next_unnull(const struct Gunc_iByteStream *self, uint8_t *nDestination) {
 	return self->next(self->vself, nDestination);
 }
 

@@ -4,12 +4,12 @@
 # png = assets/PNG_transparency_demonstration.png
 # png = assets/rgb8.png
 # png = assets/blog-90-funny-jokes-to-share-with-coworkers.png
-png = assets/spiderman.png
+# png = assets/spiderman.png
 # png = assets/attesa-prelievo.png
+png = assets/my48x32.png
 
 cfiles = \
 	main.c \
-	pix_as_imt.c \
 	\
 	gunc/log.c \
 	gunc/files.c \
@@ -42,8 +42,6 @@ cfiles = \
 	shrub/dynaTree.c \
 	shrub/distTree.c \
 	\
-	sdaubler/convert.c \
-	sdaubler/display.c \
 
 links = \
 	-lm \

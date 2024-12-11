@@ -8,6 +8,8 @@
 
 #include "gunc/bitStream.h"
 
+#include "gunc/iRuneStream.h"
+
 struct Whine_Pixie {
 	struct Whine_Easel easel;
 	struct Whine_Canvas canvas;
@@ -33,5 +35,11 @@ int Whine_Pixie_init(struct Whine_Pixie *self, struct Whine_Easel *easel, struct
 */
 
 int Whine_Pixie_nextPixel(struct Whine_Pixie *self, uint32_t *nDestination);
+
+static inline int Whine_Pixie_as_iRuneStream(struct Whine_Pixie *self, struct Gunc_iRuneStream *rs) {
+	return Gunc_iRuneStream_init(rs, self,
+		(int(*)(void*, uint32_t*))&Whine_Pixie_nextPixel
+	);
+}
 
 #endif
