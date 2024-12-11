@@ -4,16 +4,21 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "./pix_as_imt.h"
-
 #include "gunc/log.h"
 
 #include "whine/pixie.h"
 
 #include "pork/createPixie.h"
 
-#include "sdaubler/display.h"
-#include "sdaubler/iImageTrain_impl.h"
+#include <sys/ioctl.h>
+#include <unistd.h>
+
+// #define WIDTH 80
+#define PIXEL "  "
+#define PXW 2
+
+void _printPixel(uint32_t p);
+int _printImage(const struct Gunc_iRuneStream *rs, int32_t w, int32_t h);
 
 
 int main(int argc, char **argv) {
@@ -39,20 +44,23 @@ int main(int argc, char **argv) {
 		goto fin;
 	}
 
-
-	Gunc_title("displaying image!");
-
-	struct Sdaubler_iImageTrain imt = {0};
-	e = _Pixie_as_iImageTrain(&pixie, &imt);
+	struct Gunc_iRuneStream rs = {0};
+	e = Whine_Pixie_as_iRuneStream(&pixie, &rs);
 	if (e) {
-		Gunc_nerr(e, "failed to init imt");
-		return __LINE__;
+		Gunc_nerr(e, "failed to init rune stream");
+		goto fin;
 	}
 
-	e = Sdaubler_display(&imt);
+	Gunc_title("Image:");
+
+	e = _printImage(
+		&rs,
+		pixie.easel.header.width,
+		pixie.easel.header.height
+	);
 	if (e) {
-		Gunc_nerr(e, "Sdaubler_display failed");
-		return __LINE__;
+		Gunc_nerr(e, "failed to print image");
+		goto fin;
 	}
 
 
@@ -62,5 +70,45 @@ int main(int argc, char **argv) {
 	Whine_Easel_filicide(&pixie.easel);
 	Whine_Canvas_filicide(&pixie.canvas);
 
+	Gunc_title("Program Endpoint (%d)", (bool)e);
+
 	return (bool)e;
+}
+
+int _printImage(const struct Gunc_iRuneStream *rs, int32_t w, int32_t h) {
+
+	int e = 0;
+
+	uint32_t pixel = 0;
+
+	struct winsize win;
+	ioctl(STDOUT_FILENO, TIOCGWINSZ, &win);
+
+	for (int32_t j = 0; j < h; ++j) {
+		for (int32_t i = 0; i < w; ++i) {
+			e = Gunc_iRuneStream_next(rs, &pixel);
+			if (e) {
+				Gunc_nerr(e, "failed to read next pixel (%dx%d)",
+					w,h
+				);
+				return 1;
+			}
+
+			if (i <= win.ws_col / PXW - 1) {
+				_printPixel(pixel);
+			}
+		}
+
+		printf("[0m\n");
+	}
+
+	return 0;
+}
+
+void _printPixel(uint32_t p) {
+	uint8_t r = p >> 24;
+	uint8_t g = p >> 16;
+	uint8_t b = p >> 8;
+
+	printf("[48;2;%d;%d;%dm" PIXEL, r, g, b);
 }
