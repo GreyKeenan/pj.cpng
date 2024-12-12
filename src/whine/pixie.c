@@ -101,18 +101,13 @@ int Whine_Pixie_nextPixel(struct Whine_Pixie *self, uint32_t *nDestination) {
 				//have to mask away since onesample() duplicates bits to fill byte
 			pixel = 0;
 
-			if (self->easel.palette.data == NULL) {
-				Gunc_err("palette missing");
+			e = Whine_Easel_indexPalette(&self->easel, paletteIndex, &pixel);
+			if (e) {
+				Gunc_nerr(e, "failed palette index!");
 				return __LINE__;
 			}
-			if (paletteIndex * PLTE_ENTRY + (PLTE_ENTRY - 1) >= self->easel.palette.length) {
-				Gunc_err("palette index too large (%d >= %d)", paletteIndex, self->easel.palette.length);
-				return __LINE__;
-			}
-			for (int i = 0; i < PLTE_ENTRY; ++i) {
-				pixel |= self->easel.palette.data[paletteIndex * 3 + i];
-				pixel <<= 8;
-			}
+
+			pixel <<= 8;
 			pixel |= 0xff;
 
 			break;
