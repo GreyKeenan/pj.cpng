@@ -5,7 +5,6 @@
 #include "gunc/log.h"
 #include "gunc/iByteStream.h"
 #include "gunc/iByteWriter.h"
-#include "gunc/byteBalloon.h"
 
 #include <stdlib.h>
 #include <stdint.h>
