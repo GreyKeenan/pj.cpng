@@ -3,10 +3,10 @@
 
 int _Pixie_gauge(struct Whine_Pixie *self, uint32_t *nWidth, uint32_t *nHeight) {
 	if (nWidth != NULL) {
-		*nWidth = self->image.header.width;
+		*nWidth = self->easel.header.width;
 	}
 	if (nHeight != NULL) {
-		*nHeight = self->image.header.height;
+		*nHeight = self->easel.header.height;
 	}
 	return 0;
 }

@@ -8,32 +8,27 @@
 
 #include "gunc/byteUence64.h"
 
-#include "gunc/byteSeq64.h"
 #include "gunc/bitStream.h"
 
 struct Whine_Pixie {
-	struct Whine_Image image;
-	struct Gunc_ByteSeq64 seq;
+	struct Whine_Easel easel;
+	struct Whine_Canvas canvas;
+	//BE CAREFUL COPYING THIS STRUCT
+	struct Gunc_ByteUence64 uence;
 	struct Gunc_BitStream bis;
 
 	uint64_t pixelsGiven;
-
-
-	struct Whine_Easel easel;
-	struct Whine_Canvas canvas;
-
-	struct Gunc_ByteUence64 uence;
-	//struct Gunc_BitStream bis;
 };
 
+
 /*
-static inline Whine_Pixie_orient(struct Whine_Pixie *self) {
-	self->uence.arr = self->canvas.arr;
+static inline void Whine_Pixie_orient(struct Whine_Pixie *self) {
+	self->uence.arr = &self->canvas.image;
 	self->bis.vself = &self->uence;
 }
 */
 
-int Whine_Pixie_init(struct Whine_Pixie *self, struct Whine_Image image);
+int Whine_Pixie_init(struct Whine_Pixie *self, struct Whine_Easel *easel, struct Whine_Canvas *canvas);
 /*
 	validates ihdr
 	other funcs are free to assume valid ihdr

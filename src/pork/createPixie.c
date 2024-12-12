@@ -139,10 +139,9 @@ int Pork_createPixie(const char *path, struct Whine_Pixie *destination) {
 		goto fin;
 	}
 	decompressedCanvas.status = Whine_Canvas_FILTERED;
-	//TODO check interlace here-ish
-
 
 	//
+
 	uence = (struct Gunc_ByteUence64) { .arr = &decompressedCanvas.image };
 	e = Gunc_ByteUence64_as_iByteStream(&uence, &bys);
 	if (e) {
@@ -183,7 +182,15 @@ int Pork_createPixie(const char *path, struct Whine_Pixie *destination) {
 	
 	//
 
+	e = Whine_Pixie_init(destination, &easel, &canvas);
+	if (e) {
+		Gunc_nerr(e, "failed to init pixie");
+		e = __LINE__;
+		goto fin;
+	}
 
+	easel = (struct Whine_Easel){0};
+	canvas = (struct Whine_Canvas){0};
 
 	//
 

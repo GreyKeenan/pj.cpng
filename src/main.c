@@ -59,7 +59,8 @@ int main(int argc, char **argv) {
 
 	fin:
 
-	Whine_Image_filicide(&pixie.image);
+	Whine_Easel_filicide(&pixie.easel);
+	Whine_Canvas_filicide(&pixie.canvas);
 
 	return (bool)e;
 }
