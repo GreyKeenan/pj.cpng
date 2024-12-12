@@ -1,6 +1,6 @@
 #include "./nofilter.h"
 
-#include "./image.h"
+#include "./easel.h"
 
 #include "gunc/log.h"
 #include "gunc/iByteStream.h"
@@ -19,9 +19,9 @@ static inline uint8_t Whine_filt_c(uint64_t cBuffer, uint8_t bytesPerPixel);
 static inline uint8_t Whine_paeth(int a, int b, int c);
 
 
-int Whine_nofilter(struct Whine_Image *image, struct Gunc_iByteStream *bs) {
+int Whine_nofilter(struct Gunc_iByteStream *bs, struct Gunc_iByteWriter *bw, const struct Whine_Easel *easel) {
 
-	if (image->header.interlaceMethod != Whine_ImHeader_INTERLACE_NONE) {
+	if (easel->header.interlaceMethod != Whine_ImHeader_INTERLACE_NONE) {
 		Gunc_err("TODO: unable to defilter interlaced images");
 		return __LINE__;
 	}
@@ -31,40 +31,21 @@ int Whine_nofilter(struct Whine_Image *image, struct Gunc_iByteStream *bs) {
 
 	uint8_t *hnScanline = NULL;
 
-	struct Gunc_ByteBalloon bb = {0};
-	struct Gunc_iByteWriter bw = {0};
 
-	if (image->header.filterMethod != 0) {
-		Gunc_err("unrecognized filter method: %d", image->header.filterMethod);
-		r = __LINE__;
-		goto fin;
-	}
-	if (image->hnImageData != NULL) {
-		Gunc_err("image already has scanline data %p", image->hnImageData);
+	if (easel->header.filterMethod != 0) {
+		Gunc_err("unrecognized filter method: %d", easel->header.filterMethod);
 		r = __LINE__;
 		goto fin;
 	}
 
-	e = Gunc_ByteBalloon_init(&bb, 1024);
-	if (e) {
-		Gunc_nerr(e, "failed to init bb");
-		r = __LINE__;
-		goto fin;
-	}
-	e = Gunc_ByteBalloon_as_iByteWriter(&bb, &bw);
-	if (e) {
-		Gunc_nerr(e, "failed to init bw");
-		r = __LINE__;
-		goto fin;
-	}
 
-	uint8_t bytesPerPixel = Whine_ImHeader_bytesPerPixel(&image->header);
+	uint8_t bytesPerPixel = Whine_ImHeader_bytesPerPixel(&easel->header);
 	if (bytesPerPixel == 0) {
 		Gunc_nerr(bytesPerPixel, "invalid bytesPerPixel");
 		r = __LINE__;
 		goto fin;
 	}
-	uint64_t bytesPerScanline = Whine_ImHeader_bytesPerScanline(&image->header);
+	uint64_t bytesPerScanline = Whine_ImHeader_bytesPerScanline(&easel->header);
 	if (bytesPerScanline == 0) {
 		Gunc_nerr(bytesPerScanline, "invalid bytesPerScanline");
 		r = __LINE__;
@@ -84,7 +65,7 @@ int Whine_nofilter(struct Whine_Image *image, struct Gunc_iByteStream *bs) {
 	}
 
 	uint8_t filterType = 0;
-	for (int32_t j = 0; j < image->header.height; ++j) {
+	for (int32_t j = 0; j < easel->header.height; ++j) {
 		e = Gunc_iByteStream_next(bs, &filterType);
 		if (e) {
 			Gunc_nerr(e, "failed to read filterType for line %d", j);
@@ -95,7 +76,7 @@ int Whine_nofilter(struct Whine_Image *image, struct Gunc_iByteStream *bs) {
 		Gunc_say("line %d filter type: %d", j, filterType);
 		#endif
 
-		e = Whine_scanline(bs, &bw, hnScanline, bytesPerScanline, bytesPerPixel, filterType);
+		e = Whine_scanline(bs, bw, hnScanline, bytesPerScanline, bytesPerPixel, filterType);
 		if (e) {
 			Gunc_nerr(e, "failed to process scanline %d", j);
 			r = __LINE__;
@@ -104,24 +85,9 @@ int Whine_nofilter(struct Whine_Image *image, struct Gunc_iByteStream *bs) {
 	}
 
 
-	e = Gunc_ByteBalloon_trim(&bb);
-	if (e) {
-		Gunc_nerr(e, "failed to trim bb");
-		r = __LINE__;
-		goto fin;
-	}
-
-	Gunc_TODO("ERROR doesnt check if data is already set!");
-	Whine_Image_setData(image, bb.hData, Whine_Image_SCANLINED);
-	bb.hData = NULL;
-	// could give image byteLength here, rather then calcing later
-
 	fin:
 	if (hnScanline != NULL) {
 		free(hnScanline);
-	}
-	if (bb.hData != NULL) {
-		free(bb.hData);
 	}
 
 	return r;
