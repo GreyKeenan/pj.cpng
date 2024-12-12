@@ -27,6 +27,8 @@ cfiles = \
 	whine/image.c \
 	whine/imHeader.c \
 	whine/pixie.c \
+	whine/easel.c \
+	whine/canvas.c \
 	\
 	zoop/decompress.c \
 	zoop/alderman.c \
