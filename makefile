@@ -19,6 +19,7 @@ cfiles = \
 	gunc/ascii.c \
 	gunc/byteUence64.c \
 	gunc/byteBalloon64.c \
+	gunc/byteArr64.c \
 	\
 	pork/createPixie.c \
 	\

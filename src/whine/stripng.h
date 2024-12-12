@@ -1,11 +1,11 @@
 #ifndef WHINE_STRIPNG_H
 #define WHINE_STRIPNG_H
 
-struct Whine_Image;
+struct Whine_Easel;
 struct Gunc_iByteStream;
 struct Gunc_iByteWriter;
 
-int Whine_stripng(struct Whine_Image *image, struct Gunc_iByteStream *bs, struct Gunc_iByteWriter *bw);
+int Whine_stripng(struct Gunc_iByteStream *bs, struct Gunc_iByteWriter *bw, struct Whine_Easel *easel);
 /*
 expects $bs to be a png
 reads png measurements to $destination

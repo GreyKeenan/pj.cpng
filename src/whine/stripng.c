@@ -1,6 +1,6 @@
 #include "./stripng.h"
 
-#include "./image.h"
+#include "./easel.h"
 #include "./chunk.h"
 #include "./ihdr.h"
 
@@ -14,14 +14,14 @@
 #include <stdlib.h>
 
 static inline int Whine_header(struct Gunc_iByteStream *bs);
-static inline int Whine_chunkstream(struct Whine_Image *image, struct Gunc_iByteStream *bs, struct Gunc_iByteWriter *bw);
+static inline int Whine_chunkstream(struct Whine_Easel *easel, struct Gunc_iByteStream *bs, struct Gunc_iByteWriter *bw);
 static inline int Whine_waste(struct Gunc_iByteStream *bs, uint32_t count);
 
 #define HEADER_LENGTH 8
 const uint8_t Whine_HEADER[HEADER_LENGTH] = {0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A};
 
 
-int Whine_stripng(struct Whine_Image *image, struct Gunc_iByteStream *bs, struct Gunc_iByteWriter *bw) {
+int Whine_stripng(struct Gunc_iByteStream *bs, struct Gunc_iByteWriter *bw, struct Whine_Easel *easel) {
 
 	int e = 0;
 
@@ -30,16 +30,16 @@ int Whine_stripng(struct Whine_Image *image, struct Gunc_iByteStream *bs, struct
 		return 1;
 	}
 
-	e = Whine_ihdr(&image->header, bs);
+	e = Whine_ihdr(&easel->header, bs);
 	if (e) {
 		Gunc_nerr(e, "failed to read IHDR");
 		return 2;
 	}
 
-	e = Whine_chunkstream(image, bs, bw);
+	e = Whine_chunkstream(easel, bs, bw);
 	if (e) {
 		Gunc_nerr(e, "failed to process chunk sequence.");
-		//Whine_Image_destroy(destination); //it gets freed in main ig? Need to
+		//Whine_Easel_destroy(destination); //it gets freed in main ig? Need to
 		Gunc_TODO("rethink whos is managing these allocations");
 		return 3;
 	}
@@ -67,7 +67,7 @@ static inline int Whine_header(struct Gunc_iByteStream *bs) {
 	return 0;
 }
 
-static inline int Whine_chunkstream(struct Whine_Image *image, struct Gunc_iByteStream *bs, struct Gunc_iByteWriter *bw) {
+static inline int Whine_chunkstream(struct Whine_Easel *easel, struct Gunc_iByteStream *bs, struct Gunc_iByteWriter *bw) {
 
 	int e = 0;
 	uint32_t length = 0;
@@ -112,14 +112,14 @@ static inline int Whine_chunkstream(struct Whine_Image *image, struct Gunc_iByte
 		}
 
 		if (!strcmp(name, "PLTE")) {
-			if (image->hnPalette != NULL) {
+			if (easel->palette.data != NULL) {
 				Gunc_err("multiple PLTEs");
 				return __LINE__;
 			}
 			if (
-				(length % Whine_Image_PLTE_ENTRY)
-				|| (length / Whine_Image_PLTE_ENTRY < Whine_Image_PLTE_MIN)
-				|| (length / Whine_Image_PLTE_ENTRY > Whine_Image_PLTE_MAX)
+				(length % Whine_Easel_PLTE_ENTRY)
+				|| (length / Whine_Easel_PLTE_ENTRY < Whine_Easel_PLTE_MIN)
+				|| (length / Whine_Easel_PLTE_ENTRY > Whine_Easel_PLTE_MAX)
 			) {
 				Gunc_err("invalid palette length: %d", length);
 				return __LINE__;
@@ -129,12 +129,12 @@ static inline int Whine_chunkstream(struct Whine_Image *image, struct Gunc_iByte
 				return __LINE__;
 			}
 
-			image->hnPalette = malloc(length);
-			if (image->hnPalette == NULL) {
+			easel->palette.data = malloc(length);
+			if (easel->palette.data == NULL) {
 				Gunc_err("failed to alloc for palette");
 				return __LINE__;
 			}
-			image->paletteLength = length;
+			easel->palette.length = length;
 
 			for (unsigned int i = 0; i < length; ++i) {
 				e = Gunc_iByteStream_next(bs, &b);
@@ -142,7 +142,7 @@ static inline int Whine_chunkstream(struct Whine_Image *image, struct Gunc_iByte
 					Gunc_nerr(e, "failed to read PLTE data");
 					return __LINE__;
 				}
-				image->hnPalette[i] = b;
+				easel->palette.data[i] = b;
 			}
 			goto finishChunk;
 		}
@@ -190,7 +190,7 @@ static inline int Whine_chunkstream(struct Whine_Image *image, struct Gunc_iByte
 		Gunc_err("missing IDAT");
 		return __LINE__;
 	}
-	if ((image->header.colorType == Whine_ImHeader_COLORTYPE_PALETTE) && (image->hnPalette == NULL)) {
+	if ((easel->header.colorType == Whine_ImHeader_COLORTYPE_PALETTE) && (easel->palette.data == NULL)) {
 		Gunc_err("missing PLTE");
 		return __LINE__;
 	}
