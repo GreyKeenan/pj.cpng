@@ -10,6 +10,8 @@ struct Whine_Pixie {
 	struct Whine_Image image;
 	struct Gunc_ByteSeq64 seq;
 	struct Gunc_BitStream bis;
+
+	uint64_t pixelsGiven;
 };
 
 int Whine_Pixie_init(struct Whine_Pixie *self, struct Whine_Image image);

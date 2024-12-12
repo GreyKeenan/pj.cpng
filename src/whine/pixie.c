@@ -139,6 +139,14 @@ int Whine_Pixie_nextPixel(struct Whine_Pixie *self, uint32_t *nDestination) {
 		*nDestination = pixel;
 	}
 
+
+	self->pixelsGiven++;
+	//Gunc_say("pixelsGiven: %d", self->pixelsGiven);
+	if (self->pixelsGiven % self->image.header.width == 0) {
+		Gunc_BitStream_finishByte(&self->bis);
+	}
+
+
 	return 0;
 }
 
