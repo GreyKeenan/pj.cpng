@@ -17,6 +17,8 @@ cfiles = \
 	gunc/bitStream.c \
 	gunc/byteSeq64.c \
 	gunc/ascii.c \
+	gunc/byteUence64.c \
+	gunc/byteBalloon64.c \
 	\
 	pork/createPixie.c \
 	\
