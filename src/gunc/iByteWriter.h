@@ -1,13 +1,15 @@
 #ifndef GUNC_IBYTEWRITER_H
 #define GUNC_IBYTEWRITER_H
 
+#include "./iByte.h"
+
 #include <stdint.h>
 #include <stddef.h>
 
 enum Gunc_iByteWriter_status {
-	Gunc_iByteWriter_CAP = -1,
-	Gunc_iByteWriter_RETRY = -2,
-	Gunc_iByteWriter_NULL = -3
+	Gunc_iByteWriter_CAP = Gunc_iByte_CAP,
+	Gunc_iByteWriter_RETRY = Gunc_iByte_RETRY,
+	Gunc_iByteWriter_NULL = Gunc_iByte_NULL
 };
 
 struct Gunc_iByteWriter {

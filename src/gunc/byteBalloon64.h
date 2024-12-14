@@ -18,7 +18,7 @@ int Gunc_ByteBalloon64_init(struct Gunc_ByteBalloon64 *self, struct Gunc_ByteArr
 if (arr->data == NULL), will malloc $cap bytes
 if (arr->data != NULL), assume it is already malloced.
 	if cap > length, will realloc to fit cap.
-	if length < cap, will raise cap to match.
+	if length > cap, will raise cap to match.
 */
 
 

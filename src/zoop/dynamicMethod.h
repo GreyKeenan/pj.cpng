@@ -26,7 +26,7 @@ static inline int Zoop_dynamicMethod(struct Gunc_BitStream *bis, struct Gunc_iBy
 
 	uint16_t litLen = 0;
 	for (int i = 0; i < 5; ++i) {
-		e =	Gunc_BitStream_bit(bis, &bit);
+		e = Gunc_BitStream_bit(bis, &bit);
 		if (e) {
 			Gunc_nerr(e, "failed to read litLen");
 			return __LINE__;
@@ -36,9 +36,9 @@ static inline int Zoop_dynamicMethod(struct Gunc_BitStream *bis, struct Gunc_iBy
 	litLen += LITLEN_MIN;
 	uint8_t distLen = 0;
 	for (int i = 0; i < 5; ++i) {
-		e =	Gunc_BitStream_bit(bis, &bit);
+		e = Gunc_BitStream_bit(bis, &bit);
 		if (e) {
-			Gunc_nerr(e, "failed to waste bit");
+			Gunc_nerr(e, "failed to read distLen");
 			return __LINE__;
 		}
 		distLen |= bit << i;
@@ -48,10 +48,9 @@ static inline int Zoop_dynamicMethod(struct Gunc_BitStream *bis, struct Gunc_iBy
 	for (int i = 0; i < 4; ++i) {
 		e =	Gunc_BitStream_bit(bis, &bit);
 		if (e) {
-			Gunc_nerr(e, "bit read");
+			Gunc_nerr(e, "failed to read metaLen");
 			return __LINE__;
 		}
-
 		metaLen |= bit << i;
 	}
 	metaLen += METALEN_MIN;

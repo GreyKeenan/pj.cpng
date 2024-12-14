@@ -1,13 +1,15 @@
 #ifndef GUNC_IBYTESTREAM_H
 #define GUNC_IBYTESTREAM_H
 
+#include "./iByte.h"
+
 #include <stdint.h>
 #include <stddef.h>
 
 enum Gunc_iByteStream_Status {
-	Gunc_iByteStream_END = -1,
-	Gunc_iByteStream_RETRY = -2,
-	Gunc_iByteStream_NULL = -3
+	Gunc_iByteStream_END = Gunc_iByte_END,
+	Gunc_iByteStream_RETRY = Gunc_iByte_RETRY,
+	Gunc_iByteStream_NULL = Gunc_iByte_NULL
 };
 
 struct Gunc_iByteStream {
