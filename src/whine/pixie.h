@@ -1,8 +1,6 @@
 #ifndef WHINE_Pixie_H
 #define WHINE_Pixie_H
 
-#include "./image.h"
-
 #include "./easel.h"
 #include "./canvas.h"
 
