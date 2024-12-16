@@ -10,6 +10,7 @@
 #include "gunc/byteBalloon64.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 #define PASSESLEN 8
 const uint8_t Whine_pass_xstarts[PASSESLEN] = {0, 4, 0, 2, 0, 1, 0,	0};
@@ -53,6 +54,16 @@ static inline int Whine_defilterByte(
 	uint8_t bytesPerPixel
 );
 
+static inline int Whine_writeDefilteredByte(
+	struct Gunc_ByteBalloon64 *bb,
+	uint8_t byte,
+
+	uint8_t pass,
+	uint64_t bytesPerScanline,
+	uint8_t bytesPerPixel,
+	uint8_t bitsPerPixel
+);
+
 
 int Whine_thicken(const struct Whine_Easel *easel, struct Whine_Canvas *canvas, struct Gunc_iByteStream *bs) {
 
@@ -75,6 +86,12 @@ int Whine_thicken(const struct Whine_Easel *easel, struct Whine_Canvas *canvas, 
 
 	uint8_t *hnScanline = NULL;
 
+	uint8_t bitsPerPixel = Whine_ImHeader_samplesPerPixel(easel->header.colorType) * easel->header.bitDepth;
+	if (bitsPerPixel == 0) {
+		Gunc_nerr(bitsPerPixel, "invalid bitsPerPixel");
+		e = __LINE__;
+		goto fin;
+	}
 	uint8_t bytesPerPixel = Whine_ImHeader_bytesPerPixel(&easel->header);
 	if (bytesPerPixel == 0) {
 		Gunc_nerr(bytesPerPixel, "invalid bytesPerPixel");
@@ -117,7 +134,7 @@ int Whine_thicken(const struct Whine_Easel *easel, struct Whine_Canvas *canvas, 
 			hnScanline,
 			bytesPerScanline,
 			bytesPerPixel,
-			0 //TEMP
+			bitsPerPixel
 		);
 		if (e) {
 			Gunc_nerr(e, "failed to defilter non-interlaced image");
@@ -168,9 +185,9 @@ static inline int Whine_defilterPass(
 	uint8_t bytesPerPixel,
 	uint8_t bitsPerPixel
 ) {
-	//EXPECTS scanlineBuffer to be cleared/zeroed
-
 	int e = 0;
+
+	memset(scanlineBuffer, 0, scanlineLength);
 
 	uint8_t filterType = 0;
 	for (int32_t i = 0; i < height; ++i) {
@@ -220,7 +237,7 @@ static inline int Whine_defilterScanline(
 
 		e = Whine_defilterByte(&byte, filterType, i, scanlineBuffer, cBuffer, bytesPerPixel);
 		if (e) {
-			Gunc_nerr(e, "failed to defilter byte #%d (%02x)", i, byte);
+			Gunc_nerr(e, "failed to defilter byte #%d (0x%02x)", i, byte);
 			return __LINE__;
 		}
 
@@ -229,12 +246,11 @@ static inline int Whine_defilterScanline(
 
 		scanlineBuffer[i] = byte;
 
-		e = Gunc_ByteBalloon64_give(bb, byte);
+		e = Whine_writeDefilteredByte(bb, byte, pass, scanlineLength, bytesPerPixel, bitsPerPixel);
 		if (e) {
-			Gunc_nerr(e, "failed to write byte %d: 0x%x", i, byte);
+			Gunc_nerr(e, "failed to write byte: %d: 0x%02x", i, byte);
 			return __LINE__;
 		}
-		//Gunc_TODO("write accounting for interlace");
 
 	}
 
@@ -272,5 +288,35 @@ static inline int Whine_defilterByte(
 			Gunc_err("unrecognized filtertype: %d", filterType);
 			return 1;
 	}
+	return 0;
+}
+
+
+static inline int Whine_writeDefilteredByte(
+	struct Gunc_ByteBalloon64 *bb,
+	uint8_t byte,
+
+	uint8_t pass,
+	uint64_t bytesPerScanline,
+	uint8_t bytesPerPixel,
+	uint8_t bitsPerPixel
+) {
+
+	int e = 0;
+
+	if (pass == ONEPASS) {
+		e = Gunc_ByteBalloon64_give(bb, byte);
+		if (e) {
+			Gunc_nerr(e, "failed to write byte: 0x%02x", byte);
+			return __LINE__;
+		}
+		return 0;
+	}
+
+
+	Gunc_err("TODO writing interlaced defiltered bytes");
+	return 1;
+
+
 	return 0;
 }
