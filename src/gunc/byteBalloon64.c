@@ -1,6 +1,7 @@
 #include "./byteBalloon64.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 static inline int Gunc_ByteBalloon64_fit(struct Gunc_ByteBalloon64 *self, uint64_t x);
 
@@ -117,6 +118,12 @@ static inline int Gunc_ByteBalloon64_fit(struct Gunc_ByteBalloon64 *self, uint64
 		Gunc_err("failed to realloc");
 		return 3;
 	}
+	memset( //zero out the new memory
+		((uint8_t*)v) + self->cap,
+		0,
+		newCap - self->cap
+	);
+
 	self->arr->data = v;
 	self->cap = newCap;
 
