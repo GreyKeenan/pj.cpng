@@ -9,7 +9,6 @@ enum Whine_Canvas_dataStatus {
 	Whine_Canvas_ABSENT = 0
 	, Whine_Canvas_COMPRESSED
 	, Whine_Canvas_FILTERED
-	, Whine_Canvas_INTERLACED
 	, Whine_Canvas_SCANLINED
 };
 

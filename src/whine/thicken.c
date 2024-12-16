@@ -56,45 +56,22 @@ static inline int Whine_defilterByte(
 
 int Whine_thicken(const struct Whine_Easel *easel, struct Whine_Canvas *canvas, struct Gunc_iByteStream *bs) {
 
-	int e = 0;
-
 	if (canvas->status != Whine_Canvas_ABSENT) {
 		Gunc_err("destination canvas not empty");
 		return __LINE__;
 	}
-
 	if (easel->header.filterMethod != Whine_ImHeader_FILTER_DEFAULT) {
 		Gunc_err("Unrecognized filter method: %d", easel->header.filterMethod);
 		return __LINE__;
 	}
-
-	switch (easel->header.interlaceMethod) {
-		case Whine_ImHeader_INTERLACE_NONE:
-			break;
-		case Whine_ImHeader_INTERLACE_ADAM7:
-		default:
-			Gunc_err("Unrecognized interlace method: %d", easel->header.interlaceMethod);
-			return __LINE__;
+	if (easel->header.interlaceMethod > Whine_ImHeader_INTERLACE_ADAM7) {
+		Gunc_err("Unrecognized interlace method: %d", easel->header.interlaceMethod);
+		return __LINE__;
 	}
 
-	Gunc_TODO("temporary non-interlaced handling");
+	int e = 0;
 
-	struct Gunc_iByteWriter bw = {0};
 	struct Gunc_ByteBalloon64 bb = {0};
-
-	e = Gunc_ByteBalloon64_init(&bb, &canvas->image, 1024);
-	if (e) {
-		Gunc_nerr(e, "failed to initialize bb");
-		return __LINE__;
-	}
-
-	e = Gunc_ByteBalloon64_as_iByteWriter(&bb, &bw);
-	if (e) {
-		Gunc_nerr(e, "failed to init bw");
-		return __LINE__;
-	}
-
-	//
 
 	uint8_t *hnScanline = NULL;
 
@@ -123,23 +100,41 @@ int Whine_thicken(const struct Whine_Easel *easel, struct Whine_Canvas *canvas, 
 		goto fin;
 	}
 
-	e = Whine_defilterPass(
-		ONEPASS,
-		bs,
-		&bb,
-		easel->header.height,
-		hnScanline,
-		bytesPerScanline,
-		bytesPerPixel,
-		0 //TEMP
-	);
+	e = Gunc_ByteBalloon64_init(&bb, &canvas->image, 1024);
 	if (e) {
-		Gunc_nerr(e, "failed to defilter pass");
+		Gunc_nerr(e, "failed to initialize bb");
 		e = __LINE__;
 		goto fin;
 	}
 
-	//
+
+	if (easel->header.interlaceMethod == Whine_ImHeader_INTERLACE_NONE) {
+		e = Whine_defilterPass(
+			ONEPASS,
+			bs,
+			&bb,
+			easel->header.height,
+			hnScanline,
+			bytesPerScanline,
+			bytesPerPixel,
+			0 //TEMP
+		);
+		if (e) {
+			Gunc_nerr(e, "failed to defilter non-interlaced image");
+			e = __LINE__;
+			goto fin;
+		}
+		goto trim;
+	}
+
+
+	Gunc_err("TODO interlaced images");
+	e = __LINE__;
+	goto fin;
+
+
+
+	trim:
 
 	e = Gunc_ByteBalloon64_trim(&bb);
 	if (e) {
@@ -147,9 +142,7 @@ int Whine_thicken(const struct Whine_Easel *easel, struct Whine_Canvas *canvas, 
 		e = __LINE__;
 		goto fin;
 	}
-
 	canvas->status = Whine_Canvas_SCANLINED;
-
 
 	fin:
 
