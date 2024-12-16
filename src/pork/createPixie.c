@@ -14,7 +14,7 @@
 
 #include "whine/pixie.h"
 #include "whine/stripng.h"
-#include "whine/nofilter.h"
+#include "whine/thicken.h"
 
 #include "whine/easel.h"
 #include "whine/canvas.h"
@@ -150,36 +150,15 @@ int Pork_createPixie(const char *path, struct Whine_Pixie *destination) {
 		goto fin;
 	}
 
-	e = Gunc_ByteBalloon64_init(&bb, &canvas.image, BBSIZE);
+	e = Whine_thicken(&easel, &canvas, &bys);
 	if (e) {
-		Gunc_nerr(e, "failed to init bb from canvas for defilter");
-		e = __LINE__;
-		goto fin;
-	}
-	e = Gunc_ByteBalloon64_as_iByteWriter(&bb, &bw);
-	if (e) {
-		Gunc_nerr(e, "failed to init bw from bb");
-		e = __LINE__;
-		goto fin;
-	}
-
-	e = Whine_nofilter(&bys, &bw, &easel);
-	if (e) {
-		Gunc_nerr(e, "failed to defilter");
+		Gunc_nerr(e, "thicken fail");
 		e = __LINE__;
 		goto fin;
 	}
 
 	Whine_Canvas_filicide(&decompressedCanvas);
 
-	e = Gunc_ByteBalloon64_trim(&bb);
-	if (e) {
-		Gunc_nerr(e, "trim fail");
-		e = __LINE__;
-		goto fin;
-	}
-	canvas.status = Whine_Canvas_SCANLINED;
-	
 	//
 
 	e = Whine_Pixie_init(destination, &easel, &canvas);

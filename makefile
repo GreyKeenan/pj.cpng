@@ -25,6 +25,7 @@ cfiles = \
 	whine/reads.c \
 	whine/chunk.c \
 	whine/nofilter.c \
+	whine/thicken.c \
 	whine/imHeader.c \
 	whine/pixie.c \
 	whine/easel.c \
