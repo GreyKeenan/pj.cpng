@@ -12,15 +12,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define PASSESLEN 8
-const uint8_t Whine_pass_xstarts[PASSESLEN] = {0, 4, 0, 2, 0, 1, 0,	0};
-const uint8_t Whine_pass_ystarts[PASSESLEN] = {0, 0, 4, 0, 2, 0, 1,	0};
-const uint8_t Whine_pass_xfreqs[PASSESLEN] =  {8, 8, 4, 4, 2, 2, 1,	1};
-const uint8_t Whine_pass_yfreqs[PASSESLEN] =  {8, 8, 8, 4, 4, 2, 2,	1};
-#define ONEPASS 7
-	//offsets for interlaced passes
-	//0,0, 1,1 when not interlaced, aka ONEPASS
-	//pixelNum * freq + start = pixelPos to write to
+#define PASSES 7
+const uint8_t Whine_pass_xstarts[PASSES + 1] = {0, 4, 0, 2, 0, 1, 0,	0};
+const uint8_t Whine_pass_ystarts[PASSES + 1] = {0, 0, 4, 0, 2, 0, 1,	0};
+const uint8_t Whine_pass_xfreqs[PASSES + 1]  = {8, 8, 4, 4, 2, 2, 1,	1};
+const uint8_t Whine_pass_yfreqs[PASSES + 1]  = {8, 8, 8, 4, 4, 2, 2,	1};
+#define ONEPASS PASSES
 
 static inline int Whine_defilterPass(
 	uint8_t pass,
@@ -141,17 +138,47 @@ int Whine_thicken(const struct Whine_Easel *easel, struct Whine_Canvas *canvas, 
 			e = __LINE__;
 			goto fin;
 		}
-		goto trim;
+	} else {
+
+		int32_t pixelsPerPassline = 0; // aka width of pass
+		uint64_t bitsPerPassline = 0;
+		uint64_t bytesPerPassline = 0;
+
+		int32_t passlineCount = 0; // aka height of pass
+
+		for (int i = 0; i < PASSES; ++i) {
+
+			pixelsPerPassline =
+				((easel->header.width - Whine_pass_xstarts[i]) / Whine_pass_xfreqs[i])
+				+ (bool)((easel->header.width - Whine_pass_xstarts[i]) % Whine_pass_xfreqs[i]);
+			bitsPerPassline = (uint64_t)Whine_ImHeader_bitsPerPixel(&easel->header) * pixelsPerPassline;
+			bytesPerPassline = (bitsPerPassline / 8) + (bool)(bitsPerPassline % 8);
+			passlineCount =
+				((easel->header.height - Whine_pass_ystarts[i]) / Whine_pass_yfreqs[i])
+				+ (bool)((easel->header.height - Whine_pass_ystarts[i]) % Whine_pass_yfreqs[i]);
+
+			if (pixelsPerPassline == 0 || passlineCount == 0) {
+				continue;
+			}
+
+			e = Whine_defilterPass(
+				i,
+				bs, &bb,
+
+				passlineCount,
+
+				hnScanline,
+				bytesPerPassline,
+				bytesPerPixel,
+				bitsPerPixel
+			);
+			if (e) {
+				Gunc_nerr(e, "failed to defilter pass #%d", i);
+				e = __LINE__;
+				goto fin;
+			}
+		}
 	}
-
-
-	Gunc_err("TODO interlaced images");
-	e = __LINE__;
-	goto fin;
-
-
-
-	trim:
 
 	e = Gunc_ByteBalloon64_trim(&bb);
 	if (e) {
@@ -304,14 +331,14 @@ static inline int Whine_writeDefilteredByte(
 
 	int e = 0;
 
-	if (pass == ONEPASS) {
+	//if (pass >= PASSES) {
 		e = Gunc_ByteBalloon64_give(bb, byte);
 		if (e) {
 			Gunc_nerr(e, "failed to write byte: 0x%02x", byte);
 			return __LINE__;
 		}
 		return 0;
-	}
+	//}
 
 
 	Gunc_err("TODO writing interlaced defiltered bytes");
