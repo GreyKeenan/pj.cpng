@@ -30,6 +30,7 @@ returns 0 on success
 
 
 
+int Gunc_ByteBalloon64_giveAt(struct Gunc_ByteBalloon64 *self, uint64_t at, uint8_t byte);
 int Gunc_ByteBalloon64_give(struct Gunc_ByteBalloon64 *self, uint8_t byte);
 
 static inline int Gunc_ByteBalloon64_as_iByteWriter(struct Gunc_ByteBalloon64 *self, struct Gunc_iByteWriter *bw) {
