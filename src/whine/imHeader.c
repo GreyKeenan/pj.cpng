@@ -9,28 +9,6 @@ const uint8_t Whine_ImHeader_samplesMap[Whine_ImHeader_SAMPLESLEN] = {1, 0, 3, 1
 static inline int Whine_ImHeader_validateBDCT(uint8_t bitDepth, uint8_t colorType);
 
 
-uint8_t Whine_ImHeader_bytesPerPixel(const struct Whine_ImHeader *self) {
-	uint8_t bitsPerPixel = Whine_ImHeader_samplesPerPixel(self->colorType) * self->bitDepth;
-	if (bitsPerPixel > 64) {
-		Gunc_err("oversized bitsPerPixel (%d) from colortype (%d) and bitDepth (%d)", bitsPerPixel, self->colorType, self->bitDepth);
-		return 0;
-	}
-	uint8_t bytesPerPixel = (bitsPerPixel / 8) + (bool)(bitsPerPixel % 8);
-	return bytesPerPixel;
-}
-uint64_t Whine_ImHeader_bytesPerScanline(const struct Whine_ImHeader *self) {
-	if (self->width < 1) {
-		Gunc_err("undersized width: %d", self->width);
-		return 0;
-	}
-
-	uint8_t bitsPerPixel = Whine_ImHeader_samplesPerPixel(self->colorType) * self->bitDepth;
-	uint64_t bitsPerScanline = (uint64_t)bitsPerPixel * self->width;
-	uint64_t bytesPerScanline = (bitsPerScanline / 8) + (bool)(bitsPerScanline % 8);
-
-	return bytesPerScanline;
-}
-
 int Whine_ImHeader_validate(const struct Whine_ImHeader *self) {
 	if (self->width < 1) {
 		Gunc_err("invalid width: %d", self->width);

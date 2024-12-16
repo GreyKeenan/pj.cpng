@@ -1,7 +1,10 @@
 #ifndef WHINE_ImHeader_H
 #define WHINE_ImHeader_H
 
+#include "gunc/log.h"
+
 #include <stdint.h>
+#include <stdbool.h>
 
 struct Whine_ImHeader {
 	int32_t width;
@@ -44,12 +47,38 @@ returns 0 if unrecognized colorType
 	return Whine_ImHeader_samplesMap[colorType];
 }
 
-uint8_t Whine_ImHeader_bytesPerPixel(const struct Whine_ImHeader *self);
-	// returns 0 on error
-	// always < 9
-uint64_t Whine_ImHeader_bytesPerScanline(const struct Whine_ImHeader *self);
-	// returns 0 on error
-	// max is 8 * (2^31 - 1)
+static inline uint8_t Whine_ImHeader_bitsPerPixel(const struct Whine_ImHeader *self) {
+/*
+returns 0 on err
+*/
+	uint8_t bitsPerPixel = Whine_ImHeader_samplesPerPixel(self->colorType) * self->bitDepth;
+	if (bitsPerPixel > 64) {
+		Gunc_err("oversized bitsPerPixel (%d) from colortype (%d) and bitDepth (%d)", bitsPerPixel, self->colorType, self->bitDepth);
+		return 0;
+	}
+	return bitsPerPixel;
+}
+
+static inline uint8_t Whine_ImHeader_bytesPerPixel(const struct Whine_ImHeader *self) {
+/*
+returns 0 on err
+*/
+	uint8_t bitsPerPixel = Whine_ImHeader_bitsPerPixel(self);
+	return (bitsPerPixel / 8) + (bool)(bitsPerPixel % 8);
+}
+
+static inline uint64_t Whine_ImHeader_bytesPerScanline(const struct Whine_ImHeader *self) {
+/*
+returns 0 on err
+*/
+	if (self->width < 1) {
+		Gunc_err("undersized width: %d", self->width);
+		return 0;
+	}
+
+	uint64_t bitsPerScanline = (uint64_t)Whine_ImHeader_bitsPerPixel(self) * self->width;
+	return (bitsPerScanline / 8) + (bool)(bitsPerScanline % 8);
+}
 
 int Whine_ImHeader_validate(const struct Whine_ImHeader *self);
 /*
