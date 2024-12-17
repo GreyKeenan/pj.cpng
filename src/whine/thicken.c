@@ -68,7 +68,6 @@ static inline int Whine_writeDefilteredByte(
 
 	uint8_t pass_number,
 	int32_t pass_pixelsPerLine,
-	uint64_t pass_bytesPerLine,
 
 	uint64_t pass_byteX,
 	int32_t pass_pixelY,
@@ -320,9 +319,8 @@ static inline int Whine_defilterScanline(
 
 			pass_number,
 			pass_pixelsPerLine,
-			pass_bytesPerLine,
 
-			i, //ERR wrong here
+			i,
 			pass_pixelY,
 
 			image_bytesPerLine,
@@ -380,7 +378,6 @@ static inline int Whine_writeDefilteredByte(
 
 	uint8_t pass_number,
 	int32_t pass_pixelsPerLine,
-	uint64_t pass_bytesPerLine, //
 
 	uint64_t pass_byteX,
 	int32_t pass_pixelY,
@@ -402,9 +399,39 @@ static inline int Whine_writeDefilteredByte(
 	}
 
 
-	if (image_bitsPerPixel >= 8) {
-		Gunc_err("TODO bitsPerPixel >= 8");
-		return __LINE__;
+	const int32_t image_pixelY = pass_pixelY * Whine_pass_yfreqs[pass_number] + Whine_pass_ystarts[pass_number];
+	const uint64_t image_byteY = (uint64_t)image_pixelY * image_bytesPerLine;
+
+	int32_t pass_pixelX = 0;
+	int32_t image_pixelX = 0;
+	uint64_t image_byteX = 0;
+	uint64_t image_byteIndex = 0;
+
+	if (image_bytesPerPixel > 1) {
+
+		//TODO clean up these formulas
+		pass_pixelX = pass_byteX / image_bytesPerPixel;
+		image_pixelX = pass_pixelX * Whine_pass_xfreqs[pass_number] + Whine_pass_xstarts[pass_number];
+		image_byteX = (uint64_t)image_pixelX * image_bytesPerPixel
+			+ pass_byteX % image_bytesPerPixel; //offset for multi-byte
+		image_byteIndex = image_byteY + image_byteX;
+
+		/*
+		Gunc_say("writing pixel (0x%02x) to (px%d, px%d) (B%d, B%d) (%02ld)",
+			byte,
+			image_pixelX, image_pixelY,
+			image_byteX, image_byteY,
+			image_byteIndex
+		);
+		*/
+
+		e = Gunc_ByteBalloon64_giveAt(bb, image_byteIndex, byte);
+		if (e) {
+			Gunc_nerr(e, "failed to give byte 0x%02x at index 0x%016x", byte, image_byteIndex);
+			return __LINE__;
+		}
+
+		return 0;
 	}
 
 
@@ -412,14 +439,7 @@ static inline int Whine_writeDefilteredByte(
 	const uint8_t mask = (1 << image_bitsPerPixel) - 1;
 	const uint8_t image_pixelsPerByte = 8/image_bitsPerPixel; //assuming valid bitsPerPixel
 
-	const int32_t image_pixelY = pass_pixelY * Whine_pass_yfreqs[pass_number] + Whine_pass_ystarts[pass_number];
-	const uint64_t image_byteY = (uint64_t)image_pixelY * image_bytesPerLine;
-
-	int32_t pass_pixelX = 0;
 	uint8_t currentPixel = 0;
-	int32_t image_pixelX = 0;
-	uint64_t image_byteX = 0;
-	uint64_t image_byteIndex = 0;
 
 	for (int i = 0; i < image_pixelsPerByte; ++i) {
 		pass_pixelX = pass_byteX * image_pixelsPerByte + i;
@@ -438,11 +458,13 @@ static inline int Whine_writeDefilteredByte(
 		currentPixel <<= (8 - (image_pixelX + 1) * image_bitsPerPixel) % 8;
 		currentPixel |= Gunc_ByteBalloon64_get(bb, image_byteIndex);
 
+		/*
 		Gunc_say("writing pixel (0x%02x) (from 0x%02x with 0x%02x) to (%d, %d) (%02ld)",
 			currentPixel,
 			byte, Gunc_ByteBalloon64_get(bb, image_byteIndex),
 			image_pixelX, image_pixelY, image_byteIndex
 		);
+		*/
 
 		e = Gunc_ByteBalloon64_giveAt(bb, image_byteIndex, currentPixel);
 		if (e) {

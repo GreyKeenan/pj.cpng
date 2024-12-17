@@ -56,8 +56,8 @@ int Whine_Pixie_nextPixel(struct Whine_Pixie *self, uint32_t *nDestination) {
 	uint32_t pixel = 0;
 	uint8_t byte = 0;
 
-	if (self->easel.header.interlaceMethod != Whine_ImHeader_INTERLACE_NONE) {
-		Gunc_err("TODO: does not support interlaced images");
+	if (self->canvas.status != Whine_Canvas_SCANLINED) {
+		Gunc_err("non-scanlined image dataL %d", self->canvas.status);
 		return __LINE__;
 	}
 

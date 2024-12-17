@@ -6,7 +6,8 @@
 # png = assets/blog-90-funny-jokes-to-share-with-coworkers.png
 # png = assets/spiderman.png
 # png = assets/attesa-prelievo.png
-png = assets/my48x32.png
+# png = assets/my48x32.png
+png = assets/pngSuite/basi2c16.png
 
 cfiles = \
 	main.c \
