@@ -70,7 +70,7 @@ static inline int Whine_writeDefilteredByte(
 	int32_t pass_pixelsPerLine,
 	uint64_t pass_bytesPerLine,
 
-	int32_t pass_byteX,
+	uint64_t pass_byteX,
 	int32_t pass_pixelY,
 
 	uint64_t image_bytesPerLine,
@@ -382,11 +382,11 @@ static inline int Whine_writeDefilteredByte(
 	int32_t pass_pixelsPerLine,
 	uint64_t pass_bytesPerLine, //
 
-	int32_t pass_byteX,
+	uint64_t pass_byteX,
 	int32_t pass_pixelY,
 
 	uint64_t image_bytesPerLine,
-	uint8_t image_bytesPerPixel, //
+	uint8_t image_bytesPerPixel,
 	uint8_t image_bitsPerPixel
 ) {
 
@@ -401,52 +401,55 @@ static inline int Whine_writeDefilteredByte(
 		return 0;
 	}
 
-	uint8_t dest = 0;
-	uint8_t mask = (1 << (image_bitsPerPixel)) - 1;
 
-	int32_t image_pixelX = 0;
-	int32_t image_pixelY = pass_pixelY * Whine_pass_yfreqs[pass_number] + Whine_pass_ystarts[pass_number];
-	uint64_t destIdx = 0;
-
-	printf("pass_pixelY: %d pass_byteX: %d image_pixelY %d byte: 0x%02x\n",
-		pass_pixelY, pass_byteX,
-		image_pixelY, byte);
-
-	uint8_t image_pixelsPerByte = 8/image_bitsPerPixel;
-	if (!image_pixelsPerByte) {
-		++image_pixelsPerByte;
+	if (image_bitsPerPixel >= 8) {
+		Gunc_err("TODO bitsPerPixel >= 8");
+		return __LINE__;
 	}
 
-	//TODO ERR only works for < 8 bitsPerPixel
 
-	for (int i = 0; i * image_bitsPerPixel < 8; ++i) {
-		if (pass_byteX * image_pixelsPerByte + i >= pass_pixelsPerLine) {
-			printf("cutting\n");
+
+	const uint8_t mask = (1 << image_bitsPerPixel) - 1;
+	const uint8_t image_pixelsPerByte = 8/image_bitsPerPixel; //assuming valid bitsPerPixel
+
+	const int32_t image_pixelY = pass_pixelY * Whine_pass_yfreqs[pass_number] + Whine_pass_ystarts[pass_number];
+	const uint64_t image_byteY = (uint64_t)image_pixelY * image_bytesPerLine;
+
+	int32_t pass_pixelX = 0;
+	uint8_t currentPixel = 0;
+	int32_t image_pixelX = 0;
+	uint64_t image_byteX = 0;
+	uint64_t image_byteIndex = 0;
+
+	for (int i = 0; i < image_pixelsPerByte; ++i) {
+		pass_pixelX = pass_byteX * image_pixelsPerByte + i;
+		if (pass_pixelX >= pass_pixelsPerLine) {
 			break;
 		}
-		image_pixelX = (pass_byteX*image_pixelsPerByte + i) * Whine_pass_xfreqs[pass_number] + Whine_pass_xstarts[pass_number];
-		destIdx =
-			(image_bytesPerLine * image_pixelY)
-			+ (image_bitsPerPixel * image_pixelX / 8);
 
-		dest = (byte >> (8 - (i + 1) * image_bitsPerPixel)) & mask;
-		dest <<= (8 - (image_pixelX + 1) * image_bitsPerPixel) % 8;
-		dest |= Gunc_ByteBalloon64_get(bb, destIdx);
+		image_pixelX = pass_pixelX * Whine_pass_xfreqs[pass_number] + Whine_pass_xstarts[pass_number];
+		image_byteX = (uint64_t)image_pixelX * image_bitsPerPixel / 8;
+			//since bytesPerPixel is rounded up, have to use bitsPerPixel to round down
+		image_byteIndex = image_byteY + image_byteX;
 
-		printf("[%d] writing 0x%02x at %d,%d (%02ld)	was: 0x%02x\n",
-			pass_number,
-			dest,
-			image_pixelX, image_pixelY,
-			destIdx,
-			Gunc_ByteBalloon64_get(bb, destIdx)
+		currentPixel = byte >> (8 - (i + 1) * image_bitsPerPixel);
+		currentPixel &= mask;
+
+		currentPixel <<= (8 - (image_pixelX + 1) * image_bitsPerPixel) % 8;
+		currentPixel |= Gunc_ByteBalloon64_get(bb, image_byteIndex);
+
+		Gunc_say("writing pixel (0x%02x) (from 0x%02x with 0x%02x) to (%d, %d) (%02ld)",
+			currentPixel,
+			byte, Gunc_ByteBalloon64_get(bb, image_byteIndex),
+			image_pixelX, image_pixelY, image_byteIndex
 		);
 
-		e = Gunc_ByteBalloon64_giveAt(bb, destIdx, dest);
+		e = Gunc_ByteBalloon64_giveAt(bb, image_byteIndex, currentPixel);
 		if (e) {
-			Gunc_nerr(e, "failed to give byte 0x%02x at index 0x%016x", dest, destIdx);
+			Gunc_nerr(e, "failed to give byte 0x%02x at index 0x%016x", currentPixel, image_byteIndex);
 			return __LINE__;
 		}
 	}
-
+	
 	return 0;
 }
