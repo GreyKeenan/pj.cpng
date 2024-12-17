@@ -21,65 +21,37 @@ const uint8_t Whine_pass_xfreqs[PASSES + 1]  = {8, 8, 4, 4, 2, 2, 1,	1};
 const uint8_t Whine_pass_yfreqs[PASSES + 1]  = {8, 8, 8, 4, 4, 2, 2,	1};
 #define ONEPASS PASSES
 
-/*
-struct Whine_PassInfo {
-	uint8_t i;
-	uint8_t x;
-	uint8_t y;
-
-	int32_t pixelsPerLine;
-	uint64_t bytesPerLine;
-}
-struct Whine_OverallInfo {
-	uint64_t bytesPerLine;
-	uint8_t bytesPerPixel;
-	uint8_t bitsPerPixel;
-}
-
-uint8_t pass_number,
-int32_t pass_pixelsPerLine,
-int32_t pass_lines,
-uint64_t pass_bytesPerLine,
-uint8_t *pass_lineBuffer,
-
-int32_t pass_pixelX,
-int32_t pass_pixelY,
-
-uint64_t image_bytesPerLine,
-uint8_t image_bytesPerPixel,
-uint8_t image_bitsPerPixel
-*/
 
 static inline int Whine_defilterPass(
-	uint8_t pass,
 	struct Gunc_iByteStream *bs,
 	struct Gunc_ByteBalloon64 *bb,
 
-	int32_t height,
-	uint8_t *scanlineBuffer,
-	uint64_t scanlineLength,
+	uint8_t pass_number,
+	int32_t pass_pixelsPerLine,
+	int32_t pass_lines,
+	uint64_t pass_bytesPerLine,
+	uint8_t *pass_lineBuffer,
 
-	int32_t pixelsPerScanline,
-
-	uint8_t bytesPerPixel,
-	uint8_t bitsPerPixel,
-	uint64_t absoluteBytesPerScanline
+	uint64_t image_bytesPerLine,
+	uint8_t image_bytesPerPixel,
+	uint8_t image_bitsPerPixel
 );
 static inline int Whine_defilterScanline(
-	uint8_t pass,
-	int32_t passline,
-
 	struct Gunc_iByteStream *bs,
 	struct Gunc_ByteBalloon64 *bb,
 
 	uint8_t filterType,
 
-	uint8_t *scanlineBuffer,
-	uint64_t scanlineLength,
-	int32_t pixelsPerScanline,
-	uint8_t bytesPerPixel,
-	uint8_t bitsPerPixel,
-	uint64_t absoluteBytesPerScanline
+	uint8_t pass_number,
+	int32_t pass_pixelsPerLine,
+	uint64_t pass_bytesPerLine,
+	uint8_t *pass_lineBuffer,
+
+	int32_t pass_pixelY,
+
+	uint64_t image_bytesPerLine,
+	uint8_t image_bytesPerPixel,
+	uint8_t image_bitsPerPixel
 );
 static inline int Whine_defilterByte(
 	uint8_t *byte,
@@ -94,16 +66,16 @@ static inline int Whine_writeDefilteredByte(
 	struct Gunc_ByteBalloon64 *bb,
 	uint8_t byte,
 
-	uint8_t pass,
-	int32_t passx,
-	int32_t passline,
+	uint8_t pass_number,
+	int32_t pass_pixelsPerLine,
+	uint64_t pass_bytesPerLine,
 
-	uint64_t bytesPerPassline,
-	int32_t pixelsPerPassline,
+	int32_t pass_pixelX,
+	int32_t pass_pixelY,
 
-	uint64_t bytesPerScanline,
-	uint8_t bytesPerPixel,
-	uint8_t bitsPerPixel
+	uint64_t image_bytesPerLine,
+	uint8_t image_bytesPerPixel,
+	uint8_t image_bitsPerPixel
 );
 
 
@@ -169,18 +141,18 @@ int Whine_thicken(const struct Whine_Easel *easel, struct Whine_Canvas *canvas, 
 
 	if (easel->header.interlaceMethod == Whine_ImHeader_INTERLACE_NONE) {
 		e = Whine_defilterPass(
+			bs, &bb,
+
 			ONEPASS,
-			bs,
-			&bb,
+			0, //pixelsPerPassline unnecessary for ONEPASS
 			easel->header.height,
-			hnScanline,
+
 			bytesPerScanline,
+			hnScanline,
 
-			0,
-
+			bytesPerScanline, //unnecessary too
 			bytesPerPixel,
-			bitsPerPixel,
-			0
+			bitsPerPixel
 		);
 		if (e) {
 			Gunc_nerr(e, "failed to defilter non-interlaced image");
@@ -211,19 +183,18 @@ int Whine_thicken(const struct Whine_Easel *easel, struct Whine_Canvas *canvas, 
 			}
 
 			e = Whine_defilterPass(
-				i,
 				bs, &bb,
 
+				i,
+				pixelsPerPassline,
 				passlineCount,
 
-				hnScanline,
 				bytesPerPassline,
+				hnScanline,
 
-				pixelsPerPassline,
-
+				bytesPerScanline,
 				bytesPerPixel,
-				bitsPerPixel,
-				bytesPerScanline
+				bitsPerPixel
 			);
 			if (e) {
 				Gunc_nerr(e, "failed to defilter pass #%d", i);
@@ -253,35 +224,48 @@ int Whine_thicken(const struct Whine_Easel *easel, struct Whine_Canvas *canvas, 
 
 
 static inline int Whine_defilterPass(
-
-	uint8_t pass,
-
 	struct Gunc_iByteStream *bs,
 	struct Gunc_ByteBalloon64 *bb,
 
-	int32_t height,
-	uint8_t *scanlineBuffer,
-	uint64_t scanlineLength,
-	int32_t pixelsPerScanline,
-	uint8_t bytesPerPixel,
-	uint8_t bitsPerPixel,
-	uint64_t absoluteBytesPerScanline
+	uint8_t pass_number,
+	int32_t pass_pixelsPerLine,
+	int32_t pass_lines,
+	uint64_t pass_bytesPerLine,
+	uint8_t *pass_lineBuffer,
+
+	uint64_t image_bytesPerLine,
+	uint8_t image_bytesPerPixel,
+	uint8_t image_bitsPerPixel
 ) {
 	int e = 0;
 
-	memset(scanlineBuffer, 0, scanlineLength);
+	memset(pass_lineBuffer, 0, pass_bytesPerLine);
 
 	uint8_t filterType = 0;
-	for (int32_t i = 0; i < height; ++i) {
+	for (int32_t i = 0; i < pass_lines; ++i) {
 		e = Gunc_iByteStream_next(bs, &filterType);
 		if (e) {
-			Gunc_nerr(e, "failed to read filterType. pass: %d line: %d", pass, i);
+			Gunc_nerr(e, "failed to read filterType. pass_no: %d line: %d", pass_number, i);
 			return __LINE__;
 		}
 
-		e = Whine_defilterScanline(pass, i, bs, bb, filterType, scanlineBuffer, scanlineLength, pixelsPerScanline, bytesPerPixel, bitsPerPixel, absoluteBytesPerScanline);
+		e = Whine_defilterScanline(	
+			bs, bb,
+			filterType,
+
+			pass_number,
+			pass_pixelsPerLine,
+			pass_bytesPerLine,
+			pass_lineBuffer,
+
+			i,
+
+			image_bytesPerLine,
+			image_bytesPerPixel,
+			image_bitsPerPixel
+		);
 		if (e) {
-			Gunc_nerr(e, "failed to process scanline. pass: %d line: %d", pass, i);
+			Gunc_nerr(e, "failed to process scanline. pass_num: %d line: %d", pass_number, i);
 			return __LINE__;
 		}
 	}
@@ -290,22 +274,22 @@ static inline int Whine_defilterPass(
 }
 
 static inline int Whine_defilterScanline(
-	uint8_t pass,
-	int32_t passline,
-		//offsets for interlaced passes
-		//0,0, 1,1 when not interlaced
-		//pixelNum * freq + start = pixelPos to write to
 	struct Gunc_iByteStream *bs,
 	struct Gunc_ByteBalloon64 *bb,
 
 	uint8_t filterType,
 
-	uint8_t *scanlineBuffer,
-	uint64_t scanlineLength,
-	int32_t pixelsPerScanline,
-	uint8_t bytesPerPixel,
-	uint8_t bitsPerPixel,
-	uint64_t absoluteBytesPerScanline
+	uint8_t pass_number,
+	int32_t pass_pixelsPerLine,
+	uint64_t pass_bytesPerLine,
+	uint8_t *pass_lineBuffer,
+
+	int32_t pass_pixelY,
+
+	uint64_t image_bytesPerLine,
+	uint8_t image_bytesPerPixel,
+	uint8_t image_bitsPerPixel
+
 ) {
 
 	int e = 0;
@@ -313,30 +297,37 @@ static inline int Whine_defilterScanline(
 	uint64_t cBuffer = 0;
 	uint8_t byte = 0;
 
-	for (uint64_t i = 0; i < scanlineLength; ++i) {
+	for (uint64_t i = 0; i < pass_bytesPerLine; ++i) {
 		e = Gunc_iByteStream_next(bs, &byte);
 		if (e) {
 			Gunc_nerr(e, "failed to read byte #%d", i);
 			return __LINE__;
 		}
 
-		e = Whine_defilterByte(&byte, filterType, i, scanlineBuffer, cBuffer, bytesPerPixel);
+		e = Whine_defilterByte(&byte, filterType, i, pass_lineBuffer, cBuffer, image_bytesPerPixel);
 		if (e) {
 			Gunc_nerr(e, "failed to defilter byte #%d (0x%02x)", i, byte);
 			return __LINE__;
 		}
 
 		cBuffer <<= 8;
-		cBuffer |= scanlineBuffer[i];
+		cBuffer |= pass_lineBuffer[i];
 
-		scanlineBuffer[i] = byte;
+		pass_lineBuffer[i] = byte;
 
 		e = Whine_writeDefilteredByte(
 			bb, byte,
-			pass, i, passline,
-			scanlineLength, pixelsPerScanline,
-			absoluteBytesPerScanline,
-			bytesPerPixel, bitsPerPixel
+
+			pass_number,
+			pass_pixelsPerLine,
+			pass_bytesPerLine,
+
+			i, //ERR wrong here
+			pass_pixelY,
+
+			image_bytesPerLine,
+			image_bytesPerPixel,
+			image_bitsPerPixel
 		);
 		if (e) {
 			Gunc_nerr(e, "failed to write byte: %d: 0x%02x", i, byte);
@@ -387,22 +378,21 @@ static inline int Whine_writeDefilteredByte(
 	struct Gunc_ByteBalloon64 *bb,
 	uint8_t byte,
 
-	uint8_t pass,
-	int32_t passx,
-	int32_t passline,
+	uint8_t pass_number,
+	int32_t pass_pixelsPerLine,
+	uint64_t pass_bytesPerLine, //
 
-	uint64_t bytesPerPassline,
-	int32_t pixelsPerPassline,
+	int32_t pass_pixelX,
+	int32_t pass_pixelY,
 
-	uint64_t bytesPerScanline,
-	uint8_t bytesPerPixel,
-	uint8_t bitsPerPixel
-
+	uint64_t image_bytesPerLine,
+	uint8_t image_bytesPerPixel, //
+	uint8_t image_bitsPerPixel
 ) {
 
 	int e = 0;
 
-	if (pass >= PASSES) {
+	if (pass_number >= PASSES) {
 		e = Gunc_ByteBalloon64_give(bb, byte);
 		if (e) {
 			Gunc_nerr(e, "failed to write byte: 0x%02x", byte);
@@ -412,42 +402,42 @@ static inline int Whine_writeDefilteredByte(
 	}
 
 	uint8_t dest = 0;
-	uint8_t mask = (1 << (bitsPerPixel)) - 1;
+	uint8_t mask = (1 << (image_bitsPerPixel)) - 1;
 
-	int32_t scanx = 0;
-	int32_t scanline = passline * Whine_pass_yfreqs[pass] + Whine_pass_ystarts[pass];
+	int32_t image_pixelX = 0;
+	int32_t image_pixelY = pass_pixelY * Whine_pass_yfreqs[pass_number] + Whine_pass_ystarts[pass_number];
 	uint64_t destIdx = 0;
 
-	printf("passline: %d passx: %d scanline %d byte: 0x%02x\n",
-		passline, passx,
-		scanline, byte);
+	printf("pass_pixelY: %d pass_pixelX: %d image_pixelY %d byte: 0x%02x\n",
+		pass_pixelY, pass_pixelX,
+		image_pixelY, byte);
 
-	uint8_t pass_pixelsPerByte = 8/bitsPerPixel;
-	if (!pass_pixelsPerByte) {
-		++pass_pixelsPerByte;
+	uint8_t image_pixelsPerByte = 8/image_bitsPerPixel;
+	if (!image_pixelsPerByte) {
+		++image_pixelsPerByte;
 	}
 
 	//TODO ERR only works for < 8 bitsPerPixel
 
-	for (int i = 0; i * bitsPerPixel < 8; ++i) {
-		if (passx * pass_pixelsPerByte + i >= pixelsPerPassline) {
+	for (int i = 0; i * image_bitsPerPixel < 8; ++i) {
+		if (pass_pixelX * image_pixelsPerByte + i >= pass_pixelsPerLine) {
 			printf("cutting\n");
 			break;
 		}
-		scanx = (passx*pass_pixelsPerByte + i) * Whine_pass_xfreqs[pass] + Whine_pass_xstarts[pass];
+		image_pixelX = (pass_pixelX*image_pixelsPerByte + i) * Whine_pass_xfreqs[pass_number] + Whine_pass_xstarts[pass_number];
 		destIdx =
-			(bytesPerScanline * scanline)
-			+ (bitsPerPixel * scanx / 8);
+			(image_bytesPerLine * image_pixelY)
+			+ (image_bitsPerPixel * image_pixelX / 8);
 
-		dest = (byte >> (8 - (i + 1) * bitsPerPixel)) & mask;
-		dest <<= (8 - (scanx + 1) * bitsPerPixel) % 8;
+		dest = (byte >> (8 - (i + 1) * image_bitsPerPixel)) & mask;
+		dest <<= (8 - (image_pixelX + 1) * image_bitsPerPixel) % 8;
 		dest |= bb->arr->data[destIdx];
 			//TODO ERR could be accessing past data[] here
 
 		printf("[%d] writing 0x%02x at %d,%d (%02ld)	was: 0x%02x\n",
-			pass,
+			pass_number,
 			dest,
-			scanx, scanline,
+			image_pixelX, image_pixelY,
 			destIdx,
 			bb->arr->data[destIdx]
 		);
