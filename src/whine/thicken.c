@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #include "./thicken.h"
 
 #include "./easel.h"
@@ -19,6 +21,35 @@ const uint8_t Whine_pass_xfreqs[PASSES + 1]  = {8, 8, 4, 4, 2, 2, 1,	1};
 const uint8_t Whine_pass_yfreqs[PASSES + 1]  = {8, 8, 8, 4, 4, 2, 2,	1};
 #define ONEPASS PASSES
 
+/*
+struct Whine_PassInfo {
+	uint8_t i;
+	uint8_t x;
+	uint8_t y;
+
+	int32_t pixelsPerLine;
+	uint64_t bytesPerLine;
+}
+struct Whine_OverallInfo {
+	uint64_t bytesPerLine;
+	uint8_t bytesPerPixel;
+	uint8_t bitsPerPixel;
+}
+
+uint8_t pass_number,
+int32_t pass_pixelsPerLine,
+int32_t pass_lines,
+uint64_t pass_bytesPerLine,
+uint8_t *pass_lineBuffer,
+
+int32_t pass_pixelX,
+int32_t pass_pixelY,
+
+uint64_t image_bytesPerLine,
+uint8_t image_bytesPerPixel,
+uint8_t image_bitsPerPixel
+*/
+
 static inline int Whine_defilterPass(
 	uint8_t pass,
 	struct Gunc_iByteStream *bs,
@@ -27,11 +58,17 @@ static inline int Whine_defilterPass(
 	int32_t height,
 	uint8_t *scanlineBuffer,
 	uint64_t scanlineLength,
+
+	int32_t pixelsPerScanline,
+
 	uint8_t bytesPerPixel,
-	uint8_t bitsPerPixel
+	uint8_t bitsPerPixel,
+	uint64_t absoluteBytesPerScanline
 );
 static inline int Whine_defilterScanline(
 	uint8_t pass,
+	int32_t passline,
+
 	struct Gunc_iByteStream *bs,
 	struct Gunc_ByteBalloon64 *bb,
 
@@ -39,8 +76,10 @@ static inline int Whine_defilterScanline(
 
 	uint8_t *scanlineBuffer,
 	uint64_t scanlineLength,
+	int32_t pixelsPerScanline,
 	uint8_t bytesPerPixel,
-	uint8_t bitsPerPixel
+	uint8_t bitsPerPixel,
+	uint64_t absoluteBytesPerScanline
 );
 static inline int Whine_defilterByte(
 	uint8_t *byte,
@@ -56,6 +95,12 @@ static inline int Whine_writeDefilteredByte(
 	uint8_t byte,
 
 	uint8_t pass,
+	int32_t passx,
+	int32_t passline,
+
+	uint64_t bytesPerPassline,
+	int32_t pixelsPerPassline,
+
 	uint64_t bytesPerScanline,
 	uint8_t bytesPerPixel,
 	uint8_t bitsPerPixel
@@ -130,8 +175,12 @@ int Whine_thicken(const struct Whine_Easel *easel, struct Whine_Canvas *canvas, 
 			easel->header.height,
 			hnScanline,
 			bytesPerScanline,
+
+			0,
+
 			bytesPerPixel,
-			bitsPerPixel
+			bitsPerPixel,
+			0
 		);
 		if (e) {
 			Gunc_nerr(e, "failed to defilter non-interlaced image");
@@ -169,8 +218,12 @@ int Whine_thicken(const struct Whine_Easel *easel, struct Whine_Canvas *canvas, 
 
 				hnScanline,
 				bytesPerPassline,
+
+				pixelsPerPassline,
+
 				bytesPerPixel,
-				bitsPerPixel
+				bitsPerPixel,
+				bytesPerScanline
 			);
 			if (e) {
 				Gunc_nerr(e, "failed to defilter pass #%d", i);
@@ -209,8 +262,10 @@ static inline int Whine_defilterPass(
 	int32_t height,
 	uint8_t *scanlineBuffer,
 	uint64_t scanlineLength,
+	int32_t pixelsPerScanline,
 	uint8_t bytesPerPixel,
-	uint8_t bitsPerPixel
+	uint8_t bitsPerPixel,
+	uint64_t absoluteBytesPerScanline
 ) {
 	int e = 0;
 
@@ -224,7 +279,7 @@ static inline int Whine_defilterPass(
 			return __LINE__;
 		}
 
-		e = Whine_defilterScanline(pass, bs, bb, filterType, scanlineBuffer, scanlineLength, bytesPerPixel, bitsPerPixel);
+		e = Whine_defilterScanline(pass, i, bs, bb, filterType, scanlineBuffer, scanlineLength, pixelsPerScanline, bytesPerPixel, bitsPerPixel, absoluteBytesPerScanline);
 		if (e) {
 			Gunc_nerr(e, "failed to process scanline. pass: %d line: %d", pass, i);
 			return __LINE__;
@@ -236,6 +291,7 @@ static inline int Whine_defilterPass(
 
 static inline int Whine_defilterScanline(
 	uint8_t pass,
+	int32_t passline,
 		//offsets for interlaced passes
 		//0,0, 1,1 when not interlaced
 		//pixelNum * freq + start = pixelPos to write to
@@ -246,8 +302,10 @@ static inline int Whine_defilterScanline(
 
 	uint8_t *scanlineBuffer,
 	uint64_t scanlineLength,
+	int32_t pixelsPerScanline,
 	uint8_t bytesPerPixel,
-	uint8_t bitsPerPixel
+	uint8_t bitsPerPixel,
+	uint64_t absoluteBytesPerScanline
 ) {
 
 	int e = 0;
@@ -273,7 +331,13 @@ static inline int Whine_defilterScanline(
 
 		scanlineBuffer[i] = byte;
 
-		e = Whine_writeDefilteredByte(bb, byte, pass, scanlineLength, bytesPerPixel, bitsPerPixel);
+		e = Whine_writeDefilteredByte(
+			bb, byte,
+			pass, i, passline,
+			scanlineLength, pixelsPerScanline,
+			absoluteBytesPerScanline,
+			bytesPerPixel, bitsPerPixel
+		);
 		if (e) {
 			Gunc_nerr(e, "failed to write byte: %d: 0x%02x", i, byte);
 			return __LINE__;
@@ -324,26 +388,76 @@ static inline int Whine_writeDefilteredByte(
 	uint8_t byte,
 
 	uint8_t pass,
+	int32_t passx,
+	int32_t passline,
+
+	uint64_t bytesPerPassline,
+	int32_t pixelsPerPassline,
+
 	uint64_t bytesPerScanline,
 	uint8_t bytesPerPixel,
 	uint8_t bitsPerPixel
+
 ) {
 
 	int e = 0;
 
-	//if (pass >= PASSES) {
+	if (pass >= PASSES) {
 		e = Gunc_ByteBalloon64_give(bb, byte);
 		if (e) {
 			Gunc_nerr(e, "failed to write byte: 0x%02x", byte);
 			return __LINE__;
 		}
 		return 0;
-	//}
+	}
 
+	uint8_t dest = 0;
+	uint8_t mask = (1 << (bitsPerPixel)) - 1;
 
-	Gunc_err("TODO writing interlaced defiltered bytes");
-	return 1;
+	int32_t scanx = 0;
+	int32_t scanline = passline * Whine_pass_yfreqs[pass] + Whine_pass_ystarts[pass];
+	uint64_t destIdx = 0;
 
+	printf("passline: %d passx: %d scanline %d byte: 0x%02x\n",
+		passline, passx,
+		scanline, byte);
+
+	uint8_t pass_pixelsPerByte = 8/bitsPerPixel;
+	if (!pass_pixelsPerByte) {
+		++pass_pixelsPerByte;
+	}
+
+	//TODO ERR only works for < 8 bitsPerPixel
+
+	for (int i = 0; i * bitsPerPixel < 8; ++i) {
+		if (passx * pass_pixelsPerByte + i >= pixelsPerPassline) {
+			printf("cutting\n");
+			break;
+		}
+		scanx = (passx*pass_pixelsPerByte + i) * Whine_pass_xfreqs[pass] + Whine_pass_xstarts[pass];
+		destIdx =
+			(bytesPerScanline * scanline)
+			+ (bitsPerPixel * scanx / 8);
+
+		dest = (byte >> (8 - (i + 1) * bitsPerPixel)) & mask;
+		dest <<= (8 - (scanx + 1) * bitsPerPixel) % 8;
+		dest |= bb->arr->data[destIdx];
+			//TODO ERR could be accessing past data[] here
+
+		printf("[%d] writing 0x%02x at %d,%d (%02ld)	was: 0x%02x\n",
+			pass,
+			dest,
+			scanx, scanline,
+			destIdx,
+			bb->arr->data[destIdx]
+		);
+
+		e = Gunc_ByteBalloon64_giveAt(bb, destIdx, dest);
+		if (e) {
+			Gunc_nerr(e, "failed to write byte (0x%02x) at (%d)", byte, destIdx);
+			return __LINE__;
+		}
+	}
 
 	return 0;
 }
