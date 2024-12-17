@@ -84,14 +84,19 @@ int _printImage(const struct Gunc_iRuneStream *rs, int32_t w, int32_t h) {
 	struct winsize win;
 	ioctl(STDOUT_FILENO, TIOCGWINSZ, &win);
 
+	Gunc_say("image dimenisons: %dx%d", w, h);
+
 	for (int32_t j = 0; j < h; ++j) {
 		for (int32_t i = 0; i < w; ++i) {
 			e = Gunc_iRuneStream_next(rs, &pixel);
 			if (e) {
-				Gunc_nerr(e, "failed to read next pixel (%dx%d)",
+				Gunc_nerr(e, "failed to read next pixel (%dx%d) of (%dx%d)",
+					i, j,
 					w,h
 				);
-				return 1;
+				_printPixel(0xff000000);
+				e = 1;
+				goto fin;
 			}
 
 			if (i <= win.ws_col / PXW - 1) {
@@ -102,7 +107,9 @@ int _printImage(const struct Gunc_iRuneStream *rs, int32_t w, int32_t h) {
 		printf("[0m\n");
 	}
 
-	return 0;
+	fin:
+	printf("[0m\n");
+	return e;
 }
 
 void _printPixel(uint32_t p) {
