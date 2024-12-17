@@ -30,6 +30,7 @@ returns 0 on success
 
 
 
+uint8_t Gunc_ByteBalloon64_get(struct Gunc_ByteBalloon64 *self, uint64_t index);
 int Gunc_ByteBalloon64_giveAt(struct Gunc_ByteBalloon64 *self, uint64_t at, uint8_t byte);
 int Gunc_ByteBalloon64_give(struct Gunc_ByteBalloon64 *self, uint8_t byte);
 

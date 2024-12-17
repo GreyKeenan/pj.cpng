@@ -57,7 +57,7 @@ int Gunc_ByteBalloon64_trim(struct Gunc_ByteBalloon64 *self) {
 
 	vptr = realloc(self->arr->data, self->arr->length);
 	if (vptr == NULL) {
-		Gunc_err("failed to realloc for length: %016lx", self->arr->length);
+		Gunc_err("failed to realloc for length: 0x%016lx", self->arr->length);
 		return 1;
 	}
 
@@ -67,6 +67,12 @@ int Gunc_ByteBalloon64_trim(struct Gunc_ByteBalloon64 *self) {
 	return 0;
 }
 
+uint8_t Gunc_ByteBalloon64_get(struct Gunc_ByteBalloon64 *self, uint64_t index) {
+	if (index >= self->arr->length) {
+		return 0;
+	}
+	return self->arr->data[index];
+}
 int Gunc_ByteBalloon64_giveAt(struct Gunc_ByteBalloon64 *self, uint64_t at, uint8_t byte) {
 
 	if (self == NULL || self->arr == NULL || self->arr->data == NULL) {
@@ -78,7 +84,7 @@ int Gunc_ByteBalloon64_giveAt(struct Gunc_ByteBalloon64 *self, uint64_t at, uint
 
 	e = Gunc_ByteBalloon64_fit(self, at);
 	if (e) {
-		Gunc_nerr(e, "failed to fit %016lx", at);
+		Gunc_nerr(e, "failed to fit 0x%016lx", at);
 		return 2;
 	}
 
@@ -106,7 +112,7 @@ static inline int Gunc_ByteBalloon64_fit(struct Gunc_ByteBalloon64 *self, uint64
 
 	while (x >= newCap) {
 		if (0x8000000000000000 & newCap) {
-			Gunc_err("cap cannot be increased to necessary length: %016lx", x);
+			Gunc_err("cap cannot be increased to necessary length: 0x%016lx", x);
 			return 2;
 		}
 		newCap <<= 1;

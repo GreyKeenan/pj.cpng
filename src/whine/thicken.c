@@ -70,7 +70,7 @@ static inline int Whine_writeDefilteredByte(
 	int32_t pass_pixelsPerLine,
 	uint64_t pass_bytesPerLine,
 
-	int32_t pass_pixelX,
+	int32_t pass_byteX,
 	int32_t pass_pixelY,
 
 	uint64_t image_bytesPerLine,
@@ -382,7 +382,7 @@ static inline int Whine_writeDefilteredByte(
 	int32_t pass_pixelsPerLine,
 	uint64_t pass_bytesPerLine, //
 
-	int32_t pass_pixelX,
+	int32_t pass_byteX,
 	int32_t pass_pixelY,
 
 	uint64_t image_bytesPerLine,
@@ -408,8 +408,8 @@ static inline int Whine_writeDefilteredByte(
 	int32_t image_pixelY = pass_pixelY * Whine_pass_yfreqs[pass_number] + Whine_pass_ystarts[pass_number];
 	uint64_t destIdx = 0;
 
-	printf("pass_pixelY: %d pass_pixelX: %d image_pixelY %d byte: 0x%02x\n",
-		pass_pixelY, pass_pixelX,
+	printf("pass_pixelY: %d pass_byteX: %d image_pixelY %d byte: 0x%02x\n",
+		pass_pixelY, pass_byteX,
 		image_pixelY, byte);
 
 	uint8_t image_pixelsPerByte = 8/image_bitsPerPixel;
@@ -420,31 +420,30 @@ static inline int Whine_writeDefilteredByte(
 	//TODO ERR only works for < 8 bitsPerPixel
 
 	for (int i = 0; i * image_bitsPerPixel < 8; ++i) {
-		if (pass_pixelX * image_pixelsPerByte + i >= pass_pixelsPerLine) {
+		if (pass_byteX * image_pixelsPerByte + i >= pass_pixelsPerLine) {
 			printf("cutting\n");
 			break;
 		}
-		image_pixelX = (pass_pixelX*image_pixelsPerByte + i) * Whine_pass_xfreqs[pass_number] + Whine_pass_xstarts[pass_number];
+		image_pixelX = (pass_byteX*image_pixelsPerByte + i) * Whine_pass_xfreqs[pass_number] + Whine_pass_xstarts[pass_number];
 		destIdx =
 			(image_bytesPerLine * image_pixelY)
 			+ (image_bitsPerPixel * image_pixelX / 8);
 
 		dest = (byte >> (8 - (i + 1) * image_bitsPerPixel)) & mask;
 		dest <<= (8 - (image_pixelX + 1) * image_bitsPerPixel) % 8;
-		dest |= bb->arr->data[destIdx];
-			//TODO ERR could be accessing past data[] here
+		dest |= Gunc_ByteBalloon64_get(bb, destIdx);
 
 		printf("[%d] writing 0x%02x at %d,%d (%02ld)	was: 0x%02x\n",
 			pass_number,
 			dest,
 			image_pixelX, image_pixelY,
 			destIdx,
-			bb->arr->data[destIdx]
+			Gunc_ByteBalloon64_get(bb, destIdx)
 		);
 
 		e = Gunc_ByteBalloon64_giveAt(bb, destIdx, dest);
 		if (e) {
-			Gunc_nerr(e, "failed to write byte (0x%02x) at (%d)", byte, destIdx);
+			Gunc_nerr(e, "failed to give byte 0x%02x at index 0x%016x", dest, destIdx);
 			return __LINE__;
 		}
 	}
