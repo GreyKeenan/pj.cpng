@@ -27,6 +27,11 @@ int Gunc_ByteBalloon64_init(struct Gunc_ByteBalloon64 *self, struct Gunc_ByteArr
 			Gunc_err("failed to realloc");
 			return __LINE__;
 		}
+		memset( //zero out the new memory
+			((uint8_t*)v) + arr->length,
+			0,
+			cap - arr->length
+		);
 		arr->data = v;
 	} else {
 		cap = arr->length;
@@ -78,21 +83,15 @@ int Gunc_ByteBalloon64_giveAt(struct Gunc_ByteBalloon64 *self, uint64_t at, uint
 	}
 
 	self->arr->data[at] = byte;
-	if (self->arr->length < at) {
-		self->arr->length = at;
+	if (self->arr->length < at + 1) {
+		self->arr->length = at + 1;
 	}
 	
 	return 0;
 }
 
 int Gunc_ByteBalloon64_give(struct Gunc_ByteBalloon64 *self, uint8_t byte) {
-	int e = Gunc_ByteBalloon64_giveAt(self, self->arr->length, byte);
-	if (e) {
-		Gunc_nerr(e, "failed to giveAt. l: %016lx b: %02x", self->arr->length, byte);
-		return 1;
-	}
-	self->arr->length++;
-	return 0;
+	return Gunc_ByteBalloon64_giveAt(self, self->arr->length, byte);
 }
 
 
