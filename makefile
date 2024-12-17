@@ -9,6 +9,8 @@
 # png = assets/my48x32.png
 png = assets/pngSuite/basi2c16.png
 
+suite = assets/pngSuite/
+
 cfiles = \
 	main.c \
 	\
@@ -91,3 +93,12 @@ runlog: a.out
 clean:
 	rm $(out)
 	rm $(log)
+
+runsuite: a.out $(suite)
+	for p in $(suite)*.png; do \
+		if !(./$(out) "$$p" > /dev/null 2>&1); then\
+			echo "1: \033[0;31m$$p\033[0;0m"; \
+		else \
+			echo "0: $$p"; \
+		fi \
+	done \
