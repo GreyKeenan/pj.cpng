@@ -180,9 +180,9 @@ int Pork_createPixie(const char *path, struct Whine_Pixie *destination) {
 	Whine_Canvas_filicide(&decompressedCanvas);
 
 	if (f != NULL) {
-		e = fclose(f);
-		if (e) {
-			Gunc_nerr(e, "failed to close file!");
+		int e2 = fclose(f);
+		if (e2) {
+			Gunc_nerr(e2, "failed to close file!");
 			e = -1;
 		}
 	}
