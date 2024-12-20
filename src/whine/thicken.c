@@ -160,40 +160,34 @@ int Whine_thicken(const struct Whine_Easel *easel, struct Whine_Canvas *canvas, 
 		}
 	} else {
 
-		int32_t pixelsPerPassline = 0; // aka width of pass
-		uint64_t bitsPerPassline = 0;
-		uint64_t bytesPerPassline = 0;
-
-		int32_t passlineCount = 0; // aka height of pass
+		uint32_t pass_lines = 0;
+		uint32_t pass_pixelsPerLine = 0;
+		uint64_t pass_bitsPerLine = 0;
+		uint64_t pass_bytesPerLine = 0;
 
 		for (int i = 0; i < PASSES; ++i) {
 
-			pixelsPerPassline =
-				((easel->header.width - Whine_pass_xstarts[i]) / Whine_pass_xfreqs[i])
-				+ (bool)((easel->header.width - Whine_pass_xstarts[i]) % Whine_pass_xfreqs[i]);
-			bitsPerPassline = (uint64_t)Whine_ImHeader_bitsPerPixel(&easel->header) * pixelsPerPassline;
-			bytesPerPassline = (bitsPerPassline / 8) + (bool)(bitsPerPassline % 8);
-			passlineCount =
-				((easel->header.height - Whine_pass_ystarts[i]) / Whine_pass_yfreqs[i])
-				+ (bool)((easel->header.height - Whine_pass_ystarts[i]) % Whine_pass_yfreqs[i]);
-
-			if (pixelsPerPassline == 0 || passlineCount == 0) {
+			if (
+				Whine_pass_xstarts[i] >= easel->header.width
+				|| Whine_pass_ystarts[i] >= easel->header.height
+			) {
 				continue;
 			}
 
+			pass_lines =
+				((easel->header.height - Whine_pass_ystarts[i]) / Whine_pass_yfreqs[i])
+				+ (bool)((easel->header.height - Whine_pass_ystarts[i]) % Whine_pass_yfreqs[i]);
+			pass_pixelsPerLine =
+				((easel->header.width - Whine_pass_xstarts[i]) / Whine_pass_xfreqs[i])
+				+ (bool)((easel->header.width - Whine_pass_xstarts[i]) % Whine_pass_xfreqs[i]);
+			pass_bitsPerLine = (uint64_t)Whine_ImHeader_bitsPerPixel(&easel->header) * pass_pixelsPerLine;
+			pass_bytesPerLine = (pass_bitsPerLine / 8) + (bool)(pass_bitsPerLine % 8);
+
 			e = Whine_defilterPass(
 				bs, &bb,
-
-				i,
-				pixelsPerPassline,
-				passlineCount,
-
-				bytesPerPassline,
-				hnScanline,
-
-				bytesPerScanline,
-				bytesPerPixel,
-				bitsPerPixel
+				i, pass_pixelsPerLine, pass_lines,
+				pass_bytesPerLine, hnScanline,
+				bytesPerScanline, bytesPerPixel, bitsPerPixel
 			);
 			if (e) {
 				Gunc_nerr(e, "failed to defilter pass #%d", i);
