@@ -99,31 +99,31 @@ int Whine_thicken(const struct Whine_Easel *easel, struct Whine_Canvas *canvas, 
 
 	uint8_t *hnScanline = NULL;
 
-	uint8_t bitsPerPixel = Whine_ImHeader_samplesPerPixel(easel->header.colorType) * easel->header.bitDepth;
-	if (bitsPerPixel == 0) {
-		Gunc_nerr(bitsPerPixel, "invalid bitsPerPixel");
+	uint8_t image_bitsPerPixel = Whine_ImHeader_samplesPerPixel(easel->header.colorType) * easel->header.bitDepth;
+	if (image_bitsPerPixel == 0) {
+		Gunc_nerr(image_bitsPerPixel, "invalid bitsPerPixel");
 		e = __LINE__;
 		goto fin;
 	}
-	uint8_t bytesPerPixel = Whine_ImHeader_bytesPerPixel(&easel->header);
-	if (bytesPerPixel == 0) {
-		Gunc_nerr(bytesPerPixel, "invalid bytesPerPixel");
+	uint8_t image_bytesPerPixel = Whine_ImHeader_bytesPerPixel(&easel->header);
+	if (image_bytesPerPixel == 0) {
+		Gunc_nerr(image_bytesPerPixel, "invalid bytesPerPixel");
 		e = __LINE__;
 		goto fin;
 	}
-	uint64_t bytesPerScanline = Whine_ImHeader_bytesPerScanline(&easel->header);
-	if (bytesPerScanline == 0) {
-		Gunc_nerr(bytesPerScanline, "invalid bytesPerScanline");
+	uint64_t image_bytesPerLine = Whine_ImHeader_bytesPerScanline(&easel->header);
+	if (image_bytesPerLine == 0) {
+		Gunc_nerr(image_bytesPerLine, "invalid bytesPerScanline");
 		e = __LINE__;
 		goto fin;
 	}
 
-	if (bytesPerScanline > SIZE_MAX) {
+	if (image_bytesPerLine > SIZE_MAX) {
 		Gunc_err("scanline length too long for malloc");
 		e = __LINE__;
 		goto fin;
 	}
-	hnScanline = calloc(bytesPerScanline, 1);
+	hnScanline = calloc(image_bytesPerLine, 1);
 	if (hnScanline == NULL) {
 		Gunc_err("scanline malloc failed");
 		e = __LINE__;
@@ -143,15 +143,13 @@ int Whine_thicken(const struct Whine_Easel *easel, struct Whine_Canvas *canvas, 
 			bs, &bb,
 
 			ONEPASS,
-			0, //pixelsPerPassline unnecessary for ONEPASS
+			easel->header.width, //pixelsPerLine unnecessary for ONEPASS
 			easel->header.height,
 
-			bytesPerScanline,
-			hnScanline,
+			image_bytesPerLine, hnScanline,
 
-			bytesPerScanline, //unnecessary too
-			bytesPerPixel,
-			bitsPerPixel
+			image_bytesPerLine, //not used for ONEPASS either
+			image_bytesPerPixel, image_bitsPerPixel
 		);
 		if (e) {
 			Gunc_nerr(e, "failed to defilter non-interlaced image");
@@ -187,7 +185,7 @@ int Whine_thicken(const struct Whine_Easel *easel, struct Whine_Canvas *canvas, 
 				bs, &bb,
 				i, pass_pixelsPerLine, pass_lines,
 				pass_bytesPerLine, hnScanline,
-				bytesPerScanline, bytesPerPixel, bitsPerPixel
+				image_bytesPerLine, image_bytesPerPixel, image_bitsPerPixel
 			);
 			if (e) {
 				Gunc_nerr(e, "failed to defilter pass #%d", i);
