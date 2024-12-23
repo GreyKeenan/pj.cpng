@@ -27,7 +27,7 @@ struct Gunc_iByteLooker {
 	*/
 };
 
-static inline int Gunc_iByteLooker_look(struct Gunc_iByteLooker *self, uint8_t *destination, int32_t at) {
+static inline int Gunc_iByteLooker_look(const struct Gunc_iByteLooker *self, uint8_t *destination, int32_t at) {
 	if (self == NULL || self->vself == NULL || self->look == NULL || destination == NULL) {
 		return Gunc_iByteLooker_NULL;
 	}

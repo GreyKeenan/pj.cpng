@@ -23,13 +23,13 @@ struct Gunc_iByteWriter {
 	*/
 };
 
-static inline int Gunc_iByteWriter_give(struct Gunc_iByteWriter *self, uint8_t byte) {
+static inline int Gunc_iByteWriter_give(const struct Gunc_iByteWriter *self, uint8_t byte) {
 	if (self == NULL || self->vself == NULL || self->give == NULL) {
 		return Gunc_iByteWriter_NULL;
 	}
 	return self->give(self->vself, byte);
 }
-static inline int Gunc_iByteWriter_give_unnull(struct Gunc_iByteWriter *self, uint8_t byte) {
+static inline int Gunc_iByteWriter_give_unnull(const struct Gunc_iByteWriter *self, uint8_t byte) {
 	return self->give(self->vself, byte);
 }
 
