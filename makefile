@@ -48,7 +48,6 @@ cfiles = \
 
 links = \
 	-lm \
-	-lSDL2 \
 
 flags = \
 	-std=c99 \
