@@ -95,8 +95,10 @@ clean:
 	rm $(log)
 
 runsuite: a.out $(suite)
-	for p in $(suite)*.png; do \
-		if !(./$(out) "$$p" > /dev/null 2>&1); then\
+	rundir="$$PWD" && \
+	cd $(suite) && \
+	for p in *.png; do \
+		if !($$rundir/$(out) "$$p" > /dev/null 2>&1); then\
 			echo "1: \033[0;31m$$p\033[0;0m"; \
 		else \
 			echo "0: $$p"; \
