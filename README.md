@@ -19,8 +19,8 @@ but the display code uses \<sys/ioctl.h\> and \<unistd.h\> if that's relevant to
 
 * All critical types of PNG are supported.
 * For now, images which are too wide for the stdout will be cut off.
-* Especially large PNGs may throw errors, where the width * height * bytesPerPixel max out a uint64.
-  > TODO
+* Technically, especially large PNGs will throw errors, where the width * height * bytesPerPixel max out a uint64.
+  But, like, that would be insane? So who cares.
 * For now, all ancillary chunks (including tRNS, gAMA, and cHRM) are discarded.
 * Chunk CRCs are discarded.
 
